@@ -1,0 +1,27 @@
+{
+  "name": "chaos-theory",
+  "owner": {
+    "name": "William Freelove",
+    "email": "whfreelove+chaos.theory@gmail.com"
+  },
+  "metadata": {
+    "description": "Claude Code plugins attempting to harness functionality from stochastic behavior \"Agents, uhh, find a way\"",
+    "version": "0.1.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "worktree-isolation",
+      "source": "./plugins/worktree-isolation",
+      "description": "Automatically isolates Claude Code to git worktree boundaries, preventing access to project root or sibling worktrees",
+      "version": "0.1.0",
+      "author": {
+        "name": "William Freelove",
+        "email": "whfreelove+chaos.theory@gmail.com"
+      },
+      "license": "MIT",
+      "keywords": ["worktree", "git", "isolation", "hooks"],
+      "category": "development-tools"
+    }
+  ]
+}

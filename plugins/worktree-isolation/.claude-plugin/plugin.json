@@ -1,0 +1,5 @@
+{
+  "name": "worktree-isolation",
+  "version": "0.1.0",
+  "description": "Automatically isolates Claude Code to git worktree boundaries, preventing access to project root or sibling worktrees"
+}
