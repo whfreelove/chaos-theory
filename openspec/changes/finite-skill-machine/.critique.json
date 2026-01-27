@@ -1,0 +1,159 @@
+{
+  "output_template": "## CRITIC OUTPUT FORMAT (required)\n\nFor each issue found:\n### <critic type>-N: <title>\n- **Severity**: high|medium|low\n- **Description**: <explanation>\n\nSeverity rubric:\n- HIGH = blocks implementation or causes incorrect behavior\n- MEDIUM = degrades functionality or creates ambiguity\n- LOW = minor issue or style\n\nIf no issues found:\n### NO ISSUES FOUND\n\nDo NOT invent issues. Only report genuine gaps.",
+  "critics": [
+    {
+      "name": "Proposal",
+      "files": [
+        "proposal.md"
+      ],
+      "model": "sonnet",
+      "skills": [],
+      "evaluate": "Is `proposal.md` internally consistent?\n- \"Why\" is clear\n- \"What Changes\" is explicit enough for design\n- \"Capabilities\" address goals"
+    },
+    {
+      "name": "Design",
+      "files": [
+        "design.md"
+      ],
+      "model": "sonnet",
+      "skills": [
+        "ce:architecting-systems"
+      ],
+      "evaluate": "Is `design.md` internally consistent?\n- Architecture is explained thoroughly\n- Technical decisions reinforce architecture and don't conflict\n- Specificity doesn't constrain coding\n- Goals with context, non-goals with rationale"
+    },
+    {
+      "name": "Functional",
+      "files": [
+        "proposal.md",
+        "design.md"
+      ],
+      "model": "sonnet",
+      "skills": [
+        "ce:architecting-systems"
+      ],
+      "evaluate": "Does `design.md` implement all proposal capabilities and \"What Changes\"?"
+    },
+    {
+      "name": "Technical",
+      "files": [
+        "design.md"
+      ],
+      "model": "sonnet",
+      "skills": [
+        "ce:architecting-systems"
+      ],
+      "evaluate": "Does `design.md` demonstrate that all decisions are technically feasible and testable?"
+    },
+    {
+      "name": "Dependency",
+      "files": [
+        "design.md"
+      ],
+      "model": "haiku",
+      "skills": [
+        "ce:architecting-systems"
+      ],
+      "evaluate": "- Does `design.md` reference unlisted external dependencies (commands, packages, applications, services)?\n- Does `design.md` justify complex solutions over viable (simpler, stable, active, well known) external dependency alternatives?"
+    },
+    {
+      "name": "Requirement",
+      "files": [
+        "specs"
+      ],
+      "model": "sonnet",
+      "skills": [
+        "writing-gherkin-specs"
+      ],
+      "evaluate": "- Do specs follow Gherkin behavior test writing practices?\n- Does each scenario have a unique ID?\n- Are specs suitable for E2E/integration tests (NEVER unit tests)?"
+    },
+    {
+      "name": "Validation",
+      "files": [
+        "proposal.md",
+        "specs"
+      ],
+      "model": "sonnet",
+      "skills": [
+        "writing-gherkin-specs"
+      ],
+      "evaluate": "- Does each capability in `proposal.md` have a corresponding spec file with slug directory name?\n- Do specs cover all implied interface behaviors?"
+    },
+    {
+      "name": "Verification",
+      "files": [
+        "design.md",
+        "specs"
+      ],
+      "model": "sonnet",
+      "skills": [
+        "writing-gherkin-specs"
+      ],
+      "evaluate": "- Do specs cover all design interfaces?\n- Is each scenario testable with defined E2E/integration tooling?"
+    },
+    {
+      "name": "Design for Test",
+      "files": [
+        "design.md",
+        "specs"
+      ],
+      "model": "sonnet",
+      "skills": [
+        "ce:writing-tests"
+      ],
+      "evaluate": "- Does `design.md` explain tooling/methods for spec verification?\n- Does infrastructure cover E2E/integration test types?"
+    },
+    {
+      "name": "Logic",
+      "files": [
+        "design.md",
+        "specs"
+      ],
+      "model": "sonnet",
+      "skills": [
+        "writing-gherkin-specs"
+      ],
+      "evaluate": "Do design behaviors correctly implement spec requirements?"
+    },
+    {
+      "name": "Implementation",
+      "files": [
+        "tasks.md",
+        "design.md"
+      ],
+      "model": "sonnet",
+      "skills": [
+        "ce:writing-plans"
+      ],
+      "evaluate": "Do tasks in `tasks.md` implement changes in `design.md`?"
+    },
+    {
+      "name": "Test",
+      "files": [
+        "tasks.md",
+        "specs"
+      ],
+      "model": "sonnet",
+      "skills": [
+        "writing-gherkin-specs",
+        "ce:writing-tests"
+      ],
+      "evaluate": "Do tasks implement E2E/integration test spec scenarios?"
+    },
+    {
+      "name": "Test Infra",
+      "files": [
+        "tasks.md",
+        "specs"
+      ],
+      "model": "sonnet",
+      "skills": [
+        "ce:writing-tests"
+      ],
+      "evaluate": "Do tasks implement E2E/integration test infrastructure?"
+    }
+  ],
+  "hashes": {
+    "proposal.md": "48e345980bd8091a",
+    "design.md": "edd4c9b8f615fc9d"
+  }
+}
