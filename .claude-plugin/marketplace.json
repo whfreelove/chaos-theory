@@ -2,7 +2,8 @@
   "name": "chaos-theory",
   "owner": {
     "name": "William Freelove",
-    "email": "whfreelove+chaos.theory@gmail.com"
+    "email": "whfreelove+chaos.theory@gmail.com",
+    "url": "https://github.com/whfreelove"
   },
   "metadata": {
     "description": "Claude Code plugins attempting to harness functionality from stochastic behavior \"Agents, uhh, find a way\"",
@@ -21,6 +22,32 @@
       },
       "license": "MIT",
       "keywords": ["worktree", "git", "isolation", "hooks"],
+      "category": "development-tools"
+    },
+    {
+      "name": "ct",
+      "source": "./plugins/ct",
+      "description": "OpenSpec artifact validation using parallel critics",
+      "version": "0.1.0",
+      "author": {
+        "name": "William Freelove",
+        "email": "whfreelove+chaos.theory@gmail.com"
+      },
+      "license": "MIT",
+      "keywords": ["openspec", "validation", "critics", "artifacts", "documentation"],
+      "category": "development-tools"
+    },
+    {
+      "name": "fsm-spike",
+      "source": "./plugins/fsm-spike",
+      "description": "Test spike for direct task file writing",
+      "version": "0.0.1",
+      "author": {
+        "name": "William Freelove",
+        "email": "whfreelove+chaos.theory@gmail.com"
+      },
+      "license": "MIT",
+      "keywords": ["spike", "tasks", "testing"],
       "category": "development-tools"
     }
   ]
