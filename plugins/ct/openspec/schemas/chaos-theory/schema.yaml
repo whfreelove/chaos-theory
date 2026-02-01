@@ -1,0 +1,338 @@
+name: chaos-theory
+version: 1
+description: OpenSpec workflow - functional → requirements/technical/infra → tasks
+artifacts:
+  - id: functional
+    generates: functional.md
+    description: Functional specification outlining user impacting aspects of the change
+    template: functional.md
+    instruction: >
+      Create the functional specification that establishes WHAT functionality is needed
+      and WHY.
+
+
+      Invoke skill: `ct:writing-functional-specs` for functional specification concepts.
+
+
+      If "Why" is hard to fit in 1-2 sentences or "Scope" feels too long, push back
+      on the user to split the change into smaller changes.
+      If there are ANY scope or user experience aspects that weren't fully explained
+      by a human or clear from existing documentation, ASK THE USER QUESTIONS.
+
+
+      Section order: Why → Capabilities → User Impact → What Changes
+
+      - **Capabilities**: Each becomes `requirements/<slug>/requirements.feature.md`
+
+      - **User Impact** includes Scope, Out of Scope, and Known Risks subsections
+
+      IMPORTANT: The Capabilities section creates the contract between functional
+      specification and requirements phases. Research existing requirements before
+      filling in. Don't assume anything, come up with questions, get clarification.
+
+
+      This is the foundation - requirements, technical design, and tasks all build on this.
+      Quality matters. Think through the details before writing anything.
+    requires: []
+  - id: requirements
+    generates: requirements/**/*.md
+    description: Detailed behavioral specifications for the change
+    template: requirements.feature.md
+    instruction: >
+      Create requirement specification files using MDG (Markdown-Gherkin) format.
+
+
+      Invoke skill: `ct:writing-markdown-gherkin` for full MDG reference.
+
+
+      TERMINOLOGY (functional spec language → Gherkin keyword):
+
+      - "Capability" → "Feature" (one Feature per capability file)
+
+      - "Requirement" → "Rule" (requirements are Rules under Features)
+
+
+      Create one requirements file per capability listed in the functional specification:
+
+      - New capabilities: `requirements/<capability-slug>/requirements.feature.md`
+
+      - Modified capabilities: use existing folder name from `openspec/specs/<capability>/`
+
+
+      DELTA STRUCTURE (top-level headers):
+
+      - `# ADDED Requirements` - contains full MDG content (Feature/Rule/Scenario)
+
+      - `# MODIFIED Requirements` - contains full updated MDG content
+
+      - `# REMOVED Requirements` - contains ID list with reasons only
+
+      - `# RENAMED Requirements` - contains ID mapping with reasons only
+
+
+      MDG HIERARCHY (shifted down under delta headers):
+
+      ```
+      # ADDED Requirements
+
+      `@<slug>`
+      ## Feature: <capability name>
+
+      `@<slug>:1`
+      ### Rule: <business rule>
+
+      #### Background
+      - Given <common precondition>
+
+      `@<slug>:1.1`
+      #### Scenario: <behavior title>
+      - Given <state>
+      - When <action>
+      - Then <outcome>
+      ```
+
+      TAGGING CONVENTION:
+
+      - Feature: `@<slug>` (kebab-case capability name)
+
+      - Rule: `@<slug>:Y` (Y = rule number)
+
+      - Scenario: `@<slug>:Y.Z` (Z = scenario number within rule)
+
+
+      MODIFIED requirements workflow:
+
+      1. Locate existing requirement in `openspec/specs/<capability>/requirements.feature.md`
+
+      2. Copy the ENTIRE Feature/Rule/Scenario block
+
+      3. Paste under `# MODIFIED Requirements` and edit
+
+      4. Ensure tags match exactly for diff tracking
+
+
+      REMOVED/RENAMED format (ID lists only, no MDG content):
+
+      ```
+      # REMOVED Requirements
+
+      - `@<slug>:Y`
+        - **Reason**: <why removed>
+
+      # RENAMED Requirements
+
+      - `@<old-slug>:Y` → `@<new-slug>:Y`
+        - **Reason**: <why renamed>
+      ```
+
+
+      SELF-CHECK before finalizing:
+
+      1. Does each file have exactly one Feature (= one capability)?
+
+      2. Is each scenario testable (observable behavior, not internal state)?
+
+      3. Do all tags follow the `@slug:Y.Z` convention?
+
+      4. Are ADDED/MODIFIED sections MDG content, REMOVED/RENAMED just ID lists?
+    requires:
+      - functional
+  - id: technical
+    generates: technical.md
+    description: Technical design document with implementation architecture and decisions
+    template: technical.md
+    instruction: >
+      Create the technical design document that explains HOW to implement the change.
+
+
+      Invoke skill: `ct:writing-technical-design` for technical design concepts.
+
+
+      When to include technical.md (create only if any apply):
+
+      - Cross-cutting change (multiple services/modules) or new architectural pattern
+
+      - New external dependency or significant data model changes
+
+      - Complex internal solution where viable external alternatives exist
+
+      - Security, performance, or migration complexity
+
+      - Ambiguity that benefits from technical decisions before coding
+
+
+      Section purposes:
+
+      - **Context**: Background info, relevant prior decisions, tech stack key to changes.
+      Reference existing decisions from openspec/specs/ if applicable.
+
+      - **Objectives**: Specific, measurable outcomes with slugs for traceability.
+      Format: `OBJ-<slug>`: <outcome statement>
+      Keep objectives achievable within this change scope.
+
+      - **Architecture**: Mermaid diagrams showing system changes.
+      Split into System Overview (static structure) and Component Interactions (dynamics).
+      If openspec/project.md has Architecture Patterns, show DIFF (what changes).
+      If project.md is empty/missing, show new architecture fully.
+
+      - **Components**: Each new/modified component gets a definition block.
+      Format: `CMP-<slug>`: name, description, responsibilities, dependencies.
+      Slugs enable task/test traceability.
+
+      - **Interfaces**: OPTIONAL. Contracts between components - inputs, outputs, errors.
+      Format: `INT-<slug>`: operation name, input, output, errors.
+      Include data model shapes inline. Use for components that expose APIs or are
+      consumed by other components. Skip for internal implementation details.
+
+      - **Decisions**: Y-statements ONLY. Each decision is a single structured sentence.
+      Invoke skill `ct:writing-y-statements` for Y-statement format reference.
+      Decisions must be approved before writing - no "proposed" decisions in technical.md.
+      If a decision is superseded, delete it immediately (no deprecated status).
+
+      - **Risks**: OPTIONAL. Cross-cutting risks not tied to specific decisions.
+      Decision-specific trade-offs belong in Y-statement "accepting" clause, not here.
+      Format: [Risk] → Mitigation
+
+
+      First-draft quality matters:
+
+      The template establishes section structure. Following agents expand existing
+      sections rather than restructure. Missing sections lead to content shoehorned
+      into wrong places. Off-topic sections invite scope creep in critiques.
+      Get the structure right on first draft.
+
+
+      Reference the functional spec for motivation and requirements for behaviors.
+    requires:
+      - functional
+      - requirements
+  - id: infra
+    generates: infra.md
+    description: Deployment and operational specifications for the change
+    template: infra.md
+    instruction: >
+      Create the infrastructure specification that documents HOW to deploy,
+      operate, and validate this change using EXISTING infrastructure.
+
+
+      IMPORTANT: infra.md does NOT propose infrastructure changes. Changes to
+      infrastructure itself (new services, topology changes, new dependencies)
+      belong in technical.md because they affect other work in flight.
+      infra.md documents deployment and operations for the current change only.
+
+
+      Section purposes:
+
+      - **Context**: Current infrastructure state relevant to this deployment.
+      Reference existing topology, environments, constraints.
+
+      - **Objectives**: Measurable operational outcomes for THIS change.
+      Format: `OBJ-<slug>`: <outcome statement>
+      Examples: latency targets, deployment success criteria, test coverage.
+
+      - **Deployment**: OPTIONAL. How this change deploys to existing infrastructure.
+      Environment configs, Featuree flags, rollout strategy.
+      Use Mermaid diagrams to show deployment flow, not topology changes.
+
+      - **Testing Strategy**: Integration and E2E test approach for this change.
+      Test environments, test data management, requirements coverage mapping.
+      Unit testing belongs in technical.md.
+
+      - **Observability**: OPTIONAL. Logging, metrics, alerts for NEW components in this change.
+      Not infrastructure-wide observability changes.
+
+      - **Migration**: OPTIONAL. Rollout strategy, rollback triggers, data migration.
+      Only if this change requires careful deployment sequencing.
+
+
+      Reference technical.md for architecture decisions this deployment supports.
+      Y-statements for deployment decisions can go in technical.md Decisions section.
+    requires:
+      - technical
+      - requirements
+  - id: integration
+    generates: integration.feature.md
+    description: Cross-capability integration test scenarios not covered by single-capability requirements
+    template: integration.feature.md
+    instruction: >
+      Create integration test scenarios for cross-capability interactions.
+
+
+      OPTIONAL: Only create this file when capabilities interact in ways not captured
+      by individual requirements files. Skip if all behaviors are testable within
+      single-capability requirements.
+
+
+      Invoke skill: `ct:writing-markdown-gherkin` for MDG format reference.
+
+
+      FORMAT: Same MDG (Markdown-Gherkin) format as requirements files, but scoped
+      to cross-capability interactions rather than single capabilities.
+
+
+      Structure:
+
+      - One Feature per integration concern (e.g., "User Authentication Flow")
+
+      - Rules group related integration behaviors
+
+      - Scenarios test observable outcomes of capability interactions
+
+
+      Guidelines:
+
+      - Only include scenarios that span multiple capabilities
+
+      - Don't duplicate scenarios already in single-capability requirements
+
+      - Reference which capabilities are involved using `@capability-slug` tags
+
+      - Focus on integration boundaries, not internal capability behavior
+
+
+      Reference requirements for individual capability behaviors and infra.md
+      Testing Strategy for how integration tests will be executed.
+    requires:
+      - requirements
+      - infra
+  - id: tasks
+    generates: tasks.yaml
+    description: Implementation checklist with trackable tasks
+    template: tasks.yaml
+    instruction: >
+      Create the task list that breaks down the implementation work.
+
+
+      FORMAT: YAML with task groups as top-level keys (kebab-case).
+
+
+      Structure:
+
+      ```yaml
+      group-name:
+        - Task description
+        - Another task
+
+      another-group:
+        - Task description
+      ```
+
+
+      Guidelines:
+
+      - Group names must be kebab-case (lowercase, hyphens)
+
+      - Order groups by dependency (what must be done first?)
+
+      - Tasks should be atomic (isolated and small)
+
+      - Each task should be verifiable - you know when it's done
+
+
+      Reference requirements for what needs to be built, technical design for
+      how to build it, infra for how to test, deploy, and monitor it, and
+      integration (if it exists) for cross-capability test scenarios.
+    requires:
+      - requirements
+      - technical
+      - infra
