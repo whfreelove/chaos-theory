@@ -1,0 +1,96 @@
+- id: 17                    # required: incrementing integer, no zero-padding
+  status: draft            # required: draft | proposed | accepted | rejected | deprecated | superseded
+  superseded_by: [41]      # optional: ID(s) of ADR(s) that replaces this one (use when status is superseded)
+  supersedes: [4,10]       # optional: ID(s) of ADR(s) this one replaces (use when the target ID(s) would become superseded)
+  date_created: 2024-01-29 # required: YYYY-MM-DD when decision was first recorded
+  date_updated: 2024-01-29 # required: YYYY-MM-DD when decision was last modified
+  title: Short title describing problem and solution  # required
+
+  owner: Product Owner     # required: single person ultimately responsible for this decision
+  decision_makers:         # optional: people accountable for the decision
+    - Team Lead
+    - Technical Architect
+  consulted:               # optional: subject-matter experts with two-way communication
+    - Research Principal
+    - Domain Expert
+  informed:                # optional: stakeholders kept up-to-date with one-way communication
+    - Project Manager
+    - Stakeholders
+
+  context: >-              # required: describe context and problem statement
+    Describe the context and problem statement in two to three sentences.
+    Articulate the problem as a question. Link to relevant issues or docs.
+
+  decision_drivers:        # required: forces and concerns influencing the decision
+    driver-one: >-
+      Short but complete explanation of the first force or concern
+      influencing this decision.
+    driver-two: >-
+      Short but complete explanation of the second force or concern
+      influencing this decision.
+    driver-three: >-
+      Short but complete explanation of another consideration
+      that shapes the decision space.
+
+  considered_options:      # required: approaches evaluated
+    option-one: >-
+      Short but complete description of the first approach considered,
+      including its key characteristics.
+    option-two: >-
+      Short but complete description of the second approach considered,
+      including its key characteristics.
+    option-three: >-
+      Short but complete description of the third approach considered,
+      including its key characteristics.
+
+  decision_outcome:        # required
+    chosen_option: option-one  # required: key from considered_options
+    justification: >-      # required: explain why this option was chosen
+      Explain why this option was chosen. Reference which decision drivers
+      it satisfies and why alternatives fell short.
+    consequences:          # required
+      good:                # required: positive outcomes of the decision
+        - Positive consequence of this decision
+        - Another benefit or improvement
+      bad:                 # required: negative outcomes or tradeoffs accepted
+        - Negative consequence or tradeoff accepted
+        - Technical debt or limitation introduced
+    confirmation: >-       # recommended: how to verify implementation matches decision
+      Describe how implementation will be verified against this decision.
+      Could be code review, architectural tests, or design validation.
+
+  pros_and_cons:           # recommended: detailed analysis of each option
+    - option: option-one   # reference key from considered_options
+      pros:
+        - Argument in favor
+        - Another advantage
+      cons:
+        - Argument against
+        - A limitation
+    - option: option-two
+      pros:
+        - Argument in favor
+      cons:
+        - Argument against
+        - Another drawback
+    - option: option-three
+      pros:
+        - Argument in favor
+      cons:
+        - Argument against
+
+  confidence: medium       # optional: low | medium | high - disclose uncertainty
+  confidence_note: >-      # optional: explain the confidence level
+    Based on spike results but no production validation yet.
+    Team has limited experience with this technology.
+
+  evidence:                # optional: validation work supporting the decision
+    - type: spike          # spike | poc | peer-review | benchmark | production-data
+      description: >-
+        Built prototype demonstrating 10x latency improvement
+        under simulated load conditions.
+      link: https://github.com/org/repo/pull/456
+    - type: peer-review
+      description: >-
+        Validated approach with senior engineer who has
+        production experience with this technology.
