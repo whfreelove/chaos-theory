@@ -101,9 +101,13 @@ Check in order:
 1. `{cwd}/.claude/skills/{skill}/fsm.json`
 2. `~/.claude/skills/{skill}/fsm.json`
 
-**Plugin not in installed_plugins.json:**
+**installed_plugins.json missing or malformed:**
 
-If commandName contains `:` but the plugin is not found in `installed_plugins.json`, fall back to non-plugin skill lookup:
+If commandName contains `:` (plugin-style) but `installed_plugins.json` is missing or contains invalid JSON, **fail-closed** with error: "Skill '{commandName}' not found - installed_plugins.json is missing or malformed". Do NOT fall back to non-plugin lookup in this case.
+
+**Plugin not found in valid installed_plugins.json:**
+
+If commandName contains `:` and `installed_plugins.json` exists and is valid, but no matching plugin entry is found, fall back to non-plugin skill lookup:
 1. `{cwd}/.claude/skills/{skill}/fsm.json`
 2. `~/.claude/skills/{skill}/fsm.json`
 

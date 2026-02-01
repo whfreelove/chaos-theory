@@ -62,7 +62,7 @@
       ],
       "model": "sonnet",
       "skills": [
-        "writing-gherkin-specs"
+        "writing-markdown-gherkin"
       ],
       "evaluate": "- Do specs follow Gherkin behavior test writing practices?\n- Does each scenario have a unique ID?\n- Are specs suitable for E2E/integration tests (NEVER unit tests)?"
     },
@@ -74,7 +74,7 @@
       ],
       "model": "sonnet",
       "skills": [
-        "writing-gherkin-specs"
+        "writing-markdown-gherkin"
       ],
       "evaluate": "- Does each capability in `proposal.md` have a corresponding spec file with slug directory name?\n- Do specs cover all implied interface behaviors?"
     },
@@ -86,7 +86,7 @@
       ],
       "model": "sonnet",
       "skills": [
-        "writing-gherkin-specs"
+        "writing-markdown-gherkin"
       ],
       "evaluate": "- Do specs cover all design interfaces?\n- Is each scenario testable with defined E2E/integration tooling?"
     },
@@ -110,7 +110,7 @@
       ],
       "model": "sonnet",
       "skills": [
-        "writing-gherkin-specs"
+        "writing-markdown-gherkin"
       ],
       "evaluate": "Do design behaviors correctly implement spec requirements?"
     },
@@ -134,7 +134,7 @@
       ],
       "model": "sonnet",
       "skills": [
-        "writing-gherkin-specs",
+        "writing-markdown-gherkin",
         "ce:writing-tests"
       ],
       "evaluate": "Do tasks implement E2E/integration test spec scenarios?"

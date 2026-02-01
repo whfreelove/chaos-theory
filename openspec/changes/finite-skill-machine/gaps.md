@@ -71,16 +71,19 @@ New gaps from critique should NOT have Category or Decision fields.
 - **Severity**: low
 - **Description**: SCN-THS-3.1 in specs/task-hydration-service/spec.md uses Scenario Outline with Examples table to test multiple precedence rules in a single scenario. This violates the Gherkin principle that each scenario should test one specific behavior. Each precedence rule (local>project>user, plugin>non-plugin) should be its own scenario with concrete Given-When-Then steps for better clarity and debugging.
 - **Category**: defer-release
+- **Decision**: Acknowledge gap as acceptable for MVP, defer to future release.
 
 ### GAP-31: blocks field validation missing from spec
 - **Severity**: low
 - **Description**: SCN-THS-4.5 specifies that invalid `blockedBy` references fail validation, but the spec does not cover validation of `blocks` references. The design schema (fsm.json Format) shows both `blockedBy` and `blocks` can contain dependency references. An invalid ID in `blocks` should also trigger validation failure for consistency.
 - **Category**: defer-release
+- **Decision**: Acknowledge gap as acceptable for MVP, defer to future release.
 
 ### GAP-32: blocks field ID translation missing from spec
 - **Severity**: low
 - **Description**: REQ-THS-5 and SCN-THS-5.3 only demonstrate ID translation for `blockedBy` arrays. The design schema shows `blocks` also uses local IDs that require translation to actual IDs. No scenario covers `blocks` field translation behavior.
 - **Category**: defer-release
+- **Decision**: Acknowledge gap as acceptable for MVP, defer to future release.
 
 ### GAP-38: Non-numeric task file handling unspecified
 - **Severity**: low
@@ -99,4 +102,34 @@ New gaps from critique should NOT have Category or Decision fields.
 - **Description**: Design specifies projectPath "must match or contain" cwd for local/project scope filtering, but doesn't specify path normalization rules. Potential ambiguities include: trailing slash handling ("/projects/myapp" vs "/projects/myapp/"), symlink resolution, and case sensitivity on case-insensitive filesystems (macOS). GAP-13 addresses skill path normalization but not projectPath matching.
 - **Category**: defer-release
 - **Decision**: Apply same normalization as GAP-13: resolve symlinks, normalize paths, strip trailing slashes before comparison. Case sensitivity follows filesystem behavior (case-insensitive on macOS).
+
+### GAP-42: No-op detection across skill location paths not explicitly tasked
+- **Severity**: low
+- **Description**: Design specifies "If no fsm.json found, no-op (skill has no predefined tasks)" but no task explicitly covers implementing this detection logic. The no-op case must be detected after exhausting all location checks (plugin skills/, commands/, non-plugin project, non-plugin user, fallback paths). Task 8.2 covers the response but not the detection logic itself.
+- **Category**: defer-release
+- **Decision**: Acknowledge gap as acceptable for MVP, defer to future release.
+
+### GAP-43: Error aggregation testing not explicitly tasked
+- **Severity**: low
+- **Description**: SCN-THS-4.6 requires "Multiple errors reported together" and design specifies "Aggregate multiple errors into single failure message", but Task 9.2 "Write unit tests for fsm.json validation (REQ-THS-4 scenarios)" doesn't explicitly call out testing the aggregation behavior. Need test cases verifying: multiple missing fields reported together, duplicate IDs AND invalid dependencies both reported, error message format for aggregated errors.
+- **Category**: defer-release
+- **Decision**: Acknowledge gap as acceptable for MVP, defer to future release.
+
+### GAP-44: fsm.json root structure validation unspecified
+- **Severity**: low
+- **Description**: Design shows fsm.json as a JSON array at root level (lines 19-32), and error handling specifies "Malformed JSON in fsm.json" triggers failure. However, there's no explicit validation that fsm.json must be an array. What happens if fsm.json contains valid JSON but wrong type (e.g., `{"tasks": [...]}` object, or `"string"`, or `123`)? Should this fail validation or attempt to process it?
+- **Category**: defer-release
+- **Decision**: Acknowledge gap as acceptable for MVP, defer to future release.
+
+### GAP-45: Empty fsm.json array behavior unspecified
+- **Severity**: low
+- **Description**: Design doesn't specify behavior when fsm.json is an empty array `[]`. Should this trigger no-op (equivalent to missing fsm.json), delete all FSM-tagged tasks and write nothing (consistent with fresh hydration), or fail validation (no tasks to hydrate)?
+- **Category**: defer-release
+- **Decision**: Acknowledge gap as acceptable for MVP, defer to future release.
+
+### GAP-46: Non-sequential local ID handling unspecified
+- **Severity**: low
+- **Description**: Schema describes `id` field as "Local offset ID (1, 2, 3...)" (line 39), suggesting sequential numbering, and all examples use sequential IDs (1, 2, 3). However, no validation rule explicitly requires IDs to be sequential or start from 1. What happens if fsm.json has non-sequential IDs (e.g., [1, 5, 10]) or starts from 0? Are these valid or should they trigger validation failure?
+- **Category**: defer-release
+- **Decision**: Acknowledge gap as acceptable for MVP, defer to future release.
 

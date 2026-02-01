@@ -145,3 +145,9 @@
 - **Description**: No Gherkin scenarios validate that task files are written to the correct path with correct content. Current specs focus on validation failures and edge cases, but don't verify the happy path: files written to `~/.claude/tasks/{session_id}/{id}.json` with expected JSON structure.
 - **Category**: resolved
 - **Decision**: Add SCN-THS-4.7 extending "Valid fsm.json creates tasks" to verify: correct path (~/.claude/tasks/{session_id}/{id}.json), correct JSON structure, correct field values including string IDs and fsm metadata tag.
+
+### GAP-41: installed_plugins.json missing vs plugin-not-found behavior conflated
+- **Severity**: low
+- **Description**: GAP-14 (resolved) states "fail-closed if file is missing or malformed" while GAP-35 (resolved) states "fall back to non-plugin lookup if plugin not found". The design wording conflates two distinct scenarios: (1) installed_plugins.json file doesn't exist, (2) file exists but plugin entry not found. Current wording could cause implementers to apply fallback when file is missing. Clarify: file missing = fail-closed with error "skill as written doesn't exist"; file exists but plugin not found = fall back to non-plugin lookup.
+- **Category**: resolved
+- **Decision**: Updated design.md Skill Location section to restructure into two explicit scenarios: (1) "installed_plugins.json missing or malformed" → fail-closed with error "Skill '{commandName}' not found - installed_plugins.json is missing or malformed"; (2) "Plugin not found in valid installed_plugins.json" → fall back to non-plugin skill lookup.
