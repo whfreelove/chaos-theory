@@ -26,20 +26,20 @@ def compute_file_hash(filepath: Path) -> str:
     return hasher.hexdigest()[:16]
 
 
-def compute_specs_hash(change_dir: Path) -> str | None:
-    """Compute combined hash of all specs/*/spec.md files."""
-    specs_dir = change_dir / 'specs'
-    if not specs_dir.exists():
+def compute_requirements_hash(change_dir: Path) -> str | None:
+    """Compute combined hash of all requirements/*/requirements.feature.md files."""
+    requirements_dir = change_dir / 'requirements'
+    if not requirements_dir.exists():
         return None
 
-    spec_files = sorted(specs_dir.glob('*/spec.md'))
-    if not spec_files:
+    requirements_files = sorted(requirements_dir.glob('*/requirements.feature.md'))
+    if not requirements_files:
         return None
 
     hasher = hashlib.sha256()
-    for spec_file in spec_files:
-        hasher.update(str(spec_file.relative_to(change_dir)).encode())
-        with open(spec_file, 'rb') as f:
+    for requirements_file in requirements_files:
+        hasher.update(str(requirements_file.relative_to(change_dir)).encode())
+        with open(requirements_file, 'rb') as f:
             for chunk in iter(lambda: f.read(8192), b''):
                 hasher.update(chunk)
     return hasher.hexdigest()[:16]
@@ -49,18 +49,18 @@ def get_current_state(change_dir: Path) -> dict:
     """Get current file existence and hashes."""
     state = {'exists': {}, 'hashes': {}}
 
-    for filename in ['proposal.md', 'design.md', 'tasks.md']:
+    for filename in ['functional.md', 'technical.md', 'tasks.yaml']:
         filepath = change_dir / filename
         exists = filepath.exists()
         state['exists'][filename] = exists
         if exists:
             state['hashes'][filename] = compute_file_hash(filepath)
 
-    specs_dir = change_dir / 'specs'
-    spec_files = list(specs_dir.glob('*/spec.md')) if specs_dir.exists() else []
-    state['exists']['specs'] = len(spec_files) > 0
-    if spec_files:
-        state['hashes']['specs'] = compute_specs_hash(change_dir)
+    requirements_dir = change_dir / 'requirements'
+    requirements_files = list(requirements_dir.glob('*/requirements.feature.md')) if requirements_dir.exists() else []
+    state['exists']['requirements'] = len(requirements_files) > 0
+    if requirements_files:
+        state['hashes']['requirements'] = compute_requirements_hash(change_dir)
 
     return state
 
@@ -202,7 +202,7 @@ def main():
 
     output = []
     for c in selected:
-        files = ['specs/*/spec.md' if f == 'specs' else f for f in c['files']]
+        files = ['requirements/*/requirements.feature.md' if f == 'requirements' else f for f in c['files']]
         output.append({
             'name': c['name'],
             'model': c['model'],

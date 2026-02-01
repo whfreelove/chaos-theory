@@ -2,95 +2,102 @@
   "output_template": "## CRITIC OUTPUT FORMAT (required)\n\nFor each issue found:\n### <critic type>-N: <title>\n- **Severity**: high|medium|low\n- **Description**: <explanation>\n\nSeverity rubric:\n- HIGH = blocks implementation or causes incorrect behavior\n- MEDIUM = degrades functionality or creates ambiguity\n- LOW = minor issue or style\n\nIf no issues found:\n### NO ISSUES FOUND\n\nDo NOT invent issues. Only report genuine gaps.",
   "critics": [
     {
-      "name": "Proposal",
-      "files": ["proposal.md"],
+      "name": "Functional",
+      "files": ["functional.md"],
       "model": "opus",
-      "skills": [],
-      "evaluate": "`proposal.md` internal consistency: \"what\" not \"how\" with no implementation detail, clear \"Why\", explicit \"What Changes\", \"Capabilities\" address goals, \"Impact\" is about users not tech"
+      "skills": ["ct:writing-functional-specs"],
+      "evaluate": "Evaluate `functional.md` for implementation leakage:\n\n- **Why**: Flag if it describes technical gaps (missing APIs, no hooks) instead of human burden (wasted effort, variability, rework)\n- **What Changes**: Flag if it describes internal mechanisms rather than artifacts/behaviors users interact with\n- **Capabilities**: Flag if framed by component/feature names rather than by actor (\"Users can...\", \"Skill authors can...\")\n- **User Impact**: Flag if it describes technical footprint (files, APIs, registrations) rather than experience changes\n\nVerbosity often signals implementation leakage - functional specs should be under 1 page.\n\nWhen citing issues, quote the specific violating text so it can be fixed directly."
     },
     {
       "name": "Design",
-      "files": ["design.md"],
+      "files": ["technical.md"],
       "model": "sonnet",
-      "skills": ["ce:architecting-systems"],
-      "evaluate": "`design.md` internal consistency: thorough architecture, non-conflicting technical decisions that reinforce architecture, specificity doesn't constrain coding, goals with context, non-goals with rationale"
-    },
-    {
-      "name": "Functional",
-      "files": ["proposal.md", "design.md"],
-      "model": "sonnet",
-      "skills": ["ce:architecting-systems"],
-      "evaluate": "`design.md` implements all proposal capabilities and \"What Changes\""
+      "skills": ["ct:writing-technical-design"],
+      "evaluate": "`technical.md` internal consistency: thorough architecture, non-conflicting technical decisions that reinforce architecture, specificity doesn't constrain coding, objectives with context"
     },
     {
       "name": "Technical",
-      "files": ["design.md"],
+      "files": ["technical.md"],
       "model": "sonnet",
-      "skills": ["ce:architecting-systems"],
-      "evaluate": "`design.md` verifies that decisions requiring non-obvious, novel, or complex implementation document how they are technically feasible and testable"
+      "skills": ["ct:writing-technical-design"],
+      "evaluate": "verify that decisions in `technical.md` which require non-obvious, novel, or complex implementation document how they are technically feasible and testable"
     },
     {
       "name": "Dependency",
-      "files": ["design.md"],
+      "files": ["technical.md"],
       "model": "opus",
-      "skills": ["ce:architecting-systems"],
-      "evaluate": "Hunt for unjustified, undocumented, poorly documented, or unviable (inactive, obscure, expensive, complex) external dependencies (commands, packages, applications, services) in `design.md` and ensure each complex solution approach is explicitly justified over viable (simpler, stable, active, well known) external dependency alternatives"
-    },
-    {
-      "name": "Requirement",
-      "files": ["specs"],
-      "model": "sonnet",
-      "skills": ["writing-gherkin-specs"],
-      "evaluate": "`specs/*/spec.md` files follow Gherkin behavior test writing practices, each requirement (REQ-<abbreviated capability>-X) and scenario (SCN-<abbreviated capability>-X.Y) has a unique ID, tests suitable for E2E/integration tests (NEVER unit tests)"
-    },
-    {
-      "name": "Validation",
-      "files": ["proposal.md", "specs"],
-      "model": "sonnet",
-      "skills": ["writing-gherkin-specs"],
-      "evaluate": "Each capability in `proposal.md` has a corresponding spec file with slug directory name; specs cover all implied interface behaviors in `proposal.md`"
-    },
-    {
-      "name": "Verification",
-      "files": ["design.md", "specs"],
-      "model": "sonnet",
-      "skills": ["writing-gherkin-specs"],
-      "evaluate": "Specs cover all design interfaces; each scenario testable with defined E2E/integration tooling"
-    },
-    {
-      "name": "Design for Test",
-      "files": ["design.md", "specs"],
-      "model": "sonnet",
-      "skills": ["ce:writing-tests"],
-      "evaluate": "`design.md` defines tooling/methods for spec verification; infrastructure covers each type of E2E/integration test"
-    },
-    {
-      "name": "Logic",
-      "files": ["design.md", "specs"],
-      "model": "sonnet",
-      "skills": ["writing-gherkin-specs"],
-      "evaluate": "Design behaviors correctly implement spec requirements"
+      "skills": ["ct:writing-technical-design"],
+      "evaluate": "Hunt for unjustified dependencies in `technical.md`:\n\n- **External dependencies**: Flag if lacking Y-statement justification, poorly documented, or unviable (inactive, obscure, expensive, complex)\n- **Complex internal solutions**: Flag if a viable external alternative exists but wasn't considered\n\nEach dependency decision (add external OR build internal) should have a Y-statement documenting what was neglected and why."
     },
     {
       "name": "Implementation",
-      "files": ["tasks.md", "design.md"],
+      "files": ["functional.md", "technical.md"],
       "model": "sonnet",
-      "skills": ["ce:writing-plans"],
-      "evaluate": "Tasks in `tasks.md` implement changes in `design.md`"
+      "skills": ["ct:writing-technical-design"],
+      "evaluate": "`technical.md` addresses all functional.md capabilities and \"What Changes\" with technical design"
     },
     {
-      "name": "Test",
-      "files": ["tasks.md", "specs"],
+      "name": "Requirements",
+      "files": ["requirements"],
       "model": "sonnet",
-      "skills": ["writing-gherkin-specs", "ce:writing-tests"],
-      "evaluate": "Tasks implement E2E/integration test spec scenarios"
+      "skills": ["ct:writing-markdown-gherkin"],
+      "evaluate": "Evaluate requirements for testability and normative clarity:\n\n- **Testability**: Flag scenarios that describe internal state (Then the x variable equals 5) rather than observable behavior (Then 5 requests are created). Do NOT flag scenarios for lacking verification details - focus on whether the outcome is externally visible vs internal.\n- **Normative Language**: Flag weak language (should, may, might, can, will) - requirements use SHALL/MUST\n- **Scenario Titles**: Flag titles containing \"verify\", \"assert\", \"should\", or conjunctions (\"and\", \"or\", \"because\") suggesting multiple behaviors\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple When-Then pairs belong in separate scenarios; And to extend Given/When/Then is fine)\n\nThe skill handles MDG structure. Focus on whether requirements are implementable and verifiable.\n\nWhen citing issues, quote the specific violating text."
+    },
+    {
+      "name": "Coverage",
+      "files": ["functional.md", "requirements"],
+      "model": "opus",
+      "skills": ["ct:writing-markdown-gherkin"],
+      "evaluate": "Identify missing requirements that would meaningfully increase capability coverage:\n\n- **User Behaviors**: Flag expected user interactions not captured by any scenario (e.g., edge cases, error paths, common workflows)\n- **Boundary Conditions**: Flag missing scenarios for limits, empty states, or invalid inputs that users would realistically encounter\n\nDo NOT:\n- Duplicate scenarios that already exist (check existing scenarios carefully)\n- Nitpick minor variations that don't change behavior\n- Suggest scenarios that break Gherkin rules (one When-Then per scenario, observable outcomes only)\n- Flag hypothetical edge cases users would never encounter\n\nFor each gap, describe the missing behavior concisely. Only flag gaps that would catch real bugs."
+    },
+    {
+      "name": "Validation",
+      "files": ["functional.md", "requirements"],
+      "model": "sonnet",
+      "skills": ["ct:writing-markdown-gherkin"],
+      "evaluate": "Evaluate requirements coverage against functional spec:\n\n- **Capability Coverage**: Flag if any functional.md capability lacks a corresponding `requirements/<slug>/requirements.feature.md` file\n- **Rule Coverage**: Flag if capability behaviors described in functional.md lack corresponding Rules in requirements\n- **Scenario Coverage**: Flag if functional.md describes user interactions not covered by any scenario\n\nWhen citing gaps, name the specific capability/behavior missing."
+    },
+    {
+      "name": "Verification",
+      "files": ["infra.md", "requirements"],
+      "model": "sonnet",
+      "skills": ["ct:writing-markdown-gherkin"],
+      "evaluate": "Each requirement scenario is verifiable with the test infrastructure defined in `infra.md`; flag scenarios that cannot be tested with available environments, tooling, or data"
+    },
+    {
+      "name": "Design for Test",
+      "files": ["infra.md", "requirements"],
+      "model": "sonnet",
+      "skills": ["ce:writing-tests"],
+      "evaluate": "`infra.md` defines test environments, tooling, and data management needed to execute requirement scenarios; flag missing infrastructure"
+    },
+    {
+      "name": "Logic",
+      "files": ["technical.md", "requirements"],
+      "model": "sonnet",
+      "skills": ["ct:writing-technical-design"],
+      "evaluate": "Technical design components and interfaces adequately support implementation of requirement scenarios"
+    },
+    {
+      "name": "Code Tasks",
+      "files": ["tasks.yaml", "technical.md"],
+      "model": "sonnet",
+      "skills": [],
+      "evaluate": "Tasks in `tasks.yaml` implement changes from `technical.md`; each task is small, verifiable (clear done state), and groups are ordered by dependency"
+    },
+    {
+      "name": "Test Tasks",
+      "files": ["tasks.yaml", "requirements", "infra.md"],
+      "model": "sonnet",
+      "skills": ["ct:writing-markdown-gherkin", "ce:writing-tests"],
+      "evaluate": "Tasks implement requirement scenarios as E2E/integration tests, following `infra.md` Testing Strategy"
     },
     {
       "name": "Test Infra",
-      "files": ["tasks.md", "specs"],
+      "files": ["tasks.yaml", "infra.md"],
       "model": "sonnet",
-      "skills": ["ce:writing-tests"],
-      "evaluate": "Tasks implement E2E/integration test infrastructure"
+      "skills": [],
+      "evaluate": "Tasks implement test infrastructure defined in `infra.md` (environments, tooling, test data)"
     }
   ]
 }

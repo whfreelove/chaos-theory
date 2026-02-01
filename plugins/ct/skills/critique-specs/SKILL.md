@@ -14,7 +14,11 @@ description: Run parallel critics against OpenSpec change artifacts and document
 
 ### A: Critique
 
-1. Run `python ${CLAUDE_PLUGIN_ROOT}/scripts/select_critics.py openspec/changes/<change>` to get critics to invoke; an empty array means no critics. For each critic selected in the output, create a task blocking this step then invoke a parallel Task tool subagent with:
+1. Ensure `gaps.md` and `resolved.md` exist in `openspec/changes/<change>/`. If missing, copy from:
+    - `${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/gaps.md`
+    - `${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/resolved.md`
+
+2. Run `python ${CLAUDE_PLUGIN_ROOT}/scripts/select_critics.py openspec/changes/<change>` to get critics to invoke; an empty array means no critics. For each critic selected in the output, create a task blocking this step then invoke a parallel Task tool subagent with:
     - Model: `model` field
     - Files: `${PROJECT_ROOT}/openspec/changes/<change>`
         - The OpenSpec artifacts listed in `files` field
@@ -25,7 +29,7 @@ description: Run parallel critics against OpenSpec change artifacts and document
         - Do not submit gaps already covered in `gaps.md` or `resolved.md`
         - One quality gap is more valuable than ten covered or nitpick gaps
         - Standard critic output format template from `output_template` field
-2. If any gaps in `gaps.md`, `resolved.md`, or critic findings conflict with each other, resolve the conflict with a user check in via AskUserQuestion; typical options might include rejecting either or both or merging them somehow
+3. If gaps with valid statuses (not rejected, deprecated, or superseded) in `gaps.md`, `resolved.md`, or critic findings conflict with each other, resolve the conflict with a user check in via AskUserQuestion; typical options might include rejecting either or both or merging them somehow
 
 ### B: Validation
 
