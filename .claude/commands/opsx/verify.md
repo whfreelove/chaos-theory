@@ -1,5 +1,5 @@
 ---
-name: OPSX: Verify
+name: "OPSX: Verify"
 description: Verify implementation matches change artifacts before archiving
 category: Workflow
 tags: [workflow, verify, experimental]
@@ -7,7 +7,7 @@ tags: [workflow, verify, experimental]
 
 Verify that an implementation matches the change artifacts (specs, tasks, design).
 
-**Input**: Optionally specify `--change <name>` after `/opsx:verify`. If omitted, MUST prompt for available changes.
+**Input**: Optionally specify a change name after `/opsx:verify` (e.g., `/opsx:verify add-auth`). If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
 
 **Steps**
 
@@ -26,7 +26,7 @@ Verify that an implementation matches the change artifacts (specs, tasks, design
    openspec status --change "<name>" --json
    ```
    Parse the JSON to understand:
-   - `schemaName`: The workflow being used (e.g., "spec-driven", "tdd")
+   - `schemaName`: The workflow being used (e.g., "spec-driven")
    - Which artifacts exist for this change
 
 3. **Get the change directory and load artifacts**

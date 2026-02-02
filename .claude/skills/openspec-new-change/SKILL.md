@@ -1,6 +1,12 @@
 ---
 name: openspec-new-change
 description: Start a new OpenSpec change using the experimental artifact workflow. Use when the user wants to create a new feature, fix, or modification with a structured step-by-step approach.
+license: MIT
+compatibility: Requires openspec CLI.
+metadata:
+  author: openspec
+  version: "1.0"
+  generatedBy: "1.1.1"
 ---
 
 Start a new change using the experimental artifact-driven approach.
@@ -23,7 +29,6 @@ Start a new change using the experimental artifact-driven approach.
    Use the default schema (omit `--schema`) unless the user explicitly requests a different workflow.
 
    **Use a different schema only if the user mentions:**
-   - "tdd" or "test-driven" → use `--schema tdd`
    - A specific schema name → use `--schema <name>`
    - "show workflows" or "what workflows" → run `openspec schemas --json` and let them choose
 
@@ -43,7 +48,7 @@ Start a new change using the experimental artifact-driven approach.
    This shows which artifacts need to be created and which are ready (dependencies satisfied).
 
 5. **Get instructions for the first artifact**
-   The first artifact depends on the schema (e.g., `proposal` for spec-driven, `spec` for tdd).
+   The first artifact depends on the schema (e.g., `proposal` for spec-driven).
    Check the status output to find the first artifact with status "ready".
    ```bash
    openspec instructions <first-artifact-id> --change "<name>"

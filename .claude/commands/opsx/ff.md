@@ -1,5 +1,5 @@
 ---
-name: OPSX: Fast Forward
+name: "OPSX: Fast Forward"
 description: Create a change and generate all artifacts needed for implementation in one go
 category: Workflow
 tags: [workflow, artifacts, experimental]
@@ -46,12 +46,15 @@ Fast-forward through artifact creation - generate everything needed to start imp
         openspec instructions <artifact-id> --change "<name>" --json
         ```
       - The instructions JSON includes:
-        - `template`: The template content to use
+        - `context`: Project background (constraints for you - do NOT include in output)
+        - `rules`: Artifact-specific rules (constraints for you - do NOT include in output)
+        - `template`: The structure to use for your output file
         - `instruction`: Schema-specific guidance for this artifact type
         - `outputPath`: Where to write the artifact
         - `dependencies`: Completed artifacts to read for context
       - Read any completed dependency files for context
-      - Create the artifact file following the schema's `instruction`
+      - Create the artifact file using `template` as the structure
+      - Apply `context` and `rules` as constraints - but do NOT copy them into the file
       - Show brief progress: "✓ Created <artifact-id>"
 
    b. **Continue until all `applyRequires` artifacts are complete**

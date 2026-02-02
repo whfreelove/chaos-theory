@@ -60,10 +60,11 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
         - `requirements/*/requirements.feature.md`
 
     ```
-    As an experienced software architect, resolve (fix, mitigate, or explicitly defer) each entry in `gaps.md` (TodoWrite list entry per gap):
+    As an experienced software architect, resolve (fix, mitigate, or explicitly defer) each entry in `gaps.md` (TaskList entry per gap):
     1. Ignore entries that "defer resolution," continue to next gap
     2. Merge the decision into OpenSpec artifact documentation such that future fresh agents working on them will understand the updated capabilities, behaviors, interfaces, requirements, scenarios fully
-    3. Move the gap entry to `resolved.md` and leave its ID, severity, description, and decisions intact
+    3. When a Y-Statement would be added to `technical.md` Decisions section, you MUST use AskUserQuestion to confirm wording
+    4. Move the gap entry to `resolved.md` and leave its ID, severity, description, and decisions intact
     ```
 
 ### G: Gap Cleanup
@@ -125,11 +126,12 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
         6. Respond with gap comparison summary JSON list, e.g. [{"valid": 42, "superseded": 13, "rationale": "why"}]
         ```
 
-3. Categorize gap concerns: (individual question per concern, batched into minimal responses) AskUserQuestion to triage "check-in" vs "delegate" vs "defer-release" vs "defer-resolution"
-4. All "check-in" concerns: (individual question per concerns, batched into minimal responses) autonomously develop 5+ solutions, use at least 3 (recommend best 1) to AskUserQuestion for solution approach (include enough context for user to make informed decision), apply decisions
-5. All "delegate" concerns: autonomously develop 3+ solutions, pick the best, output a text summary of each solution and final decision rationale, apply decisions
-6. Record each defer-release concern to `gaps.md` with decision: "acknowledge gap as acceptable for now, defer to future release"
-7. Record each defer-resolution concern to `gaps.md` with decision: "blocking release, but defer resolution"
+3. Record implicit gaps to `gaps.md`
+4. Categorize stale and superseded gap concerns: (individual question per concern, batched into minimal responses) AskUserQuestion to triage "check-in" vs "delegate" vs "defer-release" vs "defer-resolution"
+5. All "check-in" concerns: (individual question per concerns, batched into minimal responses) autonomously develop 5+ solutions, use at least 3 (recommend best 1) to AskUserQuestion for solution approach (include enough context for user to make informed decision), apply decisions
+6. All "delegate" concerns: autonomously develop 3+ solutions, pick the best, output a text summary of each solution and final decision rationale, apply decisions
+7. Record each defer-release concern to `gaps.md` with decision: "acknowledge gap as acceptable for now, defer to future release"
+8. Record each defer-resolution concern to `gaps.md` with decision: "blocking release, but defer resolution"
     ```
 
 ### H: Report
