@@ -6,8 +6,8 @@ on:
 
 jobs:
   run:
-    runs-on:
+    runs-on: ubuntu-latest
     steps:
-      uses: superbrothers/close-pull-request@v3.1.2
+    - uses: superbrothers/close-pull-request@v3.1.2
       with:
-        comment: "I do not accept PRs. Please, open or contribute to a Discussion.
+        comment: "I do not accept PRs. Please, open or contribute to a Discussion."
