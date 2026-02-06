@@ -7,10 +7,36 @@ Claude Code plugins leveraging stochastic agent behavior. "Agents, uhh, find a w
 Add this marketplace to your Claude Code:
 
 ```bash
-/plugin marketplace add whfreelove/chaos-theory
+# CLI
+claude plugins marketplace add whfreelove/chaos-theory
+
+# In-session
+/plugins marketplace add whfreelove/chaos-theory
+```
+
+Then install a plugin:
+
+```bash
+# CLI
+claude plugins install tokamak
+
+# In-session
+/plugins install tokamak
 ```
 
 ## Available Plugins
+
+### tokamak
+
+OpenSpec artifact validation using parallel critics. Provides skills for writing functional specs, technical designs, requirements (MDG format), and Y-statement decisions.
+
+**Skills included:**
+- `tokamak:writing-functional-specs` - Functional specification writing
+- `tokamak:writing-technical-design` - Technical design documents
+- `tokamak:writing-markdown-gherkin` - MDG (Markdown-Gherkin) requirements
+- `tokamak:writing-y-statements` - Y-statement decision format
+- `tokamak:critique-specs` - Parallel critic validation
+- `tokamak:resolve-gaps` - Gap resolution workflow
 
 ### worktree-isolation
 
@@ -19,12 +45,16 @@ Restricts Claude Code to git worktree or Jujutsu workspace boundaries. Prevents 
 ## Updating
 
 ```bash
-/plugin marketplace update
+# CLI
+claude plugins marketplace update
+
+# In-session
+/plugins marketplace update
 ```
 
 ## Developing Plugins
 
-See `plugins/worktree-isolation/` for a reference implementation.
+See `plugins/tokamak/` for a full-featured reference implementation with skills, hooks, and OpenSpec schemas.
 
 For hook types, input/output formats, and publishing: [Claude Code Hooks Documentation](https://docs.anthropic.com/en/docs/claude-code/hooks)
 
