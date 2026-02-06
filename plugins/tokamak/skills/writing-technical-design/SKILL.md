@@ -267,7 +267,7 @@ For each component with non-trivial logic:
 
 Technical designs use **Y-statements** for decisions. This is a lightweight format that captures the essential information without ADR overhead.
 
-Invoke skill `ct:writing-y-statements` for full Y-statement reference.
+Invoke skill `tokamak:writing-y-statements` for full Y-statement reference.
 
 ### Quick Y-Statement Template
 
@@ -359,7 +359,7 @@ The Risks section is OPTIONAL. Use it for cross-cutting risks not tied to specif
 
 3. **Diagram first** — For complex changes, sketch architecture diagram before prose. Visual structure reveals gaps in understanding.
 
-4. **Y-statements for decisions** — Invoke `ct:writing-y-statements` skill for the full format. Don't abbreviate or skip parts.
+4. **Y-statements for decisions** — Invoke `tokamak:writing-y-statements` skill for the full format. Don't abbreviate or skip parts.
 
 5. **First draft sets structure** — Subsequent agents expand existing sections. Get all appropriate headers in place on first draft to prevent content shoehorning.
 

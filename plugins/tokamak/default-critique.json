@@ -5,63 +5,63 @@
       "name": "Functional",
       "files": ["functional.md"],
       "model": "opus",
-      "skills": ["ct:writing-functional-specs"],
+      "skills": ["tokamak:writing-functional-specs"],
       "evaluate": "Evaluate `functional.md` for implementation leakage:\n\n- **Why**: Flag if it describes technical gaps (missing APIs, no hooks) instead of human burden (wasted effort, variability, rework)\n- **What Changes**: Flag if it describes internal mechanisms rather than artifacts/behaviors users interact with\n- **Capabilities**: Flag if framed by component/feature names rather than by actor (\"Users can...\", \"Skill authors can...\")\n- **User Impact**: Flag if it describes technical footprint (files, APIs, registrations) rather than experience changes\n\nVerbosity often signals implementation leakage - functional specs should be under 1 page.\n\nWhen citing issues, quote the specific violating text so it can be fixed directly."
     },
     {
       "name": "Design",
       "files": ["technical.md"],
       "model": "sonnet",
-      "skills": ["ct:writing-technical-design"],
+      "skills": ["tokamak:writing-technical-design"],
       "evaluate": "`technical.md` internal consistency: thorough architecture, non-conflicting technical decisions that reinforce architecture, specificity doesn't constrain coding, objectives with context"
     },
     {
       "name": "Technical",
       "files": ["technical.md"],
       "model": "sonnet",
-      "skills": ["ct:writing-technical-design"],
+      "skills": ["tokamak:writing-technical-design"],
       "evaluate": "verify that decisions in `technical.md` which require non-obvious, novel, or complex implementation document how they are technically feasible and testable"
     },
     {
       "name": "Dependency",
       "files": ["technical.md"],
       "model": "opus",
-      "skills": ["ct:writing-technical-design"],
+      "skills": ["tokamak:writing-technical-design"],
       "evaluate": "Hunt for unjustified dependencies in `technical.md`:\n\n- **External dependencies**: Flag if lacking Y-statement justification, poorly documented, or unviable (inactive, obscure, expensive, complex)\n- **Complex internal solutions**: Flag if a viable external alternative exists but wasn't considered\n\nEach dependency decision (add external OR build internal) should have a Y-statement documenting what was neglected and why."
     },
     {
       "name": "Implementation",
       "files": ["functional.md", "technical.md"],
       "model": "sonnet",
-      "skills": ["ct:writing-technical-design"],
+      "skills": ["tokamak:writing-technical-design"],
       "evaluate": "`technical.md` addresses all functional.md capabilities and \"What Changes\" with technical design"
     },
     {
       "name": "Requirements",
       "files": ["requirements"],
       "model": "sonnet",
-      "skills": ["ct:writing-markdown-gherkin"],
+      "skills": ["tokamak:writing-markdown-gherkin"],
       "evaluate": "Evaluate requirements for testability and normative clarity:\n\n- **Testability**: Flag scenarios that describe internal state (Then the x variable equals 5) rather than observable behavior (Then 5 requests are created). Do NOT flag scenarios for lacking verification details - focus on whether the outcome is externally visible vs internal.\n- **Normative Language**: Flag weak language (should, may, might, can, will) - requirements use SHALL/MUST\n- **Scenario Titles**: Flag titles containing \"verify\", \"assert\", \"should\", or conjunctions (\"and\", \"or\", \"because\") suggesting multiple behaviors\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple When-Then pairs belong in separate scenarios; And to extend Given/When/Then is fine)\n\nThe skill handles MDG structure. Focus on whether requirements are implementable and verifiable.\n\nWhen citing issues, quote the specific violating text."
     },
     {
       "name": "Coverage",
       "files": ["functional.md", "requirements"],
       "model": "opus",
-      "skills": ["ct:writing-markdown-gherkin"],
+      "skills": ["tokamak:writing-markdown-gherkin"],
       "evaluate": "Identify missing requirements that would meaningfully increase capability coverage:\n\n- **User Behaviors**: Flag expected user interactions not captured by any scenario (e.g., edge cases, error paths, common workflows)\n- **Boundary Conditions**: Flag missing scenarios for limits, empty states, or invalid inputs that users would realistically encounter\n\nDo NOT:\n- Duplicate scenarios that already exist (check existing scenarios carefully)\n- Nitpick minor variations that don't change behavior\n- Suggest scenarios that break Gherkin rules (one When-Then per scenario, observable outcomes only)\n- Flag hypothetical edge cases users would never encounter\n\nFor each gap, describe the missing behavior concisely. Only flag gaps that would catch real bugs."
     },
     {
       "name": "Validation",
       "files": ["functional.md", "requirements"],
       "model": "sonnet",
-      "skills": ["ct:writing-markdown-gherkin"],
+      "skills": ["tokamak:writing-markdown-gherkin"],
       "evaluate": "Evaluate requirements coverage against functional spec:\n\n- **Capability Coverage**: Flag if any functional.md capability lacks a corresponding `requirements/<slug>/requirements.feature.md` file\n- **Rule Coverage**: Flag if capability behaviors described in functional.md lack corresponding Rules in requirements\n- **Scenario Coverage**: Flag if functional.md describes user interactions not covered by any scenario\n\nWhen citing gaps, name the specific capability/behavior missing."
     },
     {
       "name": "Verification",
       "files": ["infra.md", "requirements"],
       "model": "sonnet",
-      "skills": ["ct:writing-markdown-gherkin"],
+      "skills": ["tokamak:writing-markdown-gherkin"],
       "evaluate": "Each requirement scenario is verifiable with the test infrastructure defined in `infra.md`; flag scenarios that cannot be tested with available environments, tooling, or data"
     },
     {
@@ -75,7 +75,7 @@
       "name": "Logic",
       "files": ["technical.md", "requirements"],
       "model": "sonnet",
-      "skills": ["ct:writing-technical-design"],
+      "skills": ["tokamak:writing-technical-design"],
       "evaluate": "Technical design components and interfaces adequately support implementation of requirement scenarios"
     },
     {
@@ -89,7 +89,7 @@
       "name": "Test Tasks",
       "files": ["tasks.yaml", "requirements", "infra.md"],
       "model": "sonnet",
-      "skills": ["ct:writing-markdown-gherkin", "ce:writing-tests"],
+      "skills": ["tokamak:writing-markdown-gherkin", "ce:writing-tests"],
       "evaluate": "Tasks implement requirement scenarios as E2E/integration tests, following `infra.md` Testing Strategy"
     },
     {

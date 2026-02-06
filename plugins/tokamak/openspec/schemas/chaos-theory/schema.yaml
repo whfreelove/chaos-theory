@@ -11,7 +11,7 @@ artifacts:
       and WHY.
 
 
-      Invoke skill: `ct:writing-functional-specs` for functional specification concepts.
+      Invoke skill: `tokamak:writing-functional-specs` for functional specification concepts.
 
 
       If "Why" is hard to fit in 1-2 sentences or "Scope" feels too long, push back
@@ -42,7 +42,7 @@ artifacts:
       Create requirement specification files using MDG (Markdown-Gherkin) format.
 
 
-      Invoke skill: `ct:writing-markdown-gherkin` for full MDG reference.
+      Invoke skill: `tokamak:writing-markdown-gherkin` for full MDG reference.
 
 
       TERMINOLOGY (functional spec language → Gherkin keyword):
@@ -145,7 +145,7 @@ artifacts:
       Create the technical design document that explains HOW to implement the change.
 
 
-      Invoke skill: `ct:writing-technical-design` for technical design concepts.
+      Invoke skill: `tokamak:writing-technical-design` for technical design concepts.
 
 
       When to include technical.md (create only if any apply):
@@ -185,7 +185,7 @@ artifacts:
       consumed by other components. Skip for internal implementation details.
 
       - **Decisions**: Y-statements ONLY. Each decision is a single structured sentence.
-      Invoke skill `ct:writing-y-statements` for Y-statement format reference.
+      Invoke skill `tokamak:writing-y-statements` for Y-statement format reference.
       Decisions must be approved before writing - no "proposed" decisions in technical.md.
       If a decision is superseded, delete it immediately (no deprecated status).
 
@@ -263,7 +263,7 @@ artifacts:
       single-capability requirements.
 
 
-      Invoke skill: `ct:writing-markdown-gherkin` for MDG format reference.
+      Invoke skill: `tokamak:writing-markdown-gherkin` for MDG format reference.
 
 
       FORMAT: Same MDG (Markdown-Gherkin) format as requirements files, but scoped

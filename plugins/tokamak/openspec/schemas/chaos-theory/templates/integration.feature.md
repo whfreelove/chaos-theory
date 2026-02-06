@@ -4,7 +4,7 @@
 OPTIONAL FILE - only create when capabilities interact in ways not captured
 by single-capability requirements.
 
-MDG format. Invoke skill: ct:writing-markdown-gherkin for full reference.
+MDG format. Invoke skill: tokamak:writing-markdown-gherkin for full reference.
 
 PURPOSE: Cross-capability integration test scenarios.
 - Tests interactions BETWEEN capabilities

@@ -29,8 +29,8 @@ if [[ -z "$stdout" ]]; then
 fi
 
 # Parse FSM:use_skill:`skill-name` patterns from stdout
-# Pattern matches: FSM:use_skill:`ct:writing-functional-specs`
-# Captures: ct:writing-functional-specs
+# Pattern matches: FSM:use_skill:`tokamak:writing-functional-specs`
+# Captures: tokamak:writing-functional-specs
 skills=$(echo "$stdout" | grep -oE 'FSM:use_skill:`[^`]+`' | sed 's/FSM:use_skill:`//g; s/`$//g' || true)
 
 if [[ -n "$skills" ]]; then

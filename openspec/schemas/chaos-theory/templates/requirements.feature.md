@@ -3,7 +3,7 @@
 <!--
 DO NOT REMOVE THIS HEADER - it documents terminology mapping for editors.
 
-MDG format. Invoke skill: ct:writing-markdown-gherkin for full reference.
+MDG format. Invoke skill: tokamak:writing-markdown-gherkin for full reference.
 
 TERMINOLOGY (proposal language → Gherkin keyword):
 - "Capability" → "Feature" (one Feature per capability)

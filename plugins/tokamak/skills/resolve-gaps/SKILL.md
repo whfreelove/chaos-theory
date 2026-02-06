@@ -1,6 +1,6 @@
 ---
 name: resolve-gaps
-description: Resolve gaps from critique findings through categorization, solution design, and documentation updates. Use after running ct:critique-specs to address identified gaps.
+description: Resolve gaps from critique findings through categorization, solution design, and documentation updates. Use after running tokamak:critique-specs to address identified gaps.
 ---
 
 - Each lettered section **MUST COMPLETE** before the next lettered section

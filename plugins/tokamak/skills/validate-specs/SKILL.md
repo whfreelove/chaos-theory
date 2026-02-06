@@ -9,5 +9,5 @@ Validates OpenSpec artifacts through critique and resolution workflow.
 
 ## Workflow
 
-1. Invoke `ct:critique-specs` skill
-2. Invoke `ct:resolve-gaps` skill
+1. Invoke `tokamak:critique-specs` skill
+2. Invoke `tokamak:resolve-gaps` skill

@@ -60,7 +60,7 @@ artifacts:
     instruction: >
       Create requirement specification files using MDG (Markdown-Gherkin) format.
 
-      Invoke skill: `ct:writing-markdown-gherkin` for full MDG reference.
+      Invoke skill: `tokamak:writing-markdown-gherkin` for full MDG reference.
 
 
       TERMINOLOGY (proposal language → Gherkin keyword):

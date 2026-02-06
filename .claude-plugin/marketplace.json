@@ -21,12 +21,12 @@
         "email": "whfreelove+chaos.theory@gmail.com"
       },
       "license": "MIT",
-      "keywords": ["worktree", "git", "isolation", "hooks"],
+      "keywords": ["hooks", "worktree", "git", "isolation"],
       "category": "development-tools"
     },
     {
-      "name": "ct",
-      "source": "./plugins/ct",
+      "name": "tokamak",
+      "source": "./plugins/tokamak",
       "description": "OpenSpec artifact validation using parallel critics",
       "version": "0.1.0",
       "author": {
@@ -34,20 +34,7 @@
         "email": "whfreelove+chaos.theory@gmail.com"
       },
       "license": "MIT",
-      "keywords": ["openspec", "validation", "critics", "artifacts", "documentation"],
-      "category": "development-tools"
-    },
-    {
-      "name": "fsm-spike",
-      "source": "./plugins/fsm-spike",
-      "description": "Test spike for direct task file writing",
-      "version": "0.0.1",
-      "author": {
-        "name": "William Freelove",
-        "email": "whfreelove+chaos.theory@gmail.com"
-      },
-      "license": "MIT",
-      "keywords": ["spike", "tasks", "testing"],
+      "keywords": ["openspec", "hooks", "plan", "critics", "artifacts"],
       "category": "development-tools"
     }
   ]

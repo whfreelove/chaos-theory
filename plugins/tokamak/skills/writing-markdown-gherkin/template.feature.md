@@ -1,7 +1,7 @@
 # Feature: <feature name>
 
 <!--
-MDG (Markdown-Gherkin) template. Invoke skill: ct:writing-markdown-gherkin for full reference.
+MDG (Markdown-Gherkin) template. Invoke skill: tokamak:writing-markdown-gherkin for full reference.
 
 Structure: Feature > Rule > Scenario
 - Feature: top-level grouping (one per file)
