@@ -1,0 +1,27 @@
+{
+  "description": "FSM hooks - hydrates tasks from skill fsm.json files and blocks direct skill file access",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-skill-internals.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/hydrate-tasks.py"
+          }
+        ]
+      }
+    ]
+  }
+}

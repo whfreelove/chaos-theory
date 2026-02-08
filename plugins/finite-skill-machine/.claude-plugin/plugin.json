@@ -1,0 +1,5 @@
+{
+  "name": "finite-skill-machine",
+  "version": "0.2.0",
+  "description": "Auto-hydrates TaskList from skill fsm.json companion files"
+}
