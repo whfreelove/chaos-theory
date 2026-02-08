@@ -126,8 +126,26 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
         6. Respond with gap comparison summary JSON list, e.g. [{"valid": 42, "superseded": 13, "rationale": "why"}]
         ```
 
+    - **Defer-Release Coverage Detection**
+        - Model: Opus
+        - Files: `${PROJECT_ROOT}/openspec/changes/<change>`
+            - `gaps.md`
+            - `functional.md`
+            - `technical.md`
+
+        ```
+        As an experienced software technical writer, detect defer-release gaps lacking artifact coverage (TodoList entry per step):
+        1. Extract all gaps marked "defer-release" or "DEFERRED TO FUTURE RELEASE" from `gaps.md`
+        2. For each defer-release gap:
+           a. Check if the gap's concern is semantically addressed in `functional.md` Out of Scope section
+           b. Check if the gap's concern is semantically addressed in `technical.md` Decisions section (Y-Statements)
+           c. "Covered" means the artifact explicitly acknowledges the limitation/deferral, not just tangentially mentions the topic
+        3. If all defer-release gaps are covered, respond with empty JSON list: []
+        4. Respond with uncovered gap JSON list, e.g. [{"gap_id": 108, "description": "gap description", "rationale": "why not covered by Out of Scope or Decisions"}]
+        ```
+
 3. Record implicit gaps to `gaps.md`
-4. Categorize stale and superseded gap concerns: (individual question per concern, batched into minimal responses) AskUserQuestion to triage "check-in" vs "delegate" vs "defer-release" vs "defer-resolution"
+4. Categorize stale, superseded, and uncovered defer-release gap concerns: (individual question per concern, batched into minimal responses) AskUserQuestion to triage "check-in" vs "delegate" vs "defer-release" vs "defer-resolution"
 5. All "check-in" concerns: (individual question per concerns, batched into minimal responses) autonomously develop 5+ solutions, use at least 3 (recommend best 1) to AskUserQuestion for solution approach (include enough context for user to make informed decision), apply decisions
 6. All "delegate" concerns: autonomously develop 3+ solutions, pick the best, output a text summary of each solution and final decision rationale, apply decisions
 7. Record each defer-release concern to `gaps.md` with decision: "acknowledge gap as acceptable for now, defer to future release"

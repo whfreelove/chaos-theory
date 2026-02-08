@@ -49,7 +49,7 @@ def get_current_state(change_dir: Path) -> dict:
     """Get current file existence and hashes."""
     state = {'exists': {}, 'hashes': {}}
 
-    for filename in ['functional.md', 'technical.md', 'tasks.yaml']:
+    for filename in ['functional.md', 'technical.md', 'tasks.yaml', 'infra.md']:
         filepath = change_dir / filename
         exists = filepath.exists()
         state['exists'][filename] = exists
@@ -129,9 +129,29 @@ def main():
     args = parser.parse_args()
 
     change_dir = args.change_dir.resolve()
-    config_path = args.config or (change_dir / '.critique.json')
     script_dir = Path(__file__).parent.resolve()
-    default_path = script_dir.parent / 'default-critique.json'
+    plugin_root = script_dir.parent
+
+    # Schema-aware config resolution: read .openspec.yaml to find schema name,
+    # then map to critics.$schema.json in the plugin root
+    if args.config:
+        config_path = args.config
+    else:
+        config_path = change_dir / '.critique.json'
+        openspec_path = change_dir / '.openspec.yaml'
+        if openspec_path.exists():
+            import re
+            with open(openspec_path) as f:
+                for line in f:
+                    m = re.match(r'^schema:\s*(.+)', line)
+                    if m:
+                        schema_name = m.group(1).strip()
+                        schema_config = plugin_root / f'critics.{schema_name}.json'
+                        if schema_config.exists():
+                            config_path = schema_config
+                        break
+
+    default_path = plugin_root / 'critics.chaos-theory.json'
 
     # Error: Directory not found
     if not change_dir.exists():
