@@ -1,6 +1,5 @@
 {
   "enabledPlugins": {
-    "fsm-spike@chaos-theory": true,
-    "ct@chaos-theory": true
+    "finite-skill-machine@chaos-theory": false
   }
 }
