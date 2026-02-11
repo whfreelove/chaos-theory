@@ -1,6 +1,6 @@
 ---
-name: critique-specs
-description: Run parallel critics against OpenSpec change artifacts and document gaps. Use when validating proposal, design, specs, or tasks against each other.
+name: critique-specs-brownfield
+description: Run parallel critics against brownfield documentation artifacts. Validates both internal consistency and accuracy against the actual codebase. Use when validating reverse-engineered documentation from existing code.
 ---
 
 - Each lettered section **MUST COMPLETE** before the next lettered section
@@ -10,17 +10,15 @@ description: Run parallel critics against OpenSpec change artifacts and document
 - Create TaskCreate tasks for each numbered step, make it block the step after (no prior-step-block for 1), make it blocked by the section before it (no prior-section-block for steps in A), and make it block the section task for the section its in (the last section section-block is not blocked by anything)
 - Complete each step task after its work is verified and complete
 
-## Documentation Critique Workflow
+## Brownfield Documentation Critique Workflow
+
+Brownfield documentation is reverse-engineered from existing code. Critics validate both internal consistency (artifacts agree with each other) and external accuracy (documentation matches what the code actually does). Accuracy critics use Read/Glob/Grep tools to explore the actual codebase.
 
 ### A: Critique
 
-1. Ensure `gaps.md` and `resolved.md` exist in `openspec/changes/<change>/`. If missing, create them with:
-
-    **gaps.md**:
-    !`cat ${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/gaps.md`
-
-    **resolved.md**:
-    !`cat ${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/resolved.md`
+1. Ensure `gaps.md` and `resolved.md` exist in `openspec/changes/<change>/`. If missing, copy from:
+    - `${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/gaps.md`
+    - `${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/resolved.md`
 
 2. Run `python ${CLAUDE_PLUGIN_ROOT}/scripts/select_critics.py openspec/changes/<change>` to get critics to invoke; an empty array means no critics. For each critic selected in the output, create a task blocking this step then invoke a parallel Task tool subagent with:
     - Model: `model` field
@@ -33,6 +31,7 @@ description: Run parallel critics against OpenSpec change artifacts and document
         - Do not submit gaps already covered in `gaps.md` or `resolved.md`
         - One quality gap is more valuable than ten covered or nitpick gaps
         - Standard critic output format template from `output_template` field
+        - **Accuracy critics** (Capability Accuracy, Requirement Accuracy, Architecture Accuracy, Decision Plausibility, Infrastructure Accuracy) explore the actual codebase using Read, Glob, and Grep tools. These subagents have full tool access to cross-reference documentation against code.
 3. If gaps with valid statuses (not rejected, deprecated, or superseded) in `gaps.md`, `resolved.md`, or critic findings conflict with each other, resolve the conflict with a user check in via AskUserQuestion; typical options might include rejecting either or both or merging them somehow
 
 ### B: Validation
