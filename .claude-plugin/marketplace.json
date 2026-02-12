@@ -38,23 +38,10 @@
       "category": "development-tools"
     },
     {
-      "name": "fsm-spike",
-      "source": "./plugins/fsm-spike",
-      "description": "Auto-hydrates TaskList from skill fsm.json companion files",
-      "version": "0.1.0",
-      "author": {
-        "name": "William Freelove",
-        "email": "whfreelove+chaos.theory@gmail.com"
-      },
-      "license": "MIT",
-      "keywords": ["hooks", "tasks", "skills", "workflow", "automation"],
-      "category": "development-tools"
-    },
-    {
       "name": "finite-skill-machine",
       "source": "./plugins/finite-skill-machine",
       "description": "Auto-hydrates TaskList from skill fsm.json companion files",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "author": {
         "name": "William Freelove",
         "email": "whfreelove+chaos.theory@gmail.com"
