@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "subject": "Identify verification commands",
+    "description": "Determine what commands prove the completion claim. Match the claim type to its required evidence: tests pass → test runner, build succeeds → build command, bug fixed → reproducing test, linter clean → linter command, agent task complete → VCS diff. If no command can prove the claim, the claim cannot be made.",
+    "activeForm": "Identifying verification commands"
+  },
+  {
+    "id": 2,
+    "subject": "Run the verification commands",
+    "description": "Execute the full verification commands identified in the previous step. Run it fresh — not cached, not partial. Do not rely on previous runs or assume results. The command must execute completely: no early termination, no partial checks, no spot tests.",
+    "activeForm": "Running verification commands",
+    "blockedBy": [1]
+  },
+  {
+    "id": 3,
+    "subject": "Read the complete output",
+    "description": "Check the full output of the verification commands. Examine: exit code, failure counts, error messages, warning counts. Do not skim or skip sections. If output is truncated, re-run with full output. Note the specific evidence: exact pass/fail counts, exact exit code, exact error text.",
+    "activeForm": "Reading verification output",
+    "blockedBy": [2]
+  },
+  {
+    "id": 4,
+    "subject": "Verify the claim against evidence",
+    "description": "Compare the output evidence to the original claim. If evidence confirms: state the claim WITH specific evidence (counts, exit code, output excerpt). If evidence contradicts: state the ACTUAL status with evidence. Skip any step = invalid claim.",
+    "activeForm": "Verifying claim against evidence",
+    "blockedBy": [3]
+  }
+]
