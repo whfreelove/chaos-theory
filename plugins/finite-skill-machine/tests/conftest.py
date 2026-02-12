@@ -45,7 +45,7 @@ def task_dir_with_fsm_tasks(task_dir):
         "status": "pending",
         "blocks": [],
         "blockedBy": [],
-        "metadata": {"fsm": "other-skill"}
+        "metadata": {"fsm": "test-skill"}
     }))
     (task_dir / "2.json").write_text(json.dumps({
         "id": "2",
@@ -56,7 +56,7 @@ def task_dir_with_fsm_tasks(task_dir):
         "status": "pending",
         "blocks": [],
         "blockedBy": ["1"],
-        "metadata": {"fsm": "other-skill"}
+        "metadata": {"fsm": "test-skill"}
     }))
     return task_dir
 
@@ -152,6 +152,67 @@ def v2_multi_key_plugins(tmp_path):
     }))
 
     return plugins_file
+
+
+@pytest.fixture
+def hydrate_module():
+    """Import hydrate-tasks.py as a module for direct function testing."""
+    import importlib.util
+    script_path = Path(__file__).parent.parent / "scripts" / "hydrate-tasks.py"
+    spec = importlib.util.spec_from_file_location("hydrate_tasks", script_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _make_task_file(task_dir, task_id, status, fsm_value="test-skill"):
+    """Helper to create task files with consistent format."""
+    (task_dir / f"{task_id}.json").write_text(json.dumps({
+        "id": str(task_id), "subject": f"Task {task_id}", "description": "",
+        "activeForm": "", "owner": "", "status": status,
+        "blocks": [], "blockedBy": [],
+        "metadata": {"fsm": fsm_value}
+    }))
+
+
+@pytest.fixture
+def task_dir_all_pending(task_dir):
+    """Task directory with all-pending matching tasks."""
+    _make_task_file(task_dir, 1, "pending")
+    _make_task_file(task_dir, 2, "pending")
+    return task_dir
+
+
+@pytest.fixture
+def task_dir_all_completed(task_dir):
+    """Task directory with all-completed matching tasks."""
+    _make_task_file(task_dir, 1, "completed")
+    _make_task_file(task_dir, 2, "completed")
+    return task_dir
+
+
+@pytest.fixture
+def task_dir_all_in_progress(task_dir):
+    """Task directory with all-in_progress matching tasks."""
+    _make_task_file(task_dir, 1, "in_progress")
+    _make_task_file(task_dir, 2, "in_progress")
+    return task_dir
+
+
+@pytest.fixture
+def task_dir_mixed_completed_pending(task_dir):
+    """Task directory with mixed completed+pending tasks."""
+    _make_task_file(task_dir, 1, "completed")
+    _make_task_file(task_dir, 2, "pending")
+    return task_dir
+
+
+@pytest.fixture
+def task_dir_mixed_in_progress_completed(task_dir):
+    """Task directory with mixed in_progress+completed tasks."""
+    _make_task_file(task_dir, 1, "in_progress")
+    _make_task_file(task_dir, 2, "completed")
+    return task_dir
 
 
 def run_hook(

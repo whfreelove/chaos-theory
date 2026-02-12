@@ -384,6 +384,39 @@ def validate_fsm_tasks(tasks: list[dict], fsm_path: Path) -> list[str]:
     return errors
 
 
+ALLOWED_STATUSES = {"completed", "pending"}
+
+
+def check_active_tasks(task_dir: Path, command_name: str) -> None:
+    """Check if re-invocation is safe for the invoking skill.
+
+    Aborts if matching tasks have statuses outside the allowlist
+    or mixed statuses within the allowlist.
+    """
+    matching_tasks = find_skill_tasks(task_dir, command_name)
+    if not matching_tasks:
+        return  # Empty set is vacuously uniform — no tasks to protect
+
+    # Collect statuses from matching tasks
+    task_statuses = []
+    for task_file in matching_tasks:
+        data = json.loads(task_file.read_text())
+        task_id = int(data["id"])
+        status = data["status"]
+        task_statuses.append((task_id, status))
+
+    # Check allowlist and uniformity
+    statuses = {s for _, s in task_statuses}
+    task_ids = [tid for tid, _ in task_statuses]
+
+    # Abort if any status outside allowlist OR mixed statuses within allowlist
+    if not statuses <= ALLOWED_STATUSES or len(statuses) > 1:
+        error_exit(json.dumps({
+            "tasks": task_ids,
+            "message": "Related active task(s) must be resolved and verified first."
+        }))
+
+
 def get_task_directory(session_id: str) -> Path:
     """Get the task directory for the given session.
 
@@ -395,35 +428,43 @@ def get_task_directory(session_id: str) -> Path:
     return Path.home() / ".claude" / "tasks" / session_id
 
 
-def find_max_non_fsm_task_id(task_dir: Path) -> int:
-    """Find the maximum task ID among non-FSM tasks.
-
-    Only considers tasks without the 'fsm' metadata key, since FSM tasks
-    will be deleted before new tasks are written.
-    """
+def find_max_preserved_task_id(task_dir: Path, command_name: str) -> int:
+    """Find the maximum task ID among preserved tasks (not targeted for deletion)."""
     max_id = 0
 
     if not task_dir.exists():
         return max_id
 
     for task_file in task_dir.glob("*.json"):
+        # Handle non-numeric filenames
         try:
             stem = task_file.stem
             task_id = int(stem)
+        except ValueError:
+            continue  # Non-numeric filename, not a task file
 
-            # Check if this is an FSM task
+        # Read and validate task file (fail-fast on errors)
+        try:
             with open(task_file) as f:
                 data = json.load(f)
-            if isinstance(data, dict):
-                metadata = data.get("metadata", {})
-                if isinstance(metadata, dict) and "fsm" in metadata:
-                    # Skip FSM tasks
-                    continue
+        except json.JSONDecodeError as e:
+            error_exit(f"Failed to read task file {task_file.name}: invalid JSON - {e}")
+        except OSError as e:
+            error_exit(f"Failed to read task file {task_file.name}: {e}")
 
-            max_id = max(max_id, task_id)
-        except (ValueError, json.JSONDecodeError, OSError):
-            # Non-numeric filename or unreadable file, skip
-            continue
+        # Validate structure
+        if not isinstance(data, dict):
+            error_exit(f"Malformed task file {task_file.name}: must be an object")
+        if "id" not in data or "status" not in data or "metadata" not in data:
+            error_exit(f"Malformed task file {task_file.name}: missing required fields")
+
+        metadata = data.get("metadata", {})
+        # Skip only tasks matching the invoking skill (targeted for deletion)
+        # Other skills' FSM tasks are preserved and included in max ID
+        if isinstance(metadata, dict) and metadata.get("fsm") == command_name:
+            continue  # Skip tasks targeted for deletion
+
+        max_id = max(max_id, task_id)
 
     return max_id
 
@@ -475,32 +516,48 @@ def build_task_file(task: dict, command_name: str) -> dict:
     }
 
 
-def find_fsm_tagged_tasks(task_dir: Path) -> list[Path]:
-    """Find all tasks with fsm metadata key."""
+def find_skill_tasks(task_dir: Path, command_name: str) -> list[Path]:
+    """Find all tasks matching the given skill's command_name."""
     fsm_tasks = []
 
     if not task_dir.exists():
         return fsm_tasks
 
     for task_file in task_dir.glob("*.json"):
+        # Read and validate task file (fail-fast on errors)
         try:
             with open(task_file) as f:
                 data = json.load(f)
+        except json.JSONDecodeError as e:
+            error_exit(f"Malformed task file {task_file.name}: invalid JSON - {e}")
+        except OSError as e:
+            error_exit(f"Failed to read task file {task_file.name}: {e}")
 
-            if isinstance(data, dict):
-                metadata = data.get("metadata", {})
-                if isinstance(metadata, dict) and "fsm" in metadata:
-                    fsm_tasks.append(task_file)
-        except (json.JSONDecodeError, OSError):
-            # Skip files we can't read
-            continue
+        # Validate structure - malformed files could hide active tasks
+        if not isinstance(data, dict):
+            error_exit(f"Malformed task file {task_file.name}: must be an object, got {type(data).__name__}")
+
+        if "id" not in data or not isinstance(data["id"], str):
+            error_exit(f"Malformed task file {task_file.name}: missing or invalid 'id' field")
+
+        if "status" not in data or not isinstance(data["status"], str):
+            error_exit(f"Malformed task file {task_file.name}: missing or invalid 'status' field")
+
+        if "metadata" not in data or not isinstance(data["metadata"], dict):
+            error_exit(f"Malformed task file {task_file.name}: missing or invalid 'metadata' field")
+
+        metadata = data["metadata"]
+        # Filter by fsm value match instead of key existence
+        # Non-string fsm values (None, int, "") naturally don't match any command_name
+        if metadata.get("fsm") == command_name:
+            fsm_tasks.append(task_file)
 
     return fsm_tasks
 
 
-def delete_fsm_tasks(task_dir: Path) -> None:
-    """Delete all FSM-tagged tasks from the task directory."""
-    fsm_tasks = find_fsm_tagged_tasks(task_dir)
+def delete_skill_tasks(task_dir: Path, command_name: str) -> None:
+    """Delete tasks matching the invoking skill's command_name."""
+    fsm_tasks = find_skill_tasks(task_dir, command_name)
 
     for task_file in fsm_tasks:
         try:
@@ -560,17 +617,22 @@ def main() -> None:
     if errors:
         error_exit("Validation failed:\n  " + "\n  ".join(errors))
 
-    # Get task directory and find max ID
+    # Get task directory
     task_dir = get_task_directory(session_id)
 
-    # Find max ID among non-FSM tasks only (FSM tasks will be deleted)
-    max_id = find_max_non_fsm_task_id(task_dir)
+    # Check if re-invocation is safe (active task guard)
+    check_active_tasks(task_dir, command_name)
+
+    # Find max ID among preserved tasks (non-matching FSM tasks + manual tasks)
+
+    # Find max ID among preserved tasks (non-matching FSM tasks + manual tasks)
+    max_id = find_max_preserved_task_id(task_dir, command_name)
 
     # Translate IDs
     translated_tasks = translate_ids(tasks, max_id)
 
     # Delete existing FSM tasks and write new ones
-    delete_fsm_tasks(task_dir)
+    delete_skill_tasks(task_dir, command_name)
     write_tasks(task_dir, translated_tasks, command_name)
 
     log(f"Hydrated {len(translated_tasks)} tasks")
