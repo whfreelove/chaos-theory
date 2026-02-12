@@ -1,0 +1,22 @@
+{
+  "default": {
+    "high":   { "authority": "user", "actions": ["check-in", "defer-resolution"] },
+    "medium": { "authority": "user", "actions": ["check-in", "delegate", "defer-release", "defer-resolution"] },
+    "low":    { "authority": "agent", "actions": ["check-in", "delegate", "defer-release"] }
+  },
+  "conservative": {
+    "high":   { "authority": "user", "actions": ["check-in"] },
+    "medium": { "authority": "user", "actions": ["check-in", "defer-release"] },
+    "low":    { "authority": "user", "actions": ["check-in", "delegate", "defer-release"] }
+  },
+  "confident": {
+    "high":   { "authority": "user", "actions": ["check-in", "delegate", "defer-resolution"] },
+    "medium": { "authority": "agent", "actions": ["check-in", "delegate", "defer-release"] },
+    "low":    { "authority": "agent", "actions": ["delegate", "defer-release"] }
+  },
+  "autonomous": {
+    "high":   { "authority": "agent", "actions": ["delegate", "defer-release"] },
+    "medium": { "authority": "agent", "actions": ["delegate", "defer-release"] },
+    "low":    { "authority": "agent", "actions": ["delegate", "defer-release"] }
+  }
+}
