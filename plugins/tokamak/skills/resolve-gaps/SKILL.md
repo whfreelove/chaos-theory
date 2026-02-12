@@ -12,7 +12,7 @@ description: Resolve gaps from critique findings through categorization, solutio
 
 ## Gap Resolution Workflow
 
-### D: Categorize Gap Resolution Method
+### D: Triage Gap Resolution Method
 
 1. Call a Task tool project manager subagent with the code block below as a prompt:
     - Model: Sonnet
@@ -20,16 +20,18 @@ description: Resolve gaps from critique findings through categorization, solutio
     - Files: `${PROJECT_ROOT}/openspec/changes/<change>`
         - `gaps.md`
 
+    !`python ${CLAUDE_PLUGIN_ROOT}/scripts/resolve_triage_policy.py openspec/changes/$0`
+
     ```
-    Apply category semantics from tokamak:managing-spec-gaps when triaging.
-    Categorize each entry in `gaps.md` (TodoWrite entry per gap):
-    1. Each high severity gap: (individual question per gap, batched into minimal responses) AskUserQuestion to triage "check-in" vs "defer-resolution"; NEVER ASK MULTIPLE GAPS IN ONE QUESTION
-    2. Each medium severity gap: (individual question per gap, batched into minimal responses) AskUserQuestion to triage "check-in" vs "delegate" vs "defer-release" vs "defer-resolution"; NEVER ASK MULTIPLE GAPS IN ONE QUESTION
-    3. Low severity gaps: autonomously triage between "check-in" vs "delegate" vs "defer-release"
-    4. Respond with gap category JSON list, e.g. `[{"id": 36, "category": "check-in"}]`
+    Apply triage semantics from tokamak:managing-spec-gaps when triaging.
+    Apply the triage policy above to each entry in `gaps.md` (TodoWrite entry per gap):
+    - For severity levels where user decides: (individual question per gap, batched into minimal responses) AskUserQuestion to triage between the listed options; NEVER ASK MULTIPLE GAPS IN ONE QUESTION
+    - For severity levels where agent triages: autonomously triage between the listed options
+    - For severity levels with a single option: apply that option directly without asking
+    Respond with gap triage JSON list, e.g. `[{"id": 36, "triage": "check-in"}]`
     ```
 
-2. Apply the gap categories in the response to `gaps.md`
+2. Apply the gap triage values in the response to `gaps.md`
 
 ### E: Decide on Solutions
 
@@ -38,10 +40,12 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
 - All "check-in" gaps: (perform steps **per individual gap**)
   1. Write enough problem context to output for uninformed user to understand your solution dilemma
   2. Autonomously develop 5+ solutions
+    - Ensure each accounts for its cascading effects into other sections and spec files
   3. Sort the solutions from best to worst
   4. Write each solution to output
     - Include enough context for uninformed user to make informed decision
     - Include why you like the solution
+    - Include what's wrong with the solution
   5. Pick the best solution and write explanation why to output
   6. Ask user with each gap in a separate question
     - AskUserQuestion tool
@@ -51,10 +55,12 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
 - All "delegate" gaps:
   1. Write enough problem context to output for uninformed user to understand your solution dilemma
   2. Autonomously develop 3+ solutions
+    - Ensure each accounts for its cascading effects into other sections and spec files
   3. Sort the solutions from best to worst
   4. Write each solution to output
     - Include enough context for uninformed user to make informed decision
     - Include why you like the approach
+    - Include what's wrong with the approach
   5. Pick the best solution and write explanation why to output
   6. Record chosen decision to `gaps.md`
 - All "defer-release" gaps:
@@ -67,6 +73,7 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
   4. Write each plausible approach to output
     - Include enough context for uninformed user to make informed decision
     - Include why you like the approach
+    - Include what's wrong with the approach
   5. Ask user with each gap in a separate question
     - AskUserQuestion tool
     - Use the 4 plausible approaches
@@ -79,23 +86,37 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
 ### F: Resolve Gaps
 
 1. Call a Task tool subagent with the code block below as a prompt:
-    - Model: Opus
-    - Skills: `ce:documenting-systems`, `tokamak:managing-spec-gaps`
-    - Files: `${PROJECT_ROOT}/openspec/changes/<change>`
-        - `gaps.md`
-        - `resolved.md`
-        - `functional.md`
-        - `technical.md`
-        - `requirements/*/requirements.feature.md`
+  - Model: Opus
+  - Skills:
+    - `tokamak:managing-spec-gaps`
+    - `writing-functional-specs`
+    - `writing-markdown-gherkin`
+    - `writing-technical-design`
+    - `writing-y-statements`
+  - Files: `${PROJECT_ROOT}/openspec/changes/<change>`
+    - `gaps.md`
+    - `resolved.md`
+    - `functional.md`
+    - `requirements/*/requirements.feature.md`
+    - `technical.md`
+    - `infra.md`
+    - `integration.feature.md`
+    - `tasks.yaml`
 
-    ```
-    As an experienced software architect, resolve (fix, mitigate, or explicitly defer) each entry in `gaps.md` (TaskList entry per gap):
-    1. Ignore entries that "defer resolution," continue to next gap
-    2. Merge the decision into OpenSpec artifact documentation such that future fresh agents working on them will understand the updated capabilities, behaviors, interfaces, requirements, scenarios fully
-    3. When a Y-Statement would be added to `technical.md` Decisions section, you MUST use AskUserQuestion to confirm wording
-    4. Move the gap entry to `resolved.md` and leave its ID, severity, description, and decisions intact
-    5. Apply resolution completeness and supersession rules from tokamak:managing-spec-gaps: Decision text is immutable, co-resolved gaps use bidirectional refs, defer-release needs artifact coverage before moving to resolved.md, superseded gaps use Category: superseded with Superseded by and Current approach fields
-    ```
+  ```
+  As an experienced software architect, resolve (fix, mitigate, or explicitly defer) each entry in `gaps.md` (TaskList entry per gap):
+  1. Ignore entries that "defer resolution," continue to next gap
+  2. Merge the decision into OpenSpec artifact documentation such that future fresh agents working on them will understand the updated capabilities, behaviors, interfaces, requirements, scenarios fully
+  3. Double check that if the merge has cascading impacts, particularly new inconsistencies across documents, that they are accounted for in all relevant locations
+  4. When a Y-Statement would be added to `technical.md` Decisions section, you MUST use AskUserQuestion to confirm wording
+  5. Move the gap entry to `resolved.md`: preserve ID, source, severity, description, triage, and decision; set Status to `resolved` (superseded and deprecated statuses are handled by step 6)
+  6. When the resolution modifies artifacts, record what changed in an `Outcome` field on the resolved entry. Do NOT append `[Resolved: ...]` tags or any annotations to the Description field. Description stays as the original concern.
+  7. Apply resolution completeness and supersession rules from tokamak:managing-spec-gaps
+    - Decision text is immutable
+    - Co-resolved gaps use bidirectional refs
+    - Defer-release needs artifact coverage before moving to resolved.md
+    - Superseded gaps use Status: superseded with Superseded by and Current approach fields
+  ```
 
 ### G: Gap Cleanup
 
@@ -182,7 +203,7 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
         ```
 
 3. Record implicit gaps to `gaps.md`
-4. Categorize stale, superseded, and uncovered defer-release gap concerns using category semantics from tokamak:managing-spec-gaps: (individual question per concern, batched into minimal responses) AskUserQuestion to triage "check-in" vs "delegate" vs "defer-release" vs "defer-resolution"
+4. Categorize stale, superseded, and uncovered defer-release gap concerns using triage semantics from tokamak:managing-spec-gaps: (individual question per concern, batched into minimal responses) AskUserQuestion to triage "check-in" vs "delegate" vs "defer-release" vs "defer-resolution"
 5. All "check-in" concerns: (individual question per concerns, batched into minimal responses) autonomously develop 5+ solutions, use at least 3 (recommend best 1) to AskUserQuestion for solution approach (include enough context for user to make informed decision), apply decisions
 6. All "delegate" concerns: autonomously develop 3+ solutions, pick the best, output a text summary of each solution and final decision rationale, apply decisions
 7. Record each defer-release concern to `gaps.md` with decision: "acknowledge gap as acceptable for now, defer to future release"

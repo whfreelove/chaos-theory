@@ -16,13 +16,17 @@ Brownfield documentation is reverse-engineered from existing code. Critics valid
 
 ### A: Critique
 
-1. Ensure `gaps.md` and `resolved.md` exist in `openspec/changes/<change>/`. If missing, copy from:
+1. Ensure `gaps.md` and `resolved.md` exist in `openspec/changes/$0/`. If missing, copy from:
     - `${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/gaps.md`
     - `${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/resolved.md`
 
-2. Run `python ${CLAUDE_PLUGIN_ROOT}/scripts/select_critics.py openspec/changes/<change>` to get critics to invoke; an empty array means no critics. For each critic selected in the output, create a task blocking this step then invoke a parallel Task tool subagent with:
+2. Critic selection:
+
+    !`python ${CLAUDE_PLUGIN_ROOT}/scripts/select_critics.py openspec/changes/$0`
+
+    If the `critics` array is empty, skip to section B. For each critic in the output, create a task blocking this step then invoke a parallel Task tool subagent with:
     - Model: `model` field
-    - Files: `${PROJECT_ROOT}/openspec/changes/<change>`
+    - Files: `${PROJECT_ROOT}/openspec/changes/$0`
         - The OpenSpec artifacts listed in `files` field
         - `gaps.md`
         - `resolved.md`
@@ -39,7 +43,7 @@ Brownfield documentation is reverse-engineered from existing code. Critics valid
 1. Call a Task tool validation subagent with the code block below as a prompt:
     - Model: Sonnet
     - Pass: critic findings
-    - Files: `${PROJECT_ROOT}/openspec/changes/<change>`
+    - Files: `${PROJECT_ROOT}/openspec/changes/$0`
         - `gaps.md`
         - `resolved.md`
 
@@ -63,12 +67,12 @@ Respond with findings summary JSON list, e.g. [{"finding": "...", "status": "COV
 
 ### C: Document Gaps
 
-1. Get the next available gap ID: `${CLAUDE_PLUGIN_ROOT}/scripts/next_gap.sh openspec/changes/<change>`
+1. Get the next available gap ID: `${CLAUDE_PLUGIN_ROOT}/scripts/next_gap.sh openspec/changes/$0`
 2. Call a Task tool documentation subagent with the code block below as a prompt:
     - Model: Sonnet
     - Skills: `ce:documenting-systems`, `tokamak:managing-spec-gaps`
     - Pass: critic findings, validation results, next available gap ID
-    - Files: `${PROJECT_ROOT}/openspec/changes/<change>`
+    - Files: `${PROJECT_ROOT}/openspec/changes/$0`
         - `gaps.md`
         - `resolved.md`
 
@@ -80,10 +84,12 @@ Merge critic findings into `gaps.md`; use TodoWrite list of each step:
 4. Merge similar findings across critiques
 5. Re-evaluate severity ratings
 6. Add each finding as gaps with available IDs to `gaps.md`
-  - Include ONLY: Severity, Source, Description
+  - Include ONLY: Source, Severity, Description
   - Source = kebab-case critic name + `-critic` suffix from the finding heading (e.g., `functional-critic` from "Functional-3: ...", `architecture-accuracy-critic` from "Architecture Accuracy-1: ...")
-  - DO NOT set: Category, Decision (managed by different workflow)
+  - DO NOT set: Triage, Decision (managed by different workflow)
   - Reference spec sections by location, not quotes (spec text is volatile). One concern per gap.
 7. Verify `gaps.md` changes
 8. Respond with gap changes summary JSON list, e.g. [{"id": 36, "change": "new/update", "description": "what you did"}]
 ```
+
+3. Save hashes: `python ${CLAUDE_PLUGIN_ROOT}/scripts/select_critics.py openspec/changes/$0 --update-hashes`
