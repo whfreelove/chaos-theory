@@ -113,6 +113,21 @@ Always list at least one neglected alternative. This proves:
 **Bad**: "and neglected nothing" or omitting this part
 **Good**: "and neglected [specific alternatives]"
 
+### Write Evergreen Statements
+
+Y-Statements document *design reasoning*, not *current work state*. Every part should remain true months later — if a clause would become stale when a sprint ends, a branch merges, or tech debt gets paid down, it's transient and doesn't belong.
+
+| Part | Transient (avoid) | Evergreen (prefer) |
+|------|-------------------|-------------------|
+| facing | "the test suite doesn't cover this yet" | "the need for reliable validation of edge cases" |
+| facing | "the deadline requires a quick solution" | "the need to minimize implementation complexity" |
+| decided | "a workaround until the API supports X" | "client-side aggregation over a single endpoint" |
+| neglected | "the ideal approach blocked by issue #42" | "server-side aggregation via a new endpoint" |
+| accepting | "we haven't written integration tests yet" | "integration test coverage is required before GA" |
+| accepting | "this needs cleanup in a follow-up PR" | "increased coupling between the service and cache layers" |
+
+**Test**: Re-read the statement imagining the current sprint, branch, and backlog no longer exist. Does every clause still make sense? If not, rewrite the transient parts as durable design concerns.
+
 ### Honest Trade-offs
 
 The "accepting" clause prevents the Fairy Tale anti-pattern. Every decision has costs—name them explicitly.
@@ -181,6 +196,7 @@ If a Y-Statement decision becomes architecturally significant, promote it to a f
 2. **Keep it single-sentence** — A Y-Statement should be readable in one breath. If it needs multiple paragraphs, consider a full ADR.
 3. **Preserve the structure** — All 6 parts are required. Missing parts indicate incomplete thinking.
 4. **Match formality to context** — Code comments can be terse; PR descriptions should be more complete.
+5. **Keep statements evergreen** — Never use transient work state (sprint deadlines, WIP branches, current tech debt, pending tickets) as facing constraints or accepting trade-offs. Frame every clause around durable design concerns that remain valid after the current work completes.
 
 ## Quick Template
 
