@@ -1,10 +1,23 @@
 #!/bin/bash
-# Hook: Validate spec skill args before rendering
+# Hook: Validate spec skill prerequisites before rendering
 # Triggered: PreToolUse on Skill
-# Action: Block if $0 arg is missing or not a valid chaos-theory change
-# Action: Block resolve-gaps skills if .triage-policy.json is missing or malformed
+# Denies if args are missing, change dir is invalid, or triage policy is malformed
 
-set -euo pipefail
+set -uo pipefail
+
+deny() {
+  local reason="$1"
+  local system_msg="${2:-Skill invocation blocked by pre-spec-skills hook.}"
+  jq -n --arg reason "$reason" --arg msg "$system_msg" '{
+    systemMessage: $msg,
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: $reason
+    }
+  }'
+  exit 0
+}
 
 input=$(cat)
 
@@ -26,88 +39,65 @@ case "$skill" in
     ;;
 esac
 
-PLUGIN_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-
 args=$(echo "$input" | jq -r '.tool_input.args // empty')
 
-# Check: args provided
+# --- Validation: args provided ---
 if [[ -z "$args" ]]; then
-  cat <<EOF
-BLOCKED: ${skill} requires a change directory argument.
-
-Usage: Skill(tokamak:${skill}, args: "<change-name>")
-
-Available changes:
-EOF
-  ls -1 openspec/changes/ 2>/dev/null | sed 's/^/  - /'
-  exit 1
+  available=$(ls -1 openspec/changes/ 2>/dev/null | sed 's/^/  - /' || true)
+  deny \
+    "${skill} requires a change directory argument. Call: Skill(tokamak:${skill}, args: \"<change-name>\"). Available changes:
+${available:-  (none found)}" \
+    "${skill} blocked: missing change directory argument."
 fi
 
-# Check: directory exists
+# --- Validation: directory exists ---
 change_dir="openspec/changes/${args}"
 if [[ ! -d "$change_dir" ]]; then
-  cat <<EOF
-BLOCKED: Change directory not found: ${change_dir}
-
-Available changes:
-EOF
-  ls -1 openspec/changes/ 2>/dev/null | sed 's/^/  - /'
-  exit 1
+  available=$(ls -1 openspec/changes/ 2>/dev/null | sed 's/^/  - /' || true)
+  deny \
+    "Change directory not found: ${change_dir}. Call: Skill(tokamak:${skill}, args: \"<change-name>\") with one of:
+${available:-  (none found)}" \
+    "${skill} blocked: ${change_dir} does not exist."
 fi
 
-# Check: .openspec.yaml exists
+# --- Validation: .openspec.yaml exists ---
 openspec_yaml="${change_dir}/.openspec.yaml"
 if [[ ! -f "$openspec_yaml" ]]; then
-  cat <<EOF
-BLOCKED: No .openspec.yaml found in ${change_dir}
-
-${skill} requires an OpenSpec change with a chaos-theory schema.
-EOF
-  exit 1
+  deny \
+    "No .openspec.yaml in ${change_dir}. Create the change first: Skill(tokamak:new-change, args: \"${args}\")" \
+    "${skill} blocked: missing .openspec.yaml in ${change_dir}."
 fi
 
-# Check: schema is chaos-theory*
+# --- Validation: schema is chaos-theory* ---
 first_line=$(head -1 "$openspec_yaml")
 case "$first_line" in
   schema:\ chaos-theory*)
-    ;;  # Valid chaos-theory schema
+    ;;  # Valid
   *)
-    cat <<EOF
-BLOCKED: ${change_dir} uses a non-chaos-theory schema.
-
-Found: ${first_line}
-Expected: schema: chaos-theory*
-
-${skill} only supports chaos-theory schema changes.
-EOF
-    exit 1
+    deny \
+      "${change_dir} uses schema '${first_line}' but ${skill} requires a chaos-theory schema. Edit ${openspec_yaml} line 1 to: schema: chaos-theory" \
+      "${skill} blocked: incompatible schema in ${change_dir}."
     ;;
 esac
 
-# --- Skill-specific validation: resolve-gaps triage policy ---
+# --- Skill-specific: resolve-gaps triage policy ---
 if [[ "$skill_type" == "resolve" ]]; then
   triage_policy="${change_dir}/.triage-policy.json"
 
   if [[ ! -f "$triage_policy" ]]; then
-    cat <<EOF
-BLOCKED: No .triage-policy.json in ${change_dir}.
-
-Run tokamak:new-change to create a change with triage policy initialized.
-EOF
-    exit 1
+    deny \
+      "No .triage-policy.json in ${change_dir}. Create the change with triage policy: Skill(tokamak:new-change, args: \"${args}\")" \
+      "${skill} blocked: missing .triage-policy.json in ${change_dir}."
   fi
 
-  # Validate JSON structure
+  # Validate JSON syntax
   if ! jq empty "$triage_policy" 2>/dev/null; then
-    cat <<EOF
-BLOCKED: .triage-policy.json is not valid JSON.
-
-Fix the JSON syntax in: ${triage_policy}
-EOF
-    exit 1
+    deny \
+      ".triage-policy.json is not valid JSON. Fix syntax errors in: ${triage_policy}" \
+      "${skill} blocked: malformed JSON in ${triage_policy}."
   fi
 
-  # Validate required keys and values
+  # Validate required structure
   validation_errors=$(jq -r '
     def valid_actions: ["check-in", "delegate", "defer-release", "defer-resolution"];
     def valid_authorities: ["user", "agent"];
@@ -150,26 +140,13 @@ EOF
           "\($level): missing required key"
         end
       )
-    ] | if length > 0 then join("\n") else empty end
+    ] | if length > 0 then join("; ") else empty end
   ' "$triage_policy" 2>/dev/null)
 
   if [[ -n "$validation_errors" ]]; then
-    cat <<EOF
-BLOCKED: .triage-policy.json has validation errors:
-
-${validation_errors}
-
-Expected schema:
-{
-  "high":   { "authority": "user"|"agent", "actions": ["check-in", "delegate", "defer-release", "defer-resolution"] },
-  "medium": { "authority": "user"|"agent", "actions": [...] },
-  "low":    { "authority": "user"|"agent", "actions": [...] }
-}
-
-Valid authorities: user, agent
-Valid actions: check-in, delegate, defer-release, defer-resolution
-EOF
-    exit 1
+    deny \
+      "Validation errors in ${triage_policy}: ${validation_errors}. Edit ${triage_policy} to match expected schema: {\"high\": {\"authority\": \"user\"|\"agent\", \"actions\": [\"check-in\",\"delegate\",\"defer-release\",\"defer-resolution\"]}, \"medium\": {...}, \"low\": {...}}" \
+      "${skill} blocked: invalid .triage-policy.json in ${change_dir}."
   fi
 fi
 
