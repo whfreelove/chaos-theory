@@ -41,6 +41,15 @@
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-write-fsm.sh"
           }
         ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-spec-skills.sh"
+          }
+        ]
       }
     ]
   }
