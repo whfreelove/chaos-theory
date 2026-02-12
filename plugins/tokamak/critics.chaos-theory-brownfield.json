@@ -30,18 +30,18 @@
       "evaluate": "Hunt for unjustified dependencies in `technical.md`:\n\n- **External dependencies**: Flag if lacking Y-statement justification, poorly documented, or unviable (inactive, obscure, expensive, complex)\n- **Complex internal solutions**: Flag if a viable external alternative exists but wasn't considered\n\nEach dependency decision (add external OR build internal) should have a Y-statement documenting what was neglected and why."
     },
     {
-      "name": "Implementation",
-      "files": ["functional.md", "technical.md"],
-      "model": "sonnet",
-      "skills": ["tokamak:writing-technical-design"],
-      "evaluate": "`technical.md` addresses all functional.md capabilities and \"What Changes\" with technical design"
-    },
-    {
       "name": "Requirements",
       "files": ["requirements"],
       "model": "sonnet",
       "skills": ["tokamak:writing-markdown-gherkin"],
       "evaluate": "Evaluate requirements for testability and normative clarity:\n\n- **Testability**: Flag scenarios that describe internal state (Then the x variable equals 5) rather than observable behavior (Then 5 requests are created). Do NOT flag scenarios for lacking verification details - focus on whether the outcome is externally visible vs internal.\n- **Normative Language**: Flag weak language (should, may, might, can, will) - requirements use SHALL/MUST\n- **Scenario Titles**: Flag titles containing \"verify\", \"assert\", \"should\", or conjunctions (\"and\", \"or\", \"because\") suggesting multiple behaviors\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple When-Then pairs belong in separate scenarios; And to extend Given/When/Then is fine)\n\nThe skill handles MDG structure. Focus on whether requirements are implementable and verifiable.\n\nWhen citing issues, quote the specific violating text."
+    },
+    {
+      "name": "Implementation",
+      "files": ["functional.md", "technical.md"],
+      "model": "sonnet",
+      "skills": ["tokamak:writing-technical-design"],
+      "evaluate": "`technical.md` addresses all functional.md capabilities and \"What Changes\" with technical design"
     },
     {
       "name": "Requirements Coverage",
@@ -79,25 +79,39 @@
       "evaluate": "Technical design components and interfaces adequately support implementation of requirement scenarios"
     },
     {
-      "name": "Code Tasks",
-      "files": ["tasks.yaml", "technical.md"],
-      "model": "sonnet",
+      "name": "Capability Accuracy",
+      "files": ["functional.md"],
+      "model": "opus",
       "skills": [],
-      "evaluate": "Tasks in `tasks.yaml` implement changes from `technical.md`; each task is small, verifiable (clear done state), and groups are ordered by dependency"
+      "evaluate": "Cross-reference `functional.md` against the actual codebase to verify accuracy.\n\nUsing Glob, Grep, and Read tools, explore the project source starting from the project root (not the change directory):\n1. Find code modules, entry points, and public interfaces\n2. Compare documented capabilities against what the code actually does\n\nFlag:\n- **Undocumented capabilities**: Code functionality not described in `functional.md`\n- **Overclaimed capabilities**: `functional.md` describes functionality that doesn't exist in code\n- **Behavior mismatch**: Descriptions that don't match actual code behavior\n\nScope: Limit exploration to 3 directory levels deep from project root. Focus on source code directories, entry points, and exported interfaces.\n\nWhen citing issues, quote specific functional.md text AND reference the code location (file:line) that contradicts it."
     },
     {
-      "name": "Test Tasks",
-      "files": ["tasks.yaml", "requirements", "infra.md", "integration.feature.md"],
-      "model": "sonnet",
-      "skills": ["tokamak:writing-markdown-gherkin", "ce:writing-tests"],
-      "evaluate": "Tasks implement requirement scenarios as E2E/integration tests, following `infra.md` Testing Strategy"
+      "name": "Requirement Accuracy",
+      "files": ["requirements"],
+      "model": "opus",
+      "skills": ["tokamak:writing-markdown-gherkin"],
+      "evaluate": "Cross-reference requirement scenarios against the actual codebase to verify accuracy.\n\nUsing Glob, Grep, and Read tools, explore test suites and code paths from the project root:\n1. Find test files, test fixtures, and tested code paths\n2. Trace scenario Given/When/Then steps to actual code behavior\n\nFlag:\n- **Phantom scenarios**: Scenarios describing behavior the code doesn't exhibit\n- **Missing scenarios**: Untested code paths that should have requirement scenarios\n- **Step mismatch**: Given/When/Then steps that don't match actual code flow\n\nScope: Limit exploration to test directories and the code modules they exercise. Do not explore infrastructure or configuration.\n\nWhen citing issues, quote the specific scenario AND reference the code location that contradicts or is missing."
     },
     {
-      "name": "Test Infra",
-      "files": ["tasks.yaml", "infra.md"],
-      "model": "sonnet",
+      "name": "Architecture Accuracy",
+      "files": ["technical.md"],
+      "model": "opus",
+      "skills": ["tokamak:writing-technical-design"],
+      "evaluate": "Cross-reference `technical.md` architecture against the actual codebase structure.\n\nUsing Glob, Grep, and Read tools, explore the project structure from the project root:\n1. Map file structure, directory layout, and module organization\n2. Trace imports and dependencies between modules\n3. Read key interfaces and function signatures\n\nFlag:\n- **Phantom components**: `technical.md` describes components that don't map to real modules/files\n- **Incorrect dependencies**: Documented dependency relationships that don't match actual imports\n- **Interface mismatch**: Documented interfaces/signatures that don't match actual code\n- **Missing components**: Significant modules not represented in the architecture\n\nScope: Focus on top-level directory structure and primary source modules. Limit to 3 levels deep.\n\nWhen citing issues, quote specific technical.md text AND reference the actual file/module structure that contradicts it."
+    },
+    {
+      "name": "Decision Plausibility",
+      "files": ["technical.md"],
+      "model": "opus",
+      "skills": ["tokamak:writing-technical-design"],
+      "evaluate": "Verify `technical.md` decisions (Y-Statements) against code evidence.\n\nUsing Glob, Grep, and Read tools, examine the codebase from the project root:\n1. Read each `[initial-docs]` decision in `technical.md`\n2. Find code evidence that supports or contradicts each decision\n\nFlag:\n- **Contradicted decisions**: Y-statements claiming choices the code doesn't reflect (e.g., \"we chose REST\" but code uses GraphQL)\n- **Missing decisions**: Significant architectural choices visible in code but not documented as decisions\n- **Unsupported rationale**: Decision rationale that doesn't hold given actual code structure\n\nScope: Focus on configuration files, dependency manifests, and architectural boundaries visible in imports/exports.\n\nWhen citing issues, quote the specific decision AND reference code evidence."
+    },
+    {
+      "name": "Infrastructure Accuracy",
+      "files": ["infra.md"],
+      "model": "opus",
       "skills": [],
-      "evaluate": "Tasks implement test infrastructure defined in `infra.md` (environments, tooling, test data)"
+      "evaluate": "Cross-reference `infra.md` against actual project infrastructure.\n\nUsing Glob, Grep, and Read tools, explore infrastructure from the project root:\n1. Find CI configs (.github/workflows/, .gitlab-ci.yml, Jenkinsfile, etc.)\n2. Find test configs (jest.config, pytest.ini, vitest.config, etc.)\n3. Find deployment configs (Dockerfile, docker-compose, k8s manifests, serverless.yml, etc.)\n4. Find build configs (package.json scripts, Makefile, build.gradle, etc.)\n\nFlag:\n- **Phantom infrastructure**: `infra.md` documents infrastructure that doesn't exist in the project\n- **Undocumented infrastructure**: Existing CI/test/deploy/build configs not covered in `infra.md`\n- **Configuration mismatch**: Documented settings that don't match actual config values\n\nScope: Focus on root-level and .github/ config files. Do not explore node_modules, vendor, or build output directories.\n\nWhen citing issues, quote specific infra.md text AND reference the actual config file (or absence thereof)."
     },
     {
       "name": "Integration",

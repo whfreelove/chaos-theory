@@ -4,7 +4,8 @@ Critic selector for OpenSpec workflow.
 Selects critics to run based on file existence and content changes.
 
 Usage:
-    python select_critics.py <change_dir> [--force] [--dry-run] [--list]
+    python select_critics.py <change_dir> [--force] [--dry-run] [--list] [--scope single|cross]
+    python select_critics.py <change_dir> --update-hashes
 
 Output:
     JSON array of critic definitions to stdout
@@ -26,41 +27,37 @@ def compute_file_hash(filepath: Path) -> str:
     return hasher.hexdigest()[:16]
 
 
-def compute_requirements_hash(change_dir: Path) -> str | None:
-    """Compute combined hash of all requirements/*/requirements.feature.md files."""
-    requirements_dir = change_dir / 'requirements'
-    if not requirements_dir.exists():
-        return None
-
-    requirements_files = sorted(requirements_dir.glob('*/requirements.feature.md'))
-    if not requirements_files:
+def compute_directory_hash(change_dir: Path, dir_path: Path) -> str | None:
+    """Compute combined hash of all files in a directory (sorted, recursive)."""
+    files = sorted(f for f in dir_path.rglob('*') if f.is_file())
+    if not files:
         return None
 
     hasher = hashlib.sha256()
-    for requirements_file in requirements_files:
-        hasher.update(str(requirements_file.relative_to(change_dir)).encode())
-        with open(requirements_file, 'rb') as f:
+    for filepath in files:
+        hasher.update(str(filepath.relative_to(change_dir)).encode())
+        with open(filepath, 'rb') as f:
             for chunk in iter(lambda: f.read(8192), b''):
                 hasher.update(chunk)
     return hasher.hexdigest()[:16]
 
 
-def get_current_state(change_dir: Path) -> dict:
+def get_current_state(change_dir: Path, file_keys: list[str]) -> dict:
     """Get current file existence and hashes."""
     state = {'exists': {}, 'hashes': {}}
 
-    for filename in ['functional.md', 'technical.md', 'tasks.yaml', 'infra.md']:
-        filepath = change_dir / filename
-        exists = filepath.exists()
-        state['exists'][filename] = exists
-        if exists:
-            state['hashes'][filename] = compute_file_hash(filepath)
-
-    requirements_dir = change_dir / 'requirements'
-    requirements_files = list(requirements_dir.glob('*/requirements.feature.md')) if requirements_dir.exists() else []
-    state['exists']['requirements'] = len(requirements_files) > 0
-    if requirements_files:
-        state['hashes']['requirements'] = compute_requirements_hash(change_dir)
+    for key in file_keys:
+        filepath = change_dir / key
+        if filepath.is_dir():
+            files_in_dir = sorted(f for f in filepath.rglob('*') if f.is_file())
+            state['exists'][key] = len(files_in_dir) > 0
+            if files_in_dir:
+                state['hashes'][key] = compute_directory_hash(change_dir, filepath)
+        else:
+            exists = filepath.exists()
+            state['exists'][key] = exists
+            if exists:
+                state['hashes'][key] = compute_file_hash(filepath)
 
     return state
 
@@ -126,7 +123,15 @@ def main():
                         help='Do not update stored hashes')
     parser.add_argument('--list', action='store_true',
                         help='List critic names only')
+    parser.add_argument('--update-hashes', action='store_true',
+                        help='Save current file hashes and exit (no critic selection)')
+    parser.add_argument('--scope', choices=['single', 'cross'],
+                        help='Filter by critic scope: single (1 file) or cross (2+ files)')
     args = parser.parse_args()
+
+    # Mutual exclusion: --update-hashes cannot combine with selection flags
+    if args.update_hashes and (args.force or args.list or args.scope):
+        parser.error('--update-hashes cannot be combined with --force, --list, or --scope')
 
     change_dir = args.change_dir.resolve()
     script_dir = Path(__file__).parent.resolve()
@@ -177,6 +182,9 @@ def main():
         print(f"FIX: Add a 'critics' array to {config_path} or {default_path}", file=sys.stderr)
         sys.exit(1)
 
+    # Derive tracked file keys from all critics' files arrays
+    file_keys = sorted({f for critic in config['critics'] for f in critic.get('files', [])})
+
     hash_path = change_dir / '.hashes.json'
 
     # Error: Hash file corrupted
@@ -186,8 +194,19 @@ def main():
         print(f"WARNING: Corrupted hash file {hash_path}, treating all files as changed.", file=sys.stderr)
         stored_hashes = {}
 
-    current_state = get_current_state(change_dir)
+    current_state = get_current_state(change_dir, file_keys)
     current_hashes = current_state['hashes']
+
+    # --update-hashes: save current hashes and exit with empty critics
+    if args.update_hashes:
+        try:
+            save_hashes(hash_path, current_hashes)
+            print(f"Hashes saved to {hash_path}", file=sys.stderr)
+        except PermissionError:
+            print(f"ERROR: Cannot write hash file {hash_path}", file=sys.stderr)
+            sys.exit(1)
+        print(json.dumps({"critics": []}))
+        return
 
     selected = []
     for critic in config['critics']:
@@ -211,22 +230,30 @@ def main():
         else:
             log_selection(name, False, "no changes detected")
 
+    # Apply scope filter
+    if args.scope == 'single':
+        selected = [c for c in selected if len(c.get('files', [])) == 1]
+    elif args.scope == 'cross':
+        selected = [c for c in selected if len(c.get('files', [])) >= 2]
+
     # Summary
     print(f"--- {len(selected)}/{len(config['critics'])} critics selected ---", file=sys.stderr)
 
-    if not args.dry_run and selected:
-        try:
-            save_hashes(hash_path, current_hashes)
-        except PermissionError:
-            print(f"WARNING: Cannot write hash file {hash_path}. Hashes not saved.", file=sys.stderr)
-
     output = []
     for c in selected:
-        files = ['requirements/*/requirements.feature.md' if f == 'requirements' else f for f in c['files']]
+        expanded_files = []
+        for f in c['files']:
+            dir_path = change_dir / f
+            if dir_path.is_dir():
+                expanded_files.extend(
+                    sorted(str(p.relative_to(change_dir)) for p in dir_path.rglob('*') if p.is_file())
+                )
+            else:
+                expanded_files.append(f)
         output.append({
             'name': c['name'],
             'model': c['model'],
-            'files': files,
+            'files': expanded_files,
             'skills': c.get('skills', []),
             'evaluate': c['evaluate']
         })
