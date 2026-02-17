@@ -77,6 +77,27 @@ def any_hash_changed(file_keys: list[str], current_hashes: dict, stored_hashes: 
     return False
 
 
+def resolve_templates(files: list[str], templates_dir: Path | None) -> dict[str, str]:
+    """Map a critic's file list to matching schema template content.
+
+    Lookup strategy per file entry:
+      1. Exact match: templates_dir/<filename>
+      2. Fallback: templates_dir/<filename>.feature.md (for directory entries like 'requirements')
+    """
+    if not templates_dir or not templates_dir.is_dir():
+        return {}
+    templates = {}
+    for f in files:
+        path = templates_dir / f
+        if path.is_file():
+            templates[f] = path.read_text()
+            continue
+        fallback = templates_dir / (f + '.feature.md')
+        if fallback.is_file():
+            templates[f] = fallback.read_text()
+    return templates
+
+
 def load_config(config_path: Path, default_path: Path | None = None) -> dict:
     """Load config file, falling back to default if not found."""
     if config_path.exists():
@@ -137,24 +158,42 @@ def main():
     script_dir = Path(__file__).parent.resolve()
     plugin_root = script_dir.parent
 
-    # Schema-aware config resolution: read .openspec.yaml to find schema name,
-    # then map to critics.$schema.json in the plugin root
+    # Read .openspec.yaml for schema name and project path
+    project_path = None
+    schema_name = None
+    openspec_path = change_dir / '.openspec.yaml'
     if args.config:
         config_path = args.config
     else:
         config_path = change_dir / '.critique.json'
-        openspec_path = change_dir / '.openspec.yaml'
-        if openspec_path.exists():
-            import re
-            with open(openspec_path) as f:
-                for line in f:
-                    m = re.match(r'^schema:\s*(.+)', line)
-                    if m:
-                        schema_name = m.group(1).strip()
+
+    if openspec_path.exists():
+        import re
+        with open(openspec_path) as f:
+            for line in f:
+                m = re.match(r'^schema:\s*(.+)', line)
+                if m:
+                    schema_name = m.group(1).strip()
+                    if not args.config:
                         schema_config = plugin_root / f'critics.{schema_name}.json'
                         if schema_config.exists():
                             config_path = schema_config
-                        break
+                m = re.match(r'^project:\s*(.+)', line)
+                if m:
+                    project_path = m.group(1).strip()
+
+    # Resolve templates directory from schema name
+    openspec_root = change_dir.parent.parent  # openspec/changes/<name>/ → openspec/
+    templates_dir = (
+        openspec_root / 'schemas' / schema_name / 'templates'
+        if schema_name else None
+    )
+
+    # Resolve project directory from project path (bare name under openspec/)
+    project_dir = (openspec_root / project_path).resolve() if project_path else None
+    if project_dir and not project_dir.exists():
+        print(f"INFO: Project directory {project_dir} does not exist yet. Project files skipped.", file=sys.stderr)
+        project_dir = None
 
     default_path = plugin_root / 'critics.chaos-theory.json'
 
@@ -185,6 +224,9 @@ def main():
     # Derive tracked file keys from all critics' files arrays
     file_keys = sorted({f for critic in config['critics'] for f in critic.get('files', [])})
 
+    # Derive project file keys from critics with project_files
+    project_file_keys = sorted({f for critic in config['critics'] for f in critic.get('project_files', [])})
+
     hash_path = change_dir / '.hashes.json'
 
     # Error: Hash file corrupted
@@ -197,7 +239,18 @@ def main():
     current_state = get_current_state(change_dir, file_keys)
     current_hashes = current_state['hashes']
 
-    # --update-hashes: save current hashes and exit with empty critics
+    # Track project file hashes under "project:" prefix to avoid collision
+    project_state = {'exists': {}, 'hashes': {}}
+    if project_dir and project_file_keys:
+        raw_project_state = get_current_state(project_dir, project_file_keys)
+        for key in project_file_keys:
+            prefixed = f'project:{key}'
+            project_state['exists'][prefixed] = raw_project_state['exists'].get(key, False)
+            if key in raw_project_state['hashes']:
+                project_state['hashes'][prefixed] = raw_project_state['hashes'][key]
+                current_hashes[prefixed] = raw_project_state['hashes'][key]
+
+    # --update-hashes: save current hashes (including project hashes) and exit
     if args.update_hashes:
         try:
             save_hashes(hash_path, current_hashes)
@@ -205,7 +258,6 @@ def main():
         except PermissionError:
             print(f"ERROR: Cannot write hash file {hash_path}", file=sys.stderr)
             sys.exit(1)
-        print(json.dumps({"critics": []}))
         return
 
     selected = []
@@ -213,18 +265,28 @@ def main():
         name = critic.get('name', '<unnamed>')
         files = critic.get('files', [])
 
+        # Skip requires_project critics when project dir is unavailable
+        if critic.get('requires_project', False) and project_dir is None:
+            log_selection(name, False, "project docs not available")
+            continue
+
         # Check file existence
         missing = [f for f in files if not current_state['exists'].get(f, False)]
         if missing:
             log_selection(name, False, f"missing files: {', '.join(missing)}")
             continue
 
+        # Build combined tracked keys (change files + prefixed project files)
+        project_files = critic.get('project_files', [])
+        prefixed_project_files = [f'project:{pf}' for pf in project_files]
+        all_tracked = files + prefixed_project_files
+
         # Check for changes
         if args.force:
             log_selection(name, True, "forced")
             selected.append(critic)
-        elif any_hash_changed(files, current_hashes, stored_hashes):
-            changed = [f for f in files if current_hashes.get(f) != stored_hashes.get(f)]
+        elif any_hash_changed(all_tracked, current_hashes, stored_hashes):
+            changed = [f for f in all_tracked if current_hashes.get(f) != stored_hashes.get(f)]
             log_selection(name, True, f"changed: {', '.join(changed)}")
             selected.append(critic)
         else:
@@ -250,12 +312,25 @@ def main():
                 )
             else:
                 expanded_files.append(f)
+        # Expand project files against project_dir
+        expanded_project_files = []
+        if project_dir and c.get('project_files'):
+            for f in c['project_files']:
+                pf_path = project_dir / f
+                if pf_path.is_dir():
+                    expanded_project_files.extend(
+                        sorted(str(p.relative_to(project_dir)) for p in pf_path.rglob('*') if p.is_file())
+                    )
+                elif pf_path.exists():
+                    expanded_project_files.append(f)
         output.append({
             'name': c['name'],
             'model': c['model'],
             'files': expanded_files,
+            'project_files': expanded_project_files,
             'skills': c.get('skills', []),
-            'evaluate': c['evaluate']
+            'evaluate': c['evaluate'],
+            'templates': resolve_templates(c.get('files', []), templates_dir),
         })
 
     if args.list:
