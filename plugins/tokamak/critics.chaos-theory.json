@@ -112,6 +112,24 @@
       "model": "opus",
       "skills": ["tokamak:writing-markdown-gherkin"],
       "evaluate": "Identify missing cross-capability integration scenarios by analyzing capability interactions in `functional.md`:\n\n- **Capability Interactions**: Flag multi-capability interactions that produce emergent behavior but lack integration scenario coverage\n- **Integration Boundaries**: Flag cases where capabilities share data, trigger each other, or have ordering dependencies without integration tests\n\nUse `requirements/` for deduplication — do NOT suggest integration scenarios for behaviors already covered by single-capability requirement scenarios.\n\nDo NOT:\n- Duplicate scenarios that already exist in `integration.feature.md` or `requirements/`\n- Suggest scenarios for capabilities that don't actually interact\n- Flag hypothetical interactions users would never encounter\n\nFor each gap, name the interacting capabilities and describe the missing integration behavior."
+    },
+    {
+      "name": "Functional Consistency",
+      "files": ["functional.md"],
+      "project_files": ["functional.md"],
+      "requires_project": true,
+      "model": "opus",
+      "skills": ["tokamak:writing-functional-specs"],
+      "evaluate": "Cross-reference the change's functional.md against the project's functional.md:\n\n- **Scope conflicts**: Flag change capabilities that fall within project Out of Scope boundaries\n- **Capability duplicates**: Flag change capabilities that duplicate existing project capabilities or use colliding names\n- **Limitation conflicts**: Flag change capabilities that conflict with documented Current Limitations or Planned Future Work items\n- **Risk contradictions**: Flag change Known Risks that contradict existing project risk mitigations, or new capabilities that reintroduce risks the project already mitigated\n\nOnly flag genuine conflicts. Expanding scope beyond current boundaries is valid if deliberate — flag it as LOW so it gets documented, not blocked."
+    },
+    {
+      "name": "Technical Consistency",
+      "files": ["technical.md", "requirements", "integration.feature.md"],
+      "project_files": ["technical.md", "requirements", "integration.feature.md"],
+      "requires_project": true,
+      "model": "opus",
+      "skills": ["tokamak:writing-technical-design", "tokamak:writing-markdown-gherkin"],
+      "evaluate": "Cross-reference the change's technical artifacts against the project's technical artifacts:\n\n- **Decision contradictions**: Flag change Y-statements that contradict or reverse existing project decisions without acknowledging them\n- **Requirement collisions**: Flag requirement slug or @capability tag collisions between change and project\n- **Scenario duplicates**: Flag change requirement or integration scenarios that duplicate existing project scenarios\n- **Architecture conflicts**: Flag change components or interfaces that conflict with established project architecture\n\nDo NOT flag decisions that extend or refine existing ones — only genuine contradictions or unacknowledged reversals."
     }
   ]
 }
