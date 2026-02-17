@@ -1,0 +1,18 @@
+pytest-config:
+  - Add `importmode = "importlib"` to `[tool.pytest.ini_options]` in pyproject.toml
+
+helper-migration:
+  - Create `tests/plugins/finite-skill-machine/helpers.py` with `run_hook()` and `_make_task_file()` moved from conftest.py
+  - Add `importlib.util.spec_from_file_location` loading in conftest.py to load helpers.py and expose `run_hook` and `_make_task_file` as `@pytest.fixture(scope="session")` fixtures
+  - Remove bare `run_hook()` and `_make_task_file()` function definitions from conftest.py (14 existing `@pytest.fixture` functions remain)
+  - Remove `from conftest import run_hook, _make_task_file` from test_hydrate_tasks.py and receive both via fixture injection
+
+fsm-spec-updates:
+  - Update `openspec/finite-skill-machine/technical.md` migration note to reflect fixture injection replacing `from conftest import`
+  - Update `openspec/finite-skill-machine/infra.md` helper location from "in `conftest.py`" to "in `helpers.py`"
+
+verification:
+  - Run `make test` and confirm zero failures with same test count
+  - Run `make test PYTESTFLAGS="-W error"` and confirm no collection warnings
+  - Run `grep -r "from conftest import" tests/` and confirm zero matches
+  - Run `pytest --collect-only tests/` and confirm helpers.py is not in collected items
