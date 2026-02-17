@@ -84,11 +84,31 @@ claude plugins marketplace update
 /plugins marketplace update
 ```
 
-## Developing Plugins
+## Testing
 
-See `plugins/tokamak/` for a full-featured reference implementation with skills, hooks, and OpenSpec schemas.
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install ".[test]"
+```
 
-For hook types, input/output formats, and publishing: [Claude Code Hooks Documentation](https://docs.anthropic.com/en/docs/claude-code/hooks)
+Run all plugin tests:
+
+```bash
+make test
+```
+
+Run tests for a specific plugin (target name matches directory name under `tests/plugins/`):
+
+```bash
+make test-finite-skill-machine
+```
+
+List all available targets:
+
+```bash
+make help
+```
 
 ## License
 

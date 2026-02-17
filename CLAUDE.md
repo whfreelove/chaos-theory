@@ -1,13 +1,15 @@
 # Chaos-Theory Plugin Marketplace
 
-Claude Code plugins leveraging "stochastic" agent behavior.
+Claude Code plugins leveraging chaotic agent behavior.
 
 ## Plugins
 
 ```
 plugins/
-  worktree-isolation/  # Restricts agent to worktree bounds (active)
-  rodin/               # ExitPlanMode gate (design phase)
+  finite-skill-machine/  # Auto-populates agent task lists (active)
+  tokamak/               # Specification workflow (active)
+  worktree-isolation/    # Restricts agent to worktree bounds (active)
+  rodin/                 # ExitPlanMode gate (design phase)
 ```
 
 Create plugins following `worktree-isolation/` pattern:
@@ -64,6 +66,20 @@ Triggers requiring check-in:
 - Any runtime requirement (Python, Node, specific shell features)
 
 After approval, document in a Dependencies section with rationale. This creates a record that can be revisited if internal complexity grows too much because of the dependency.
+
+## Parallel Task Launching
+
+When a workflow requires launching multiple Task subagents concurrently (e.g., critics, validators, parallel reviews), ALL Task calls MUST be in a **single message**. Never split them across multiple messages.
+
+- ❌ Launch 2 critics, wait for results, launch 3 more, wait, launch remaining
+- ❌ Launch critics in batches of 3-4 across several messages
+- ✅ Launch all N critics in one message with N parallel Task tool calls
+
+This applies whenever the workflow says "parallel", "single message", or "all at once". If there are 13 critics, send 13 Task calls in one message. No exceptions.
+
+## OpenSpec Changes
+
+Do not propose OpenSpec changes for implementation work.
 
 ## Hook Design
 
