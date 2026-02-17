@@ -8,48 +8,34 @@ Claude Code plugins leveraging stochastic agent behavior. "Agents, uhh, find a w
 claude plugins marketplace add whfreelove/chaos-theory
 ```
 
-If you prefer installing plugins from Claude Code TUI:
-
-```
-/plugins marketplace add whfreelove/chaos-theory
-/plugins install tokamak
-/exit
-claude --continue
-/init-schemas
-```
+OpenSpec schemas are auto-initialized on your first session.
 
 ## Available Plugins
 
-### tokamak
+### Tokamak
 
-Turn thrashing agentic work plasma into forward motion.
+A **spec-as-code** reactor that harnesses power from AI agents' thrashing plasma.
 
-An OpenSpec-centered, iterative specification improvement workflow.
+An OpenSpec-based, iterative, structured specification workflow based on turning software engineering best practices overhead into background noise.
 Agents push you to understand your design through repeated rounds of finding gaps, clarifying your solutions, documenting your decisions, then updating specifications.
 
-```bash
-claude plugins install tokamak && claude /init-schemas
-# Use ! to execute in the shell from the Claude Code TUI
-!openspec new change --schema chaos-theory
+#### Setup
 
-/critique-specs
-/resolve-gaps
+[Install OpenSpec](https://github.com/Fission-AI/OpenSpec?tab=readme-ov-file#quick-start) (warning: )
+
+```bash
+claude plugins install tokamak
 ```
 
-**Primary Skills:**
+A SessionStart hook will install chaos-theory OpenSpec schemas for you (if `openspec/` already exists), and if a Tokamak update includes a new schema version, `/init-schemas` will upgrade.
 
-- `tokamak:critique-specs` - parallel critics find and document gaps in specifications
-- `tokamak:resolve-gaps` - agents help resolve gaps and update specifications
-
-Also provides skills for writing functional specs, requirements, technical design documents, and architecture decision records.
-
-### worktree-isolation
-
-Restricts Claude Code to git worktree or Jujutsu workspace boundaries. Prevents access to project root or sibling worktrees.
+See [plugins/tokamak/README.md](plugins/tokamak/README.md) for the full change and brownfield documentation workflows.
 
 ### finite-skill-machine
 
-Auto-hydrates TaskList from skill `fsm.json` companion files. Skills can define multi-step workflows that automatically populate the task list when invoked.
+Drive complex agent workflows with minimal context and mistakes.
+
+Auto-populates TaskList from skill `fsm.json` companion files. Skills can define multi-step workflows that automatically populate the task list when invoked.
 
 ```bash
 claude plugins install finite-skill-machine
@@ -73,6 +59,10 @@ Example `fsm.json`:
 ```
 
 When the skill is invoked, tasks appear automatically in the task list with proper dependencies.
+
+### worktree-isolation
+
+Restricts Claude Code to git worktree or Jujutsu workspace boundaries. Prevents access to project root or sibling worktrees.
 
 ## Updating
 
