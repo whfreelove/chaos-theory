@@ -1,0 +1,262 @@
+name: chaos-theory-brownfield
+version: 1
+description: Project documentation for existing undocumented projects — explore, interview, document
+artifacts:
+  - id: functional
+    generates: functional.md
+    description: Functional specification derived from existing code and user interviews
+    template: functional.md
+    instruction: >
+      Create the project functional specification by exploring existing code
+      and interviewing the user about design intent.
+
+
+      The project already exists. Your job is to document what IS, not what
+      should be. Accept the current design and only propose changes for critical
+      issues like known security vulnerabilities.
+
+
+      PROCESS:
+      1. Explore the codebase: code, tests, README, config files, comments
+      2. Ask the user: "Why was this built? What problem does it solve?"
+      3. Derive capabilities from actual code behavior, not aspirations
+      4. Ask the user to confirm/correct your understanding
+
+
+      Section order: Why → Capabilities → User Impact → Overview
+
+
+      - **Why**: The human burden this project addresses. Synthesize from code
+      purpose and user explanation. 1-2 sentences max.
+
+      - **Capabilities**: Derive from what the code actually does.
+      Each becomes `requirements/<slug>/requirements.feature.md`.
+      Format: `<slug>`: <actor> can <outcome>
+      Ask the user if you're missing capabilities or mischaracterizing them.
+
+      - **User Impact** has five subsections:
+        - Scope: who the project currently serves and how
+        - Out of Scope: deliberate boundaries (confirmed with user)
+        - Current Limitations: things that don't work yet (from code review + user)
+        - Planned Future Work: what the user intends to build next
+        - Known Risks: ongoing risks (from code analysis + user input)
+
+      - **Overview**: What the project does and how it works. Derived from code.
+
+
+      IMPORTANT: Don't invent capabilities the code doesn't have. Don't
+      assume limitations without checking. ASK THE USER to confirm each
+      capability and limitation you identify.
+
+
+      Distinguish what you observed in code from what the user told you.
+      Code is ground truth for "what IS". User is ground truth for "why"
+      and "what's planned".
+    requires: []
+  - id: requirements
+    generates: requirements/**/*.md
+    description: Behavioral specifications derived from existing tests and code
+    template: requirements.feature.md
+    instruction: >
+      Derive requirements from existing test suites and code behavior using
+      MDG (Markdown-Gherkin) format.
+
+
+      Invoke skill: `tokamak:writing-markdown-gherkin` for full MDG reference.
+
+
+      Each test implies a scenario. Interview user about edge cases the code
+      handles. Some requirements may be implicit in code — surface them as
+      explicit rules.
+
+
+      TERMINOLOGY (functional spec language → Gherkin keyword):
+
+      - "Capability" → "Feature" (one Feature per capability file)
+
+      - "Requirement" → "Rule" (requirements are Rules under Features)
+
+
+      Create one requirements file per capability listed in the functional
+      specification: `requirements/<capability-slug>/requirements.feature.md`
+
+
+      FLAT STRUCTURE (no delta wrappers for project-level docs):
+
+      Use `## Requirements` as the single section header. No ADDED/MODIFIED/
+      REMOVED/RENAMED sections — those are for change specs only.
+
+
+      MDG HIERARCHY:
+
+      ```
+      ## Requirements
+
+      `@<slug>`
+      ### Feature: <capability name>
+
+      `@<slug>:1`
+      #### Rule: <business rule>
+
+      ##### Background
+      - Given <common precondition>
+
+      `@<slug>:1.1`
+      ##### Scenario: <behavior title>
+      - Given <state>
+      - When <action>
+      - Then <outcome>
+      ```
+
+      TAGGING CONVENTION:
+
+      - Feature: `@<slug>` (kebab-case capability name)
+
+      - Rule: `@<slug>:Y` (Y = rule number)
+
+      - Scenario: `@<slug>:Y.Z` (Z = scenario number within rule)
+
+
+      SELF-CHECK before finalizing:
+
+      1. Does each file have exactly one Feature (= one capability)?
+
+      2. Is each scenario derived from actual code behavior or test cases?
+
+      3. Do all tags follow the `@slug:Y.Z` convention?
+
+      4. Have you confirmed edge cases with the user?
+    requires:
+      - functional
+  - id: technical
+    generates: technical.md
+    description: Technical design reverse-engineered from existing code architecture
+    template: technical.md
+    instruction: >
+      Reverse-engineer architecture from code structure. Document components
+      from actual modules, files, and classes.
+
+
+      Invoke skill: `tokamak:writing-technical-design` for technical design concepts.
+
+
+      Interview user about design decisions — turn into Y-statements with
+      `[initial-docs]` provenance (decisions documented retroactively, not
+      made during a change). The user may not remember why every decision
+      was made. Record what's known, flag what's uncertain.
+
+
+      Section purposes:
+
+      - **Context**: Current tech stack, dependencies, deployment environment.
+      Derived from code inspection (package.json, requirements.txt, Dockerfile, etc).
+
+      - **Objectives**: What the current architecture achieves.
+      Format: `OBJ-<slug>`: <outcome statement>
+      Derive from actual system behavior, confirm with user.
+
+      - **Architecture**: Reverse-engineered system design via Mermaid diagrams.
+      System Overview (static structure from code) and Component Interactions
+      (dynamics from call chains, message flows, API boundaries).
+
+      - **Components**: Each module/service/class gets a definition block.
+      Format: `CMP-<slug>`: name, description, responsibilities, dependencies.
+      Derive from actual code structure, not aspirational design.
+
+      - **Interfaces**: OPTIONAL. Contracts between components.
+      Format: `INT-<slug>`: operation name, input, output, errors.
+      Derive from actual API signatures, function parameters, message formats.
+
+      - **Decisions**: Y-statements documenting existing design choices.
+      Invoke skill `tokamak:writing-y-statements` for format reference.
+      Provenance tag: `[initial-docs]` — these decisions already exist in code.
+      Mark uncertain decisions: "we believe we decided X, accepting uncertainty
+      about the original rationale."
+
+      - **Risks**: OPTIONAL. Known technical debt, fragile areas, scaling concerns.
+      Format: [Risk] → [Mitigation]
+
+
+      First-draft quality matters. Get the structure right on first draft.
+      Document what IS, then let the user decide what to change.
+    requires: []
+  - id: infra
+    generates: infra.md
+    description: Infrastructure documentation derived from existing deployment and testing setup
+    template: infra.md
+    instruction: >
+      Document existing testing setup, deployment process, and observability.
+      Derive from actual infrastructure, not aspirational plans.
+
+
+      Section purposes:
+
+      - **Context**: Current infrastructure state. Derived from CI configs,
+      Dockerfiles, deployment scripts, hosting dashboards.
+
+      - **Objectives**: What the current operational setup achieves.
+      Format: `OBJ-<slug>`: <outcome statement>
+
+      - **Deployment**: How the project currently deploys. Document actual
+      process, environments, and configs. Note gaps if deployment is manual
+      or undocumented.
+
+      - **Testing Strategy**: Existing test framework, patterns, coverage.
+      Map discovered requirements to actual test files.
+      Note coverage gaps where requirements lack tests.
+
+      - **Observability**: OPTIONAL. Existing logging, metrics, alerts.
+      Document what's in place, note what's missing.
+
+
+      No Migration section — document current state, not transitions.
+
+
+      Interview the user about any infrastructure that isn't discoverable
+      from code (deployment credentials, CI secrets, manual processes).
+    requires: []
+  - id: integration
+    generates: integration.feature.md
+    description: Cross-capability integration test scenarios derived from existing code paths
+    template: integration.feature.md
+    instruction: >
+      Create integration test scenarios for cross-capability interactions.
+
+
+      OPTIONAL: Only create this file when capabilities interact in ways not
+      captured by individual requirements files. Skip if all behaviors are
+      testable within single-capability requirements.
+
+
+      Invoke skill: `tokamak:writing-markdown-gherkin` for MDG format reference.
+
+
+      FORMAT: Same MDG format as requirements files, but scoped to
+      cross-capability interactions rather than single capabilities.
+
+
+      FLAT STRUCTURE: Use `## Integration Scenarios` as the single section
+      header. No delta wrappers.
+
+
+      Structure:
+
+      - One Feature per integration concern
+
+      - Rules group related integration behaviors
+
+      - Scenarios test observable outcomes of capability interactions
+
+      - Tag involved capabilities: `@capability-a` `@capability-b`
+
+
+      Guidelines:
+
+      - Only include scenarios that span multiple capabilities
+
+      - Don't duplicate scenarios already in single-capability requirements
+
+      - Focus on integration boundaries, not internal capability behavior
+
+      - Derive scenarios from actual cross-capability code paths observed
+    requires: []

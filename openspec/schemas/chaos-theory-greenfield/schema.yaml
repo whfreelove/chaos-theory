@@ -1,0 +1,254 @@
+name: chaos-theory-greenfield
+version: 1
+description: Project documentation for new projects — brainstorm, design, define
+artifacts:
+  - id: functional
+    generates: functional.md
+    description: Functional specification establishing project vision and capabilities
+    template: functional.md
+    instruction: >
+      Create the project functional specification from the user's vision.
+
+
+      This is the foundation — all other project docs build on this.
+      The user may not have clarity yet. Your job is to help them find it
+      through questions, not to fill in blanks with assumptions.
+
+
+      Section order: Why → Capabilities → User Impact → Overview
+
+
+      - **Why**: The human burden this project addresses. 1-2 sentences max.
+      If the user can't articulate this concisely, help them narrow scope.
+      If it takes a paragraph, the project may need splitting.
+
+      - **Capabilities**: Each becomes `requirements/<slug>/requirements.feature.md`.
+      Brainstorm with the user. Push for concrete actor-outcome pairs.
+      Format: `<slug>`: <actor> can <outcome>
+
+      - **User Impact** has five subsections:
+        - Scope: who benefits and how
+        - Out of Scope: deliberate boundaries (things this project will never do)
+        - Current Limitations: empty for greenfield (nothing built yet)
+        - Planned Future Work: features the user wants but not in first release
+        - Known Risks: uncertainties, dependencies, unknowns
+
+      - **Overview**: How the project will work. High-level mechanism description.
+
+
+      IMPORTANT: The Capabilities section creates the contract with requirements.
+      Don't assume capabilities from a vague prompt. Come up with questions.
+      ASK THE USER QUESTIONS for any unclear scope, audience, or purpose.
+
+
+      Quality matters. A vague functional spec produces vague requirements
+      and vague technical design. Push for specificity now.
+    requires: []
+  - id: requirements
+    generates: requirements/**/*.md
+    description: Detailed behavioral specifications for each capability
+    template: requirements.feature.md
+    instruction: >
+      Define requirements from user discussions and brainstorming using MDG
+      (Markdown-Gherkin) format.
+
+
+      Invoke skill: `tokamak:writing-markdown-gherkin` for full MDG reference.
+
+
+      No existing code to reference — scenarios come from user intent and
+      acceptance criteria. Work through edge cases collaboratively.
+
+
+      TERMINOLOGY (functional spec language → Gherkin keyword):
+
+      - "Capability" → "Feature" (one Feature per capability file)
+
+      - "Requirement" → "Rule" (requirements are Rules under Features)
+
+
+      Create one requirements file per capability listed in the functional
+      specification: `requirements/<capability-slug>/requirements.feature.md`
+
+
+      FLAT STRUCTURE (no delta wrappers for project-level docs):
+
+      Use `## Requirements` as the single section header. No ADDED/MODIFIED/
+      REMOVED/RENAMED sections — those are for change specs only.
+
+
+      MDG HIERARCHY:
+
+      ```
+      ## Requirements
+
+      `@<slug>`
+      ### Feature: <capability name>
+
+      `@<slug>:1`
+      #### Rule: <business rule>
+
+      ##### Background
+      - Given <common precondition>
+
+      `@<slug>:1.1`
+      ##### Scenario: <behavior title>
+      - Given <state>
+      - When <action>
+      - Then <outcome>
+      ```
+
+      TAGGING CONVENTION:
+
+      - Feature: `@<slug>` (kebab-case capability name)
+
+      - Rule: `@<slug>:Y` (Y = rule number)
+
+      - Scenario: `@<slug>:Y.Z` (Z = scenario number within rule)
+
+
+      SELF-CHECK before finalizing:
+
+      1. Does each file have exactly one Feature (= one capability)?
+
+      2. Is each scenario testable (observable behavior, not internal state)?
+
+      3. Do all tags follow the `@slug:Y.Z` convention?
+
+      4. Are scenarios derived from user discussions, not assumptions?
+    requires:
+      - functional
+  - id: technical
+    generates: technical.md
+    description: Technical design document with architecture and decisions
+    template: technical.md
+    instruction: >
+      Design architecture collaboratively with the user. This IS the design —
+      there is no existing code to reverse-engineer.
+
+
+      Invoke skill: `tokamak:writing-technical-design` for technical design concepts.
+
+
+      Make technology and pattern decisions through discussion. Present options
+      with trade-offs. Decisions need user approval before recording as
+      Y-statements.
+
+
+      Section purposes:
+
+      - **Context**: Technology constraints, team expertise, existing ecosystem.
+      What influences design decisions before coding starts.
+
+      - **Objectives**: Specific, measurable outcomes.
+      Format: `OBJ-<slug>`: <outcome statement>
+
+      - **Architecture**: System design via Mermaid diagrams.
+      System Overview (static structure) and Component Interactions (dynamics).
+      For greenfield, show the full new architecture — no diffs.
+
+      - **Components**: Each component gets a definition block.
+      Format: `CMP-<slug>`: name, description, responsibilities, dependencies.
+
+      - **Interfaces**: OPTIONAL. Contracts between components.
+      Format: `INT-<slug>`: operation name, input, output, errors.
+      Include data model shapes inline.
+
+      - **Decisions**: Y-statements ONLY. Each is a single structured sentence.
+      Invoke skill `tokamak:writing-y-statements` for format reference.
+      All decisions must be discussed and approved with the user first.
+      Provenance tag: `[initial-design]`
+
+      - **Risks**: OPTIONAL. Cross-cutting risks not tied to specific decisions.
+      Format: [Risk] → [Mitigation]
+
+
+      First-draft quality matters. The template establishes section structure.
+      Following agents expand existing sections rather than restructure.
+      Get the structure right on first draft.
+    requires:
+      - functional
+      - requirements
+  - id: infra
+    generates: infra.md
+    description: Testing and deployment strategy for the project
+    template: infra.md
+    instruction: >
+      Define testing and deployment strategy from scratch. No existing
+      infrastructure to document — work with user on all choices.
+
+
+      Section purposes:
+
+      - **Context**: Infrastructure constraints, hosting preferences,
+      team CI/CD experience. What the user already has or plans to use.
+
+      - **Objectives**: Measurable operational outcomes.
+      Format: `OBJ-<slug>`: <outcome statement>
+
+      - **Deployment**: How the project will deploy. Environment configs,
+      rollout strategy. Work with user on hosting choice and deployment
+      approach.
+
+      - **Testing Strategy**: Test framework choice, test patterns, coverage
+      targets. Map requirements to test types (unit, integration, E2E).
+      Discuss trade-offs with user.
+
+      - **Observability**: OPTIONAL. Logging, metrics, alerting plan.
+      What telemetry the project needs from day one.
+
+
+      No Migration section for greenfield — nothing to migrate from.
+
+
+      Technology choices here (test framework, CI/CD platform, hosting) are
+      decisions. Record them as Y-statements in technical.md, not here.
+      This document describes the operational plan, not the rationale.
+    requires:
+      - technical
+      - requirements
+  - id: integration
+    generates: integration.feature.md
+    description: Cross-capability integration test scenarios
+    template: integration.feature.md
+    instruction: >
+      Create integration test scenarios for cross-capability interactions.
+
+
+      OPTIONAL: Only create this file when capabilities interact in ways not
+      captured by individual requirements files. Skip if all behaviors are
+      testable within single-capability requirements.
+
+
+      Invoke skill: `tokamak:writing-markdown-gherkin` for MDG format reference.
+
+
+      FORMAT: Same MDG format as requirements files, but scoped to
+      cross-capability interactions rather than single capabilities.
+
+
+      FLAT STRUCTURE: Use `## Integration Scenarios` as the single section
+      header. No delta wrappers.
+
+
+      Structure:
+
+      - One Feature per integration concern
+
+      - Rules group related integration behaviors
+
+      - Scenarios test observable outcomes of capability interactions
+
+      - Tag involved capabilities: `@capability-a` `@capability-b`
+
+
+      Guidelines:
+
+      - Only include scenarios that span multiple capabilities
+
+      - Don't duplicate scenarios already in single-capability requirements
+
+      - Focus on integration boundaries, not internal capability behavior
+    requires:
+      - requirements
+      - infra
