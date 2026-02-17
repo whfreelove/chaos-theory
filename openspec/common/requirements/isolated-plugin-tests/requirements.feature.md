@@ -1,18 +1,16 @@
 # Feature: Isolated plugin tests (isolated-plugin-tests)
 
 <!--
-DO NOT REMOVE THIS HEADER - it documents terminology mapping for editors.
-
 MDG format. Invoke skill: tokamak:writing-markdown-gherkin for full reference.
 
-TERMINOLOGY (proposal language -> Gherkin keyword):
-- "Capability" -> "Feature" (one Feature per capability)
-- "Requirement" -> "Rule" (requirements are grouped as Rules)
+TERMINOLOGY (functional spec language → Gherkin keyword):
+- "Capability" → "Feature" (one Feature per capability)
+- "Requirement" → "Rule" (requirements are grouped as Rules)
 
-We use Gherkin syntax, so headers say "Feature" and "Rule".
+PROJECT-LEVEL: Flat structure, no delta wrappers (ADDED/MODIFIED/REMOVED).
 -->
 
-## ADDED Requirements
+## Requirements
 
 `@isolated-plugin-tests:1`
 ### Rule: Non-fixture test helpers SHALL be importable without cross-plugin collision
@@ -43,14 +41,3 @@ We use Gherkin syntax, so headers say "Feature" and "Rule".
 - And test files receive helper functions via fixture injection
 - When the migrated plugin's tests run
 - Then all tests pass with the same count as before migration
-
-## MODIFIED Requirements
-
-## REMOVED Requirements
-
-`@isolated-plugin-tests:1` (original)
-### Rule: Adding a conftest.py to a new plugin test directory SHALL NOT affect existing plugins' test results
-
-Removed per GAP-22. The multi-plugin isolation guarantee is a property of pytest's `importmode = "importlib"` configuration, not behavior this change tests. Original scenarios (1.1 existing tests pass, 1.2 no import errors, 1.3 same-named fixture isolation) assumed multi-plugin test infrastructure that the change deliberately omits (GAP-4). The isolation guarantee is documented in technical.md Decisions section instead.
-
-## RENAMED Requirements
