@@ -20,23 +20,25 @@ Brownfield documentation is reverse-engineered from existing code. Critics valid
     - `${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/gaps.md`
     - `${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/resolved.md`
 
-2. Critic selection:
+2. Run critics in parallel:
 
-    !`python ${CLAUDE_PLUGIN_ROOT}/scripts/select_critics.py openspec/changes/$0`
+    !`python ${CLAUDE_PLUGIN_ROOT}/scripts/run_critics.py openspec/changes/$0`
 
-    If the `critics` array is empty, skip to section B. For each critic in the output, create a task blocking this step then invoke a parallel Task tool subagent with:
-    - Model: `model` field
-    - Files: `${PROJECT_ROOT}/openspec/changes/$0`
-        - The OpenSpec artifacts listed in `files` field
-        - `gaps.md`
-        - `resolved.md`
-    - Evaluation criteria: `evaluate` field
-    - Include:
-        - Do not submit gaps already covered in `gaps.md` or `resolved.md`
-        - One quality gap is more valuable than ten covered or nitpick gaps
-        - Standard critic output format template from `output_template` field
-        - **Accuracy critics** (Capability Accuracy, Requirement Accuracy, Architecture Accuracy, Decision Plausibility, Infrastructure Accuracy) explore the actual codebase using Read, Glob, and Grep tools. These subagents have full tool access to cross-reference documentation against code.
+    If the output shows `critics_run: 0`, skip to section B.
+
+    If any critics failed (check `results` for `status: "error"`), report failures
+    to the user and ask whether to proceed with partial results or retry.
+
+    Collect the `output` field from each successful result — these are the critic
+    findings for steps 3, B, and C.
 3. If gaps with valid statuses (not rejected, deprecated, or superseded) in `gaps.md`, `resolved.md`, or critic findings conflict with each other, resolve the conflict with a user check in via AskUserQuestion; typical options might include rejecting either or both or merging them somehow
+
+   **Project consistency conflicts**: When a project consistency finding conflicts with a change-internal finding, the resolution is typically one of:
+   - The change deliberately expands scope — resolution updates the project boundary (at merge time)
+   - The change inadvertently conflicts — fix the change artifact
+   - The project docs are outdated — note that merge-change will update them
+
+   Present these options to the user alongside reject/merge.
 
 ### B: Validation
 
@@ -46,6 +48,9 @@ Brownfield documentation is reverse-engineered from existing code. Critics valid
     - Files: `${PROJECT_ROOT}/openspec/changes/$0`
         - `gaps.md`
         - `resolved.md`
+    - Project reference files (if available, read-only):
+        - `${PROJECT_ROOT}/<project>/functional.md`
+        - `${PROJECT_ROOT}/<project>/technical.md`
 
 ```
 Validate whether critic findings are each semantically distinct from existing gaps in `gaps.md` or `resolved.md`.
@@ -62,6 +67,10 @@ Example of invalid mapping:
 - Gap text: "Critic must explicitly declare no issues"
 - Match Reason: Finding is about testing hooks, gap is about output format ✗
 
+For project consistency findings, also check if the concern is already acknowledged in project docs
+(e.g., in Current Limitations, Known Risks, or Out of Scope). If so, mark as COVERED with the
+project doc section as the match source.
+
 Respond with findings summary JSON list, e.g. [{"finding": "...", "status": "COVERED", "matched_gaps": ["GAP-12"], "match_reason": "..."}, {"finding": "...", "status": "PARTIAL", "matched_gaps": ["GAP-4"], "match_reason": "..."}, {"finding": "...", "status": "UNCOVERED", "matched_gaps": [], "match_reason": ""}]
 ```
 
@@ -75,6 +84,9 @@ Respond with findings summary JSON list, e.g. [{"finding": "...", "status": "COV
     - Files: `${PROJECT_ROOT}/openspec/changes/$0`
         - `gaps.md`
         - `resolved.md`
+    - Project reference files (if available, read-only):
+        - `${PROJECT_ROOT}/<project>/functional.md`
+        - `${PROJECT_ROOT}/<project>/technical.md`
 
 ```
 Merge critic findings into `gaps.md`; use TodoWrite list of each step:

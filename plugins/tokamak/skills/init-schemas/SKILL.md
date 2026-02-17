@@ -25,7 +25,7 @@ If Step 1 shows files exist, use AskUserQuestion:
 If no existing schemas OR user confirmed overwrite:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/init-schemas.sh" --force
+"${CLAUDE_PLUGIN_ROOT}/scripts/init_schemas.sh" --force
 ```
 
 The `--force` flag skips the script's interactive prompt since we already confirmed via AskUserQuestion.

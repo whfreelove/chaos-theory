@@ -18,17 +18,58 @@ From the description, derive a kebab-case name (e.g., "add user authentication" 
 
 **Do NOT proceed without a change name.**
 
+## Step 1b: Determine project path
+
+Scan `openspec/` for project directories (anything that isn't `changes/`, `schemas/`, or files):
+```bash
+ls -1d openspec/*/ 2>/dev/null | grep -vE '(changes|schemas)/' | sed 's|openspec/||;s|/$||'
+```
+
+- **One project found**: AskUserQuestion yes/no: "Is this change for project `<name>`?"
+- **Multiple projects found**: AskUserQuestion with project names as options + "New project"
+- **No projects found**: AskUserQuestion open-ended: "What project is this change for?"
+
+Record as `PROJECT_PATH` (e.g., `finite-skill-machine`). Directory does NOT need to exist yet.
+
+## Step 1c: Determine project type (new projects only)
+
+If the user selected an **existing project** in Step 1b, skip this step.
+
+If the user specified a **new project**, use AskUserQuestion:
+- "Is this project greenfield (building something new) or brownfield (documenting/modifying existing code)?"
+- Options:
+  - **Greenfield** — New codebase; specs designed collaboratively before implementation
+  - **Brownfield** — Existing codebase; documentation reverse-engineered from code
+
+If **brownfield**: present a follow-up recommendation:
+- "For brownfield projects, consider starting with a documentation change first to capture the current codebase state. This creates a project baseline that future changes build on. Proceed with a brownfield documentation change?"
+- Options:
+  - **Yes, brownfield documentation change (Recommended)** — Use `--schema chaos-theory-brownfield` in Step 2
+  - **No, proceed with a regular change** — Use default schema
+
+If **greenfield**: use `--schema chaos-theory-greenfield` in Step 2.
+
+Record the schema choice as `SCHEMA_FLAG` for Step 2.
+
 ## Step 2: Create the change directory
 
 ```bash
 openspec new change "$0"
 ```
 
-Add `--schema <name>` only if the user explicitly requested a specific workflow. Otherwise omit it to use the default schema.
+Add `${SCHEMA_FLAG}` if set by Step 1c. Also add `--schema <name>` if the user explicitly requested a specific workflow in a different step. Otherwise omit it to use the default schema.
 
 If the user asks "what schemas are available", run `openspec schemas --json` and let them choose.
 
 This creates a scaffolded change at `openspec/changes/$0/`.
+
+## Step 2b: Initialize lifecycle status
+
+```bash
+echo "specs-status: new" >> "openspec/changes/$0/.openspec.yaml"
+echo "code-status: waiting" >> "openspec/changes/$0/.openspec.yaml"
+echo "project: ${PROJECT_PATH}" >> "openspec/changes/$0/.openspec.yaml"
+```
 
 ## Step 3: Select triage policy
 
@@ -63,6 +104,7 @@ cp "${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/resolved.md" "openspec
 Report what was created:
 
 - Change directory: `openspec/changes/$0/`
+- Project: `${PROJECT_PATH}`
 - Triage policy: `.triage-policy.json` (profile name)
 - Gap tracking: `gaps.md` and `resolved.md`
 - Next step: run `opsx:continue` to begin creating artifacts

@@ -22,22 +22,25 @@ description: Run parallel critics against OpenSpec change artifacts and document
     **resolved.md**:
     !`cat ${CLAUDE_PLUGIN_ROOT}/skills/critique-specs/templates/resolved.md`
 
-2. Critic selection:
+2. Run critics in parallel:
 
-    !`python ${CLAUDE_PLUGIN_ROOT}/scripts/select_critics.py openspec/changes/$0`
+    !`python ${CLAUDE_PLUGIN_ROOT}/scripts/run_critics.py openspec/changes/$0`
 
-    If the `critics` array is empty, skip to section B. For each critic in the output, create a task blocking this step then invoke **all** critic Task tool subagents in a **single message** (blocking parallel calls, do NOT use `run_in_background`). This ensures all critics complete before proceeding. Each subagent should have:
-    - Model: `model` field
-    - Files: `${PROJECT_ROOT}/openspec/changes/$0`
-        - The OpenSpec artifacts listed in `files` field
-        - `gaps.md`
-        - `resolved.md`
-    - Evaluation criteria: `evaluate` field
-    - Include:
-        - Do not submit gaps already covered in `gaps.md` or `resolved.md`
-        - One quality gap is more valuable than ten covered or nitpick gaps
-        - Standard critic output format template from `output_template` field
+    If the output shows `critics_run: 0`, skip to section B.
+
+    If any critics failed (check `results` for `status: "error"`), report failures
+    to the user and ask whether to proceed with partial results or retry.
+
+    Collect the `output` field from each successful result — these are the critic
+    findings for steps 3, B, and C.
 3. If gaps with valid statuses (not rejected, deprecated, or superseded) in `gaps.md`, `resolved.md`, or critic findings conflict with each other, resolve the conflict with a user check in via AskUserQuestion; typical options might include rejecting either or both or merging them somehow
+
+   **Project consistency conflicts**: When a project consistency finding conflicts with a change-internal finding, the resolution is typically one of:
+   - The change deliberately expands scope — resolution updates the project boundary (at merge time)
+   - The change inadvertently conflicts — fix the change artifact
+   - The project docs are outdated — note that merge-change will update them
+
+   Present these options to the user alongside reject/merge.
 
 ### B: Validation
 
@@ -47,6 +50,9 @@ description: Run parallel critics against OpenSpec change artifacts and document
     - Files: `${PROJECT_ROOT}/openspec/changes/$0`
         - `gaps.md`
         - `resolved.md`
+    - Project reference files (if available, read-only):
+        - `${PROJECT_ROOT}/<project>/functional.md`
+        - `${PROJECT_ROOT}/<project>/technical.md`
 
 ```
 Validate whether critic findings are each semantically distinct from existing gaps in `gaps.md` or `resolved.md`.
@@ -63,6 +69,10 @@ Example of invalid mapping:
 - Gap text: "Critic must explicitly declare no issues"
 - Match Reason: Finding is about testing hooks, gap is about output format ✗
 
+For project consistency findings, also check if the concern is already acknowledged in project docs
+(e.g., in Current Limitations, Known Risks, or Out of Scope). If so, mark as COVERED with the
+project doc section as the match source.
+
 Respond with findings summary JSON list, e.g. [{"finding": "...", "status": "COVERED", "matched_gaps": ["GAP-12"], "match_reason": "..."}, {"finding": "...", "status": "PARTIAL", "matched_gaps": ["GAP-4"], "match_reason": "..."}, {"finding": "...", "status": "UNCOVERED", "matched_gaps": [], "match_reason": ""}]
 ```
 
@@ -76,6 +86,9 @@ Respond with findings summary JSON list, e.g. [{"finding": "...", "status": "COV
     - Files: `${PROJECT_ROOT}/openspec/changes/$0`
         - `gaps.md`
         - `resolved.md`
+    - Project reference files (if available, read-only):
+        - `${PROJECT_ROOT}/<project>/functional.md`
+        - `${PROJECT_ROOT}/<project>/technical.md`
 
 ```
 Merge critic findings into `gaps.md`; use TodoWrite list of each step:
@@ -95,3 +108,17 @@ Merge critic findings into `gaps.md`; use TodoWrite list of each step:
 ```
 
 3. Save hashes: `python ${CLAUDE_PLUGIN_ROOT}/scripts/select_critics.py openspec/changes/$0 --update-hashes`
+4. Stage and commit gap changes:
+
+    ```bash
+    git add "openspec/changes/$0"
+    git commit -m "spec($0): <subject>
+
+    <body>"
+    ```
+
+    The subject should summarize the critique action (e.g., `spec(rodin): Record 5 critique gaps`).
+    The body should list each gap recorded, one per line, using the gap changes
+    summary from step 2 (e.g., `- GAP-36: Missing retry policy for webhook failures`).
+
+    If there are no staged changes, skip the commit.

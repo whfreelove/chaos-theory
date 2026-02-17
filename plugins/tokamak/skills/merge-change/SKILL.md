@@ -1,19 +1,44 @@
+---
+name: merge-change
+description: Merge change artifacts into project documentation with lifecycle tracking. Use when specs are ratified and ready to merge.
+---
+
 # merge-change
 
 Apply completed change artifacts into existing project-level documentation.
 
 ## When to Use
 
-After a change has been implemented and verified, merge its artifacts (functional.md, requirements, technical.md, infra.md, integration.feature.md) into the project's living documentation.
+When `specs-status` is `ready` or `merging`, merge the change's artifacts (functional.md, requirements, technical.md, infra.md, integration.feature.md) into the project's living documentation. The PreToolUse hook validates this state; the PostToolUse hook auto-transitions `ready → merging` on invocation.
 
 ## Inputs
 
-- **Change path**: Path to the completed change directory (e.g., `openspec/changes/my-feature/`)
-- **Project path**: Path to the project documentation directory (e.g., `openspec/my-project/`)
+**Input**: `$0` is the change name. If empty, check conversation context.
+
+- **Change path**: Derived as `openspec/changes/<change-name>/`
+- **Project path**: Read from `.openspec.yaml` `project` field — a bare directory name resolved under `openspec/` (set during `new-change`)
 
 If not provided, detect from context:
-- Change path: most recently archived or completed change
-- Project path: directory matching the project name under `openspec/`
+- Change path: most recently ratified or in-progress change
+- Project path: fall back to directory matching the project name under `openspec/`
+
+## Step 0: Validate state and resolve project
+
+Read `specs-status` and verify it is `ready` or `merging` (redundant with hook gate, but serves as instruction-level safety):
+
+```bash
+current=$("${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" read "openspec/changes/$0" specs-status)
+```
+
+If not `ready` or `merging`, inform the user what state the change is in and what needs to happen first. The PostToolUse hook auto-transitions `ready → merging` on skill invocation, so by the time this runs, status will be `merging`.
+
+Read the project path from `.openspec.yaml`:
+
+```bash
+project=$("${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" read "openspec/changes/$0" project)
+```
+
+If empty, fall back to context detection (scan `openspec/` for a directory matching the change context). If ambiguous, ask the user. Use the resolved project path throughout the merge process.
 
 ## Process
 
@@ -145,3 +170,15 @@ After all subagents complete:
 4. If any discrepancy is found, fix the file directly — do not re-dispatch a subagent
 5. Present a summary: which files were updated, key changes per file, any corrections made in step 4
 6. Ask user to review before considering the merge complete
+
+## Completion
+
+After the user approves the merge, write the terminal status:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" write "openspec/changes/$0" specs-status merged
+```
+
+Report the new state and suggest next steps based on `code-status`:
+- If `code-status: implemented` or `n/a` → both tracks terminal, suggest `Skill(tokamak:archive-change, args: "$0")`
+- If `code-status: ready` or `in-progress` → suggest `Skill(tokamak:implement-change, args: "$0")` to complete implementation first

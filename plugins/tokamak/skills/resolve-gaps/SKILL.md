@@ -85,7 +85,12 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
 
 ### F: Resolve Gaps
 
-1. Call a Task tool subagent with the code block below as a prompt:
+1. Read `project` field from `.openspec.yaml`:
+  ```bash
+  project=$("${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" read "openspec/changes/$0" project)
+  ```
+
+2. Call a Task tool subagent with the code block below as a prompt:
   - Model: Opus
   - Skills:
     - `tokamak:managing-spec-gaps`
@@ -102,9 +107,16 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
     - `infra.md`
     - `integration.feature.md`
     - `tasks.yaml`
+  - Project reference files (if project directory exists, read-only):
+    - `${PROJECT_ROOT}/<project>/functional.md`
+    - `${PROJECT_ROOT}/<project>/technical.md`
+    - `${PROJECT_ROOT}/<project>/infra.md`
+    - `${PROJECT_ROOT}/<project>/requirements/*/requirements.feature.md`
+    - `${PROJECT_ROOT}/<project>/integration.feature.md`
 
   ```
-  As an experienced software architect, resolve (fix, mitigate, or explicitly defer) each entry in `gaps.md` (TaskList entry per gap):
+  As an experienced software architect, resolve (fix, mitigate, or explicitly defer) each entry in `gaps.md` (TaskList entry per gap).
+  If project documentation is provided, ensure resolutions are consistent with existing project docs. Check that resolutions don't introduce contradictions with project-level capabilities, decisions, requirements, or risks.
   1. Ignore entries that "defer resolution," continue to next gap
   2. Merge the decision into OpenSpec artifact documentation such that future fresh agents working on them will understand the updated capabilities, behaviors, interfaces, requirements, scenarios fully
   3. Double check that if the merge has cascading impacts, particularly new inconsistencies across documents, that they are accounted for in all relevant locations
@@ -152,15 +164,21 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
             - `technical.md`
             - `infra.md`
             - `requirements/*/requirements.feature.md`
+        - Project reference files (if project directory exists, read-only):
+            - `${PROJECT_ROOT}/<project>/functional.md`
+            - `${PROJECT_ROOT}/<project>/technical.md`
+            - `${PROJECT_ROOT}/<project>/infra.md`
+            - `${PROJECT_ROOT}/<project>/requirements/*/requirements.feature.md`
 
         ```
         As an experienced software technical writer, detect stale gaps (TodoList entry per step):
         1. Search `functional.md`, `technical.md`, `infra.md`, and `requirements/*/requirements.feature.md`
         2. Compare to `gaps.md` and `resolved.md`
         3. Look for stale details in the current and resolved gaps from old versions of the specifications
-        4. If none found, respond with empty JSON list: []
-        5. Any new gaps recorded from stale concerns should use `Source: stale-detection`
-        6. Respond with stale gap JSON list, e.g. [{"id": 42, "rationale": "why"}]
+        4. If project documentation is provided, also check if gaps are stale because project state already addresses the concern
+        5. If none found, respond with empty JSON list: []
+        6. Any new gaps recorded from stale concerns should use `Source: stale-detection`
+        7. Respond with stale gap JSON list, e.g. [{"id": 42, "rationale": "why"}]
         ```
 
     - **Gap Supersession Detection**
@@ -188,6 +206,9 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
             - `gaps.md`
             - `functional.md`
             - `technical.md`
+        - Project reference files (if project directory exists, read-only):
+            - `${PROJECT_ROOT}/<project>/functional.md`
+            - `${PROJECT_ROOT}/<project>/technical.md`
 
         ```
         Apply resolution completeness principles from tokamak:managing-spec-gaps.
@@ -196,7 +217,8 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
         2. For each defer-release gap:
            a. Check if the gap's concern is semantically addressed in `functional.md` Out of Scope section
            b. Check if the gap's concern is semantically addressed in `technical.md` Decisions section (Y-Statements)
-           c. "Covered" means the artifact explicitly acknowledges the limitation/deferral, not just tangentially mentions the topic
+           c. If project documentation is provided, also check project-level Out of Scope, Current Limitations, and Decisions
+           d. "Covered" means the artifact explicitly acknowledges the limitation/deferral, not just tangentially mentions the topic
         3. If all defer-release gaps are covered, respond with empty JSON list: []
         4. Any new gaps recorded from coverage concerns should use `Source: defer-release-coverage-detection`
         5. Respond with uncovered gap JSON list, e.g. [{"gap_id": 108, "description": "gap description", "rationale": "why not covered by Out of Scope or Decisions"}]
@@ -212,7 +234,20 @@ Thinking like an experienced software architect, update `gaps.md` with decisions
 
 ### H: Report
 
-1. Output a summary of the findings resolved grouped by severity rating
-2. Output a summary of the gaps remaining grouped by severity rating
-3. If no critic findings were high or medium severity and no entries in `gaps.md` are high or medium severity, announce **DESIGN IS COMPLETE**
-4. Otherwise, design is incomplete and more rounds of critique are suggested
+1. Stage and commit resolution changes:
+
+    ```bash
+    git add "openspec/changes/$0"
+    git commit -m "spec($0): <subject>
+
+    <body>"
+    ```
+
+    The subject should summarize the resolution action (e.g., `spec(rodin): Resolve 4 gaps, record 2 implicit gaps`).
+    The body should list each gap resolved and each implicit gap recorded/resolved,
+    one per line (e.g., `- GAP-36 resolved: Missing retry policy for webhook failures`).
+
+    If there are no staged changes, skip the commit.
+
+2. Output a summary of the findings resolved grouped by severity rating
+3. Output a summary of the gaps remaining grouped by severity rating
