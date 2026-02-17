@@ -1,0 +1,24 @@
+{
+  "high": {
+    "authority": "user",
+    "actions": [
+      "check-in",
+      "delegate",
+      "defer-resolution"
+    ]
+  },
+  "medium": {
+    "authority": "agent",
+    "actions": [
+      "check-in",
+      "delegate"
+    ]
+  },
+  "low": {
+    "authority": "agent",
+    "actions": [
+      "delegate",
+      "defer-release"
+    ]
+  }
+}
