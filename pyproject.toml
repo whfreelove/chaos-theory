@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chaos-theory"
+version = "0.2.0"
+requires-python = ">= 3.11"
+
+[tool.setuptools]
+packages = []
+
+[project.optional-dependencies]
+test = ["pytest>=7.2.0", "pytest-asyncio>=0.23.0", "pytest-cov>=5.0.0", "pytest-timeout>=2.3.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/plugins/*"]
+addopts = "--import-mode=importlib"
+asyncio_mode = "auto"
+timeout = 30
