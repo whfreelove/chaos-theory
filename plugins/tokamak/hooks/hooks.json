@@ -1,13 +1,23 @@
 {
   "description": "FSM (Finite Skill Machine) enforcement hooks for OpenSpec changes",
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/init_schemas.sh --auto"
+          }
+        ]
+      }
+    ],
     "PermissionRequest": [
       {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/permission-help.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/permission_help.sh"
           }
         ]
       }
@@ -18,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-instructions-fsm.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post_instructions_fsm.sh"
           }
         ]
       },
@@ -27,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-skill-fsm.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post_spec_skills.sh"
           }
         ]
       }
@@ -38,7 +48,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-write-fsm.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre_write_fsm.sh"
           }
         ]
       },
@@ -47,7 +57,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-spec-skills.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre_spec_skills.sh"
           }
         ]
       }
