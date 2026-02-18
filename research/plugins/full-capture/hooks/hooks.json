@@ -1,0 +1,25 @@
+{
+  "description": "Capture every PreToolUse and PostToolUse event to separate JSONL files",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/capture-pre.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/capture-post.py"
+          }
+        ]
+      }
+    ]
+  }
+}

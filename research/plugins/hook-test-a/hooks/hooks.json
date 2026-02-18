@@ -1,0 +1,15 @@
+{
+  "description": "Configurable PreToolUse hook A — logs invocation and returns configured response",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hook-a.py"
+          }
+        ]
+      }
+    ]
+  }
+}

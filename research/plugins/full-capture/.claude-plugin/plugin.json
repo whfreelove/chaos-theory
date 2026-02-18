@@ -1,0 +1,5 @@
+{
+  "name": "full-capture",
+  "version": "0.1.0",
+  "description": "Captures both PreToolUse and PostToolUse hook envelopes to JSONL for notebook analysis"
+}

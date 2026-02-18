@@ -1,0 +1,5 @@
+{
+  "name": "hook-test-b",
+  "version": "0.1.0",
+  "description": "Configurable PreToolUse hook B — returns response from /tmp/claude/hook-b-response.json"
+}

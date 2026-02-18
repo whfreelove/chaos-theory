@@ -20,6 +20,7 @@ def run_claude(
     *,
     plugin_dir: Path | None = None,
     session_id: str | None = None,
+    permission_mode: str = "default",
 ) -> ClaudeResult:
     """Run claude -p with --session-id + --output-format json.
 
@@ -27,6 +28,7 @@ def run_claude(
         prompt: The prompt to send to claude -p.
         plugin_dir: Optional plugin directory to load via --plugin-dir.
         session_id: Optional session ID. Generated if not provided.
+        permission_mode: Permission mode for the session. Default "default".
 
     Returns:
         ClaudeResult with parsed output, session_id, returncode, stderr.
@@ -34,7 +36,14 @@ def run_claude(
     if session_id is None:
         session_id = str(uuid.uuid4())
 
-    cmd = ["claude", "-p", prompt, "--session-id", session_id, "--output-format", "json"]
+    cmd = [
+        "claude", "-p",
+        prompt,
+        "--session-id", session_id,
+        "--output-format", "json",
+        "--model", "haiku",
+        "--permission-mode", permission_mode,
+    ]
     if plugin_dir is not None:
         cmd.extend(["--plugin-dir", str(plugin_dir)])
 
