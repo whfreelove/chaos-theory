@@ -1,0 +1,15 @@
+{
+  "description": "Append every PostToolUse event to a JSONL file",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/capture.py"
+          }
+        ]
+      }
+    ]
+  }
+}

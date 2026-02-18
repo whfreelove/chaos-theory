@@ -5,7 +5,7 @@ Claude Code plugins leveraging stochastic agent behavior. "Agents, uhh, find a w
 ## Installation
 
 ```bash
-claude plugins marketplace add whfreelove/chaos-theory
+claude plugin marketplace add whfreelove/chaos-theory
 ```
 
 OpenSpec schemas are auto-initialized on your first session.
@@ -21,10 +21,10 @@ Agents push you to understand your design through repeated rounds of finding gap
 
 #### Setup
 
-[Install OpenSpec](https://github.com/Fission-AI/OpenSpec?tab=readme-ov-file#quick-start) (warning: )
+[Install OpenSpec](https://github.com/Fission-AI/OpenSpec#quick-start) (warning: confirm your [telemetry privacy settings](https://github.com/Fission-AI/OpenSpec#other))
 
 ```bash
-claude plugins install tokamak
+claude plugin install tokamak
 ```
 
 A SessionStart hook will install chaos-theory OpenSpec schemas for you (if `openspec/` already exists), and if a Tokamak update includes a new schema version, `/init-schemas` will upgrade.
@@ -33,12 +33,12 @@ See [plugins/tokamak/README.md](plugins/tokamak/README.md) for the full change a
 
 ### finite-skill-machine
 
-Drive complex agent workflows with minimal context and mistakes.
+Drive complex agent workflows with minimal context and no task transcription mistakes.
 
 Auto-populates TaskList from skill `fsm.json` companion files. Skills can define multi-step workflows that automatically populate the task list when invoked.
 
 ```bash
-claude plugins install finite-skill-machine
+claude plugin install finite-skill-machine
 ```
 
 Create a skill with an `fsm.json` alongside `SKILL.md`:
@@ -64,17 +64,14 @@ When the skill is invoked, tasks appear automatically in the task list with prop
 
 Restricts Claude Code to git worktree or Jujutsu workspace boundaries. Prevents access to project root or sibling worktrees.
 
-## Updating
+## Update
 
 ```bash
-# CLI
-claude plugins marketplace update
-
-# In-session
-/plugins marketplace update
+claude plugin marketplace update
+claude plugin update finite-skill-machine
 ```
 
-## Testing
+## Test
 
 ```bash
 python -m venv .venv
@@ -100,6 +97,12 @@ List all available targets:
 make help
 ```
 
-## License
+## Research
 
-MIT
+Launch a JupyterLab environment for exploring plugin behaviors:
+
+```bash
+make research
+```
+
+The `research/` directory holds notebooks for static analysis (hook outputs, JSON configs, transcript logs) and live CLI execution via subprocess.

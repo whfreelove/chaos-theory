@@ -1,0 +1,5 @@
+{
+  "name": "probe",
+  "version": "0.1.0",
+  "description": "Minimal hook probe — verifies hooks fire in -p mode by writing a sentinel file"
+}

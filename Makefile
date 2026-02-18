@@ -1,12 +1,17 @@
 .DEFAULT_GOAL := help
 
-.PHONY: test coverage help
+.PHONY: test coverage research help
 
 test: ## Run all plugin tests
 	pytest
 
 coverage: ## Run tests with coverage report
 	pytest --cov=plugins --cov-report=term-missing
+
+research: ## Launch JupyterLab for research notebooks
+	pip install -e ".[research]"
+	nbstripout --install
+	jupyter lab --notebook-dir=research
 
 test-%: ## Run tests for a plugin (e.g., make test-finite-skill-machine)
 	@test -d tests/plugins/$* || { echo "Error: no test directory 'tests/plugins/$*/'"; exit 1; }

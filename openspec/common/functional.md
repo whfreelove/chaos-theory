@@ -7,6 +7,7 @@ Plugin test authors need to create test fixtures and helper modules without brea
 - `isolated-plugin-tests`: Test authors can create `conftest.py` and helper modules in any plugin test directory without cross-plugin import collisions
 - `contributor-reproduces-environment`: A contributor can clone the repo, follow documented steps, and run all plugin tests from the project root
 - `ci-validates-pr`: Tests run automatically on push and pull request via GitHub Actions, reporting status to GitHub
+- `contributor-launches-research`: A contributor can launch a JupyterLab environment with analysis and visualization tools to explore Claude Code plugin behaviors
 
 ## User Impact
 
@@ -21,6 +22,9 @@ Plugin test authors need to create test fixtures and helper modules without brea
 - Pull requests are automatically validated — test results are reported as status checks
 - The README documents environment setup and test execution for new contributors
 - Running tests does not produce files that show up in version control
+- Contributors can install research dependencies separately from test dependencies
+- A single Makefile target launches JupyterLab pointed at the research directory
+- Notebooks can analyze static project artifacts and invoke the Claude CLI via subprocess
 
 ### Out of Scope
 
@@ -28,6 +32,9 @@ Plugin test authors need to create test fixtures and helper modules without brea
 - Pre-commit hooks for test execution
 - Docker-based test environments
 - Multi-Python version CI matrix (single version only)
+- Automated testing of research notebooks
+- Starter/template notebooks (created as research questions arise)
+- Claude SDK / API access from notebooks (CLI subprocess only)
 - Documenting minimum tooling requirements (pip 21.3+) and platform-specific alternatives (Windows without Make) in contributor setup instructions
 - Specifying which GitHub Actions pull_request activity types trigger CI (platform defaults accepted)
 - Failure-path scenarios for individual Makefile targets beyond `make test`
@@ -46,6 +53,7 @@ Plugin test authors need to create test fixtures and helper modules without brea
 - Adding tests for currently untested plugins (worktree-isolation, rodin, tokamak)
 - Code coverage tooling or coverage thresholds
 - Linting or formatting enforcement in CI
+- Shared `helpers.py` module when common patterns emerge across research notebooks
 
 ### Known Risks
 

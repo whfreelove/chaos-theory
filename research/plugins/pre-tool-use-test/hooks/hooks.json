@@ -1,0 +1,15 @@
+{
+  "description": "Return a configurable response to every PreToolUse event",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/respond.py"
+          }
+        ]
+      }
+    ]
+  }
+}

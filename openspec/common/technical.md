@@ -195,4 +195,37 @@ No complex inter-component interactions for the isolation layer. The architectur
 
 `[common-test-infra]` In the context of test directory structure, we decided to relocate tests from plugin directories to a centralized `tests/plugins/` hierarchy, and not keep them alongside plugin code, to separate test artifacts from distributed plugin code (the marketplace distributes plugin directories; tests should not ship to consumers), accepting that test code must use longer path expressions to reference plugin scripts.
 
+## Research Infrastructure
+
+### Context
+
+The project provides an optional research environment for contributors and agents to explore Claude Code plugin behaviors using JupyterLab notebooks. Research notebooks support both static analysis (hook outputs, JSON configs, transcript logs) and live CLI execution (subprocess calls to `claude`). Research dependencies are installed separately from test dependencies via an optional extras group.
+
+### Components
+
+`CMP-pyproject-research`: pyproject.toml research extras
+- **Description**: Optional dependency group `[research]` in `[project.optional-dependencies]` declaring JupyterLab and analysis libraries.
+- **Responsibilities**: Declare `jupyterlab>=4.0`, `matplotlib>=3.8`, `pandas>=2.1`, `rich>=13.0`, `networkx>=3.2`, `mermaid-py>=0.8` as the research extras group. Installable via `pip install -e ".[research]"` independently of `.[test]`.
+- **Dependencies**: None (consumed by pip).
+
+`CMP-research-gitignore`: research/.gitignore
+- **Description**: Gitignore file excluding Jupyter checkpoint directories and Python bytecode from version control.
+- **Responsibilities**: Exclude `.ipynb_checkpoints/`, `__pycache__/`, and `*.pyc` within the `research/` directory.
+- **Dependencies**: None.
+
+`CMP-makefile-research`: Makefile research target
+- **Description**: Convenience target that installs research extras and launches JupyterLab pointed at the `research/` directory.
+- **Responsibilities**: Run `pip install -e ".[research]"` then `jupyter lab --notebook-dir=research`.
+- **Dependencies**: `CMP-pyproject-research` (for dependency declarations).
+
+### Decisions
+
+`[research-infra]` In the context of providing research tools for plugin exploration, facing the choice of how to manage research dependencies, we decided to use optional extras in `pyproject.toml` (a `research` group), and not a separate virtual environment or `requirements-research.txt`, to keep all project dependencies in one configuration file and allow `pip install -e ".[test,research]"` for contributors who need both, accepting that research and test dependency versions must be compatible within a single environment.
+
+`[research-infra]` In the context of Mermaid diagram rendering in notebooks, facing the choice between `mermaid-py` and `nb-mermaid`, we decided to use `mermaid-py`, and not `nb-mermaid`, because `mermaid-py` is actively maintained and provides a broader API surface beyond notebook-specific rendering, accepting that notebook rendering may require slightly more setup than a dedicated notebook extension.
+
+`[research-infra]` In the context of organizing research notebooks, facing the choice between a flat `research/` directory and categorized subdirectories, we decided to use a flat directory structure, and not topic-based subdirectories, to avoid premature organization before research patterns emerge, accepting that the directory may need restructuring as the notebook count grows.
+
+`[research-infra]` In the context of how notebooks interact with Claude, facing the choice between the Claude SDK/API and subprocess CLI calls, we decided to use subprocess CLI execution (`subprocess.run(["claude", ...])`) only, and not the Claude SDK or API, to match how contributors already interact with Claude Code and avoid introducing API key management, accepting that subprocess calls are less ergonomic than SDK method calls and output parsing is more fragile.
+
 ## Risks

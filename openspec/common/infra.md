@@ -63,6 +63,10 @@ flowchart LR
 | Rule 2: CI reports test status to GitHub | Failing tests exit non-zero, workflow reports failure status | Self-verified — the workflow's first successful run proves pass-path works. Fail-path verified by code review of Makefile recipe structure — single-line pytest invocations where make inherits the exit code. No manual failure induction required. |
 | Rule 3: CI uses pinned Python version | `actions/setup-python` reads `.python-version` | Self-verified — workflow logs show Python version matching `.python-version` |
 
+### Research Infrastructure
+
+Research infrastructure is excluded from automated testing — notebooks are exploratory artifacts, not regression-testable code.
+
 ### Test Approach
 
 Each plugin's test fixtures and test data are self-contained within its own directory — no shared test data infrastructure is needed. Plugin test suites exercise their helpers through their own fixtures.
@@ -86,6 +90,10 @@ make test                                    # Expected: zero failures, all pass
 make test PYTESTFLAGS="-W error"             # Expected: zero failures, no collection warnings
 grep -r "from conftest import" tests/        # Expected: zero matches
 pytest --collect-only tests/                 # Expected: no helper modules (e.g., helpers.py) appear in collected items
+```
+
+```bash
+pip install -e ".[research]" && python -c "import jupyterlab; print('ok')"  # research deps resolve
 ```
 
 The combination of `make test` (behavioral verification), `grep` (static review-time check), and `pytest --collect-only` (collection verification) provides defense in depth. `make test` confirms imports resolve and tests pass at runtime. `grep` catches stale bare imports at review time. The `-W error` flag ensures collection warnings about helper modules surface as failures. `pytest --collect-only` verifies that helper modules named to avoid pytest collection patterns (`test_*.py`, `*_test.py`) are not collected — this is the concrete verification mechanism for the naming convention guarantee (@isolated-plugin-tests:1.1).

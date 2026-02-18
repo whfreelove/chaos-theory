@@ -1,0 +1,5 @@
+{
+  "name": "pre-tool-use-test",
+  "version": "0.1.0",
+  "description": "Returns a configurable PreToolUse response for behavioral testing"
+}
