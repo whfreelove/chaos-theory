@@ -6,7 +6,7 @@ The FSM plugin is a local Claude Code plugin with no deployment infrastructure. 
 
 `OBJ-structural-validity`: The delivered fsm.json passes the existing `validate_fsm_tasks` validation in `hydrate-tasks.py` — valid JSON array, required fields present (including `description`), unique IDs, all `blockedBy` references resolve.
 
-`OBJ-requirements-coverage`: Each requirement capability has a documented verification approach.
+`OBJ-requirements-coverage`: Each requirement rule in the requirements files has at least one corresponding scenario with a documented verification approach.
 
 ## Deployment
 
@@ -22,17 +22,19 @@ This change has two distinct verification modes:
 
 2. **Behavioral verification** (manual, author-driven): The 5 requirement capabilities describe agent behavior during the guided workflow. These are verified by invoking the skill and observing agent behavior, not by automated tests. The "code under test" is the agent following task descriptions, not a Python function.
 
-No new pytest tests are added. The structural validation path already exists in the hydration pipeline; behavioral verification is inherently manual because the outputs are agent actions guided by prose descriptions.
+No new behavioral verification pytest tests are added. Structural validation tests in the validation-enhancement group extend the existing hydration pipeline's field checking — these are code changes to `validate_fsm_tasks`, not behavioral tests. The structural validation path already exists in the hydration pipeline; behavioral verification is inherently manual because the outputs are agent actions guided by prose descriptions.
 
 **Integration verification exclusion**: No integration test scenarios are defined for this change. The five capabilities form a sequential pipeline with validation gates, not bidirectional interactions that produce emergent behavior. Cross-capability coverage is captured by single-capability requirements. See `integration.feature.md` for the full rationale.
+
+**CI/CD exclusion**: Behavioral verification is manual by design — no automated CI/CD integration is defined for behavioral tests because the outputs are agent actions guided by prose descriptions, not deterministic function outputs.
 
 ### Relationship to tasks.yaml
 
 The verification approaches documented in infra.md's Coverage by capability tables define *what* to verify and *how*. The `behavioral-verification` group in tasks.yaml provides *actionable implementation tasks* that execute these verification approaches — one task per capability. Each behavioral verification task derives its procedure from the corresponding capability's coverage table in this document.
 
-### Verification by design: AskUserQuestion confirmation gates
+### Verification by design: confirmation gates
 
-Multiple requirements specify that "the skill does not proceed until the author approves" (workflow-intake:2.3, 4.3, dependency-mapping:4.3). These confirmation gates use AskUserQuestion (or equivalent user prompt) as the blocking mechanism. **AskUserQuestion is inherently blocking** — the skill literally cannot proceed without a user response. The agent's execution pauses at the prompt and does not resume until the author provides input.
+Multiple requirements specify that "the skill does not proceed until the author approves" (workflow-intake:2.3, 4.3, dependency-mapping:4.3). These confirmation gates use any mechanism that blocks skill execution until the author responds. The blocking mechanism is **inherently blocking** — the skill literally cannot proceed without a user response. The agent's execution pauses at the prompt and does not resume until the author provides input.
 
 This means the blocking behavior is **guaranteed by construction**, not by testing. There is no code path where the skill could bypass a confirmation gate, because the underlying mechanism (waiting for user input) is a fundamental property of the execution model. Accordingly, no specific test infrastructure is needed to verify that confirmation gates block — the verification is that the mechanism exists in the task description, which is covered by behavioral verification.
 
@@ -45,7 +47,7 @@ This means the blocking behavior is **guaranteed by construction**, not by testi
 | Rule 1: Input-based sources and brainstorming gap-filling | Source-specific guidance for existing skill, written steps; brainstorming gap-filling after input-based intakes; convergence to normalized step list | Manual: invoke skill with each intake type, verify guidance is source-specific; verify brainstorming reviews prior intake material and fills gaps; verify convergence produces a normalized step list |
 | Rule 2: Existing skill transformation | Sequential step extraction, implicit parallelism identification, conditional logic decomposition (author chooses strategy), author review gate | Manual: provide an existing skill as input, verify extracted steps match the skill's structure; provide a skill with conditional branching, verify the skill presents decomposition options and incorporates the author's choice |
 | Rule 3: Written step description intake | Well-structured acceptance, vague description prompting, overly large step splitting | Manual: provide written steps of varying quality, verify the skill prompts for clarification or splitting as appropriate |
-| Rule 4: Brainstorming gap-filling | Gap identification from prior intake material; unordered idea organization when no prior material exists; overlapping idea consolidation; author confirmation gate; graceful termination when no steps emerge | Manual: invoke skill with input-based material, verify brainstorming identifies gaps and proposes additions; invoke skill with no input-based material, verify brainstorming guides from scratch; verify graceful termination when no steps emerge |
+| Rule 4: Brainstorming gap-filling | Gap identification from prior intake material; unordered idea organization when no prior material exists; overlapping idea consolidation; author confirmation gate; graceful termination when no steps emerge | Manual: invoke skill with input-based material, verify brainstorming identifies gaps and proposes additions; invoke skill with no input-based material, verify brainstorming guides from scratch; verify graceful termination when no steps emerge. **Empty-sources setup procedure**: start a fresh session, invoke the skill, provide no input to either input-based intake source (both tasks mark themselves complete with no output). Brainstorming receives zero prior material and guides the author through generating a full step list from scratch |
 
 #### `dependency-mapping`
 
@@ -55,7 +57,8 @@ This means the blocking behavior is **guaranteed by construction**, not by testi
 | Rule 2: Parallel execution patterns | Independent task identification, parallel grouping confirmation | Manual: define independent tasks, verify no blocking relationships between them |
 | Rule 3: Fan-in and fan-out patterns | Fan-out from single predecessor, fan-in to single successor, diamond pattern | Manual: define fan-out/fan-in workflows, verify dependency graph captures convergence and divergence |
 | Rule 4: Author confirmation of graph | Dependency summary presentation, modification after review, approval gate | Manual: verify the skill presents a complete dependency summary and allows modifications |
-| Rule 5: Step list modifications during dependency mapping | Author removes a task (graph updated, dangling refs removed); author adds a task (graph updated, new relationships prompted); author renames a task (label updated, relationships preserved); re-validation after each modification | Manual: during dependency mapping, remove a task and verify graph updates correctly; add a task and verify the skill prompts for blocking relationships with all existing tasks (predecessors and successors); rename a task and verify existing dependencies preserved |
+| Rule 5: Step list modifications during dependency mapping | Author removes a task (graph updated, dangling refs removed); author adds a task (graph updated, new relationships prompted); author renames a task (label updated, relationships preserved); re-validation after each modification | Manual: during dependency mapping, remove a task and verify graph updates correctly; add a task and verify the skill prompts for blocking relationships with all existing tasks (predecessors and successors); rename a task and verify existing dependencies preserved. **Single-task boundary example**: when adding a task to a workflow with one existing task, the skill prompts for the new task's relationship to the single existing task — blocked by it, blocks it, or independent. Pass: the skill references the one existing task by name. Fail: the skill prompts generically without referencing the existing task |
+| Rule 6: Single-task workflows | Empty dependency graph, immediate progression for single-task workflow | Manual: define a workflow with exactly one task, verify the task's blockedBy array is empty, verify the skill confirms the trivially empty graph and proceeds |
 
 #### `self-contained-descriptions`
 
@@ -72,6 +75,7 @@ This means the blocking behavior is **guaranteed by construction**, not by testi
 |------|---------------|----------------------|
 | Rule 1: SKILL.md generation | Valid YAML frontmatter with `name` and `description`; author-facing body language; correct directory placement; self-validation failure (missing frontmatter) triggers author correction and re-validation before SKILL.md is finalized | Manual: complete the workflow, verify generated SKILL.md has frontmatter and describes steps without internal identifiers; verify that a self-validation failure triggers author correction and re-validation before SKILL.md is finalized |
 | Rule 2: Task definition file generation | All workflow steps present; dependencies encoded correctly; required fields (`id`, `subject`, `description`) per entry; display-friendly names auto-normalized to directory-safe format with author confirmation | Structural: `validate_fsm_tasks` checks required fields, unique IDs, and `blockedBy` resolution at runtime. Manual: verify step count matches workflow definition; provide a display-friendly name, verify normalization and confirmation prompt |
+| Rule 2 (self-validation): SKILL.md self-validation | Self-validation failure triggers author correction and re-validation before SKILL.md is finalized | Manual: trigger a self-validation failure (e.g., remove a frontmatter field), verify the skill reports the issue, correct it, verify re-validation runs and passes |
 | Rule 3: Correct directory structure | Files placed under `plugins/<plugin>/skills/<skill>/`; SKILL.md and fsm.json colocated; target directory created if it does not exist; existing directory detected with overwrite/rename/abort options | Manual: verify the skill instructs placement at the correct path; verify the skill creates the target directory when it does not exist; verify the skill detects an existing directory and offers overwrite/rename/abort options before placing files |
 
 #### `workflow-validation`

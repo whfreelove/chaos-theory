@@ -93,6 +93,15 @@ The skill SHALL validate outputs at the end of each phase (intake, dependency ma
 - Then the skill confirms the output is now valid
 - And the task completes and the skill proceeds to the next phase
 
+`@workflow-validation:1.7`
+#### Scenario: Phase-completion summary confirms all entries updated before advancing
+
+- Given the agent has completed a construction phase (dependency mapping or description writing) for all tasks
+- When the phase finishes updating all entries
+- Then the agent SHALL present a phase-completion summary showing which entries were updated
+- And the author SHALL confirm completeness before the next phase begins
+- And the skill SHALL not advance to the next phase until the author confirms the summary
+
 `@workflow-validation:2`
 ### Rule: The skill SHALL perform comprehensive final validation before deployment
 
@@ -123,9 +132,9 @@ The skill SHALL run a complete validation pass across all workflow outputs befor
 #### Scenario: Final validation checks dependency graph for cycles using topological sort
 
 - Given the author has completed all phases and the skill is performing final validation
-- When the skill performs a topological sort on the dependency graph
-- Then the skill SHALL verify that the sort consumes all nodes
-- And if any nodes remain unconsumed, the skill reports the set of unconsumed task IDs and labels as involved in cycle(s)
+- When the skill performs cycle detection on the dependency graph
+- Then the skill SHALL present validation results indicating whether the dependency graph is acyclic
+- And if cycles are detected, the skill SHALL report the set of task IDs and labels involved in cycle(s) to the author
 
 `@workflow-validation:2.4`
 #### Scenario: Final validation failure identifies specific issues to fix

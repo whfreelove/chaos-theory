@@ -76,8 +76,8 @@ flowchart TD
 - **CMP-intake-brainstorm**: Sequential gap-filling step (blocked by CMP-intake-existing and CMP-intake-written, blocks CMP-normalize). Receives context from whatever material the input-based intakes produced and fills gaps — generating ideas for missing areas, expanding thin coverage, or producing the full step list from scratch if neither input-based intake contributed material. Not a parallel source; runs after input-based intakes complete.
 - **CMP-normalize**: Blocked by CMP-intake-brainstorm. Normalizes whichever intake sources produced output into a consistent step list format.
 - **CMP-skill-md**: Branches off CMP-normalize independently. Only needs the normalized step list to write author-facing documentation about broad workflow concepts. Self-validates (frontmatter check) and completes independently — does not feed into CMP-final-validation.
-- **CMP-dependency-map → CMP-descriptions → CMP-fsm-json**: Linear chain. Dependency mapping → self-contained description writing → fsm.json finalization. Progressive construction flows linearly through these three components.
-- **CMP-final-validation**: Depends on CMP-fsm-json only. Cross-cutting validation runs after the fsm.json artifact is finalized. Does not wait for CMP-skill-md (which self-validates independently).
+- **CMP-dependency-map → CMP-descriptions → CMP-fsm-json-finalize**: Linear chain. Dependency mapping → self-contained description writing → fsm.json finalization. Progressive construction flows linearly through these three components.
+- **CMP-final-validation**: Depends on CMP-fsm-json-finalize only. Cross-cutting validation runs after the fsm.json artifact is finalized. Does not wait for CMP-skill-md (which self-validates independently).
 
 ### Data flow
 
@@ -90,7 +90,7 @@ flowchart TD
 | Dependency mapping | CMP-dependency-map | Dependency table | Table of `{task_id, task_label, blockedBy[]}` entries showing serial, parallel, fan-in, and fan-out relationships |
 | Description writing | CMP-descriptions | Enriched task list | List of `{task_id, task_label, description, activeForm}` entries — each description is self-contained |
 | SKILL.md generation | CMP-skill-md | SKILL.md (final, self-validated) | Markdown with YAML frontmatter (`name`, `description`) and body content in author-facing language — self-validated for frontmatter correctness |
-| fsm.json finalization | CMP-fsm-json | fsm.json (final) | JSON array following INT-fsm-json schema: `{id, subject, description, activeForm, blockedBy}` per entry — validated and formatted from progressively-built artifact |
+| fsm.json finalization | CMP-fsm-json-finalize | fsm.json (final) | JSON array following INT-fsm-json schema: `{id, subject, description, activeForm, blockedBy}` per entry — validated and formatted from progressively-built artifact |
 | Final validation | CMP-final-validation | Validation report | Pass/fail results for 3 cross-cutting checks with specific issues listed per failure |
 
 ## Specifications
@@ -161,9 +161,10 @@ flowchart TD
   - Present the complete dependency graph for author review
   - Allow the author to modify dependencies after review
   - Validate that every task appears in the graph and all dependency references point to existing tasks
-  - Validate that no circular dependencies exist using Kahn's algorithm (BFS-based topological sort) — early detection prevents wasted effort on descriptions and file generation for a workflow that will fail final validation
-  - Support step list modifications during the dependency mapping phase: the author MAY add, remove, or rename tasks. Each modification triggers a dependency graph update (removing dangling references on removal, prompting for new relationships on addition, preserving relationships on rename) and re-validation. Newly added tasks receive the next sequential ID (max existing ID + 1); existing task IDs remain stable during authoring
+  - Validate that no circular dependencies exist using Kahn's algorithm (BFS-based topological sort) via programmatic tool invocation (e.g., a Python script) rather than agent reasoning in natural language — deterministic execution ensures correct, repeatable cycle detection regardless of workflow complexity. Early detection prevents wasted effort on descriptions and file generation for a workflow that will fail final validation
+  - Support step list modifications during the dependency mapping phase: the author MAY add, remove, or rename tasks. Each modification triggers a dependency graph update (removing dangling references on removal, prompting for new relationships on addition, preserving relationships on rename) and re-validation. Newly added tasks receive the next sequential ID (max existing ID + 1); existing task IDs remain stable during authoring. When the author adds a new task, apply a lightweight quality check against intake-quality criteria (specificity, actionability, scope) to the provided label and description before adding it to the graph — this prevents clearly under-specified tasks from entering the workflow without requiring full intake processing
   - If validation fails within this task, present the issue to the author, ask them to correct it, then re-validate before completing the task
+  - When the workflow contains 15-20 or more tasks, warn the author that the workflow is large and suggest grouping related tasks for review during dependency mapping to improve UX. No hard upper limit is enforced
 - **Dependencies**: CMP-normalize output (normalized step list)
 
 `CMP-descriptions`: Write self-contained descriptions
@@ -194,28 +195,33 @@ flowchart TD
   - Create the target directory `plugins/<plugin>/skills/<skill>/` if it does not exist during file placement
   - Detect when the target skill directory already exists and contains files; offer the author options to overwrite, choose a different skill name, or abort
   - Guide the author on file placement: `plugins/<plugin>/skills/<skill>/SKILL.md`
+  - Write the SKILL.md file to disk using the Write tool (Claude Code's native file creation tool)
+  - **Skill discoverability**: The FSM plugin discovers skills via filesystem convention — skills placed in `plugins/<plugin>/skills/<skill>/` with both SKILL.md and fsm.json are automatically discovered by Claude Code's plugin loading mechanism. No registration steps, index updates, manifest changes, or reload signals are required
 - **Dependencies**: CMP-normalize output (normalized step list)
 
-`CMP-fsm-json`: Finalize fsm.json
+`CMP-fsm-json-finalize`: Finalize fsm.json
 - **Description**: Finalizes the progressively-built fsm.json artifact for the author's new skill. Since progressive construction builds the fsm.json incrementally across earlier phases (IDs and subjects from dependency mapping, blockedBy from dependency encoding, descriptions and activeForm from description writing), this component's role is finalization — validating, formatting, and writing the final artifact — not full generation. Produces a JSON array with 5 core fields per entry plus metadata. Other optional INT-fsm-json fields (owner, status, blocks) are omitted — defaults apply at hydration time.
 - **Responsibilities**:
-  - Validate and format the progressively-built fsm.json artifact into a final JSON array with one entry per workflow task. Renumber all task IDs to topological order (sequential starting at 1) and update all blockedBy references to match the new IDs — this produces clean final output regardless of insertion order during authoring. After renumbering, verify that all blockedBy references resolve to valid IDs in the renumbered array. Tie-breaking for same-precedence nodes: tasks retain their original authoring order (the order IDs were assigned during CMP-dependency-map). This stable sort preserves author intent and produces deterministic output for parallel tasks
+  - Validate and format the progressively-built fsm.json artifact into a final JSON array with one entry per workflow task. Renumber all task IDs to topological order (sequential starting at 1) and update all blockedBy references to match the new IDs — this produces clean final output regardless of insertion order during authoring. After renumbering, verify that all blockedBy references resolve to valid IDs in the renumbered array. After renumbering, present the old-to-new ID mapping to the author so they are aware of the ID changes. Tie-breaking for same-precedence nodes: tasks retain their original authoring order (the order IDs were assigned during CMP-dependency-map). This stable sort preserves author intent and produces deterministic output for parallel tasks
   - Verify each entry contains 5 core fields with correct types: `id` (integer, sequential starting at 1), `subject` (string, short task title), `description` (string, self-contained instructions from CMP-descriptions output), `activeForm` (string — present-continuous form is auto-generated but author overrides are accepted as-is without format validation), `blockedBy` (array of integers, local IDs)
   - Verify each entry contains `metadata` (object) with an `fsm` key whose value is a non-empty string matching the skill name, following the anti-clobber convention
   - Other optional fields (owner, status, blocks) are omitted — hydration applies defaults
   - Validate that all `blockedBy` references point to IDs that exist in the same array
   - Guide the author on file placement: `plugins/<plugin>/skills/<skill>/fsm.json` alongside the SKILL.md — directory creation and collision detection are handled by CMP-skill-md
+  - Write the fsm.json file to disk using the Write tool (Claude Code's native file creation tool)
+  - **Skill discoverability**: Same filesystem convention as CMP-skill-md — the fsm.json file placed alongside SKILL.md in `plugins/<plugin>/skills/<skill>/` is automatically discovered by Claude Code's plugin loading mechanism with no additional registration required
 - **Dependencies**: CMP-descriptions output (enriched task list) — linear successor in the DM → DE → FJ chain
 
 `CMP-final-validation`: Final validation
 - **Description**: Dedicated validation task that runs 3 cross-cutting checks after the fsm.json artifact is finalized. Catches issues that incremental phase checks cannot detect because they span the complete task definition. SKILL.md validation (frontmatter check) is handled by CMP-skill-md's self-validation and is not repeated here.
 - **Responsibilities**:
-  - **Cycle detection**: Verify no circular dependencies exist in the fsm.json draft's `blockedBy` graph using Kahn's algorithm (BFS-based topological sort). Initialize each node's in-degree from the `blockedBy` graph; enqueue nodes with in-degree 0; repeatedly dequeue a node, decrement in-degrees of its dependents, and enqueue any that reach 0. If the sort does not consume all nodes, the unconsumed nodes are involved in cycle(s). Report the set of unconsumed task IDs and labels. O(V+E) complexity, deterministic. Does not report exact cycle paths; for small author-created workflows the involved-node set is sufficient to identify and fix the issue.
+  - **Cycle detection**: Verify no circular dependencies exist in the fsm.json draft's `blockedBy` graph using Kahn's algorithm (BFS-based topological sort) via programmatic tool invocation (e.g., a Python script) rather than agent reasoning in natural language. Initialize each node's in-degree from the `blockedBy` graph; enqueue nodes with in-degree 0; repeatedly dequeue a node, decrement in-degrees of its dependents, and enqueue any that reach 0. If the sort does not consume all nodes, the unconsumed nodes are involved in cycle(s). Report the set of unconsumed task IDs and labels. O(V+E) complexity, deterministic. Does not report exact cycle paths; for small author-created workflows the involved-node set is sufficient to identify and fix the issue.
   - **Self-containment audit**: Re-verify every task description stands alone using the self-containment checklist. Each description must contain: (a) **goal statement** — what the task accomplishes, (b) **specific actions** — what the agent should do, (c) **acceptance criteria** — how to know when done, (d) **no undefined references** — every term is either defined within the description or includes a pointer to its definition in code or project documentation. Flag any description that fails any checklist item, references the SKILL.md text, sibling tasks, or assumes context not present in the description.
   - **Structural integrity**: Verify fsm.json draft is a valid JSON array, each entry has required fields (`id`, `subject`, `description`, `activeForm`, `blockedBy`) with correct types (`id`: integer, `subject`: string, `description`: string, `activeForm`: string, `blockedBy`: array of integers), all IDs are unique, all `blockedBy` references resolve, and each entry contains `metadata` as an object with an `fsm` key whose value is a non-empty string matching the skill name. Confirm file targets the correct directory (`plugins/<plugin>/skills/<skill>/`).
+  - **Name consistency**: Verify that the `metadata.fsm` value in fsm.json matches the SKILL.md frontmatter `name` field. This requires access to the SKILL.md content produced by CMP-skill-md.
   - When a self-containment issue is detected, the author corrects the description in-place within the final validation task — no regression to the description writing phase is needed. Re-evaluate the corrected description before proceeding.
   - Present pass/fail results per check with specific issues listed for each failure. Do not finalize until all checks pass.
-- **Dependencies**: CMP-fsm-json output (fsm.json draft)
+- **Dependencies**: CMP-fsm-json-finalize output (fsm.json draft). Also requires access to SKILL.md content (produced by CMP-skill-md) for name-consistency check — CMP-skill-md completes independently and its output is available on disk by the time CMP-final-validation runs
 
 ## Data Transformation
 
@@ -226,7 +232,7 @@ Each phase adds specific fields to the cumulative artifact as it flows through t
 | Normalize | CMP-normalize | `label`, `description` | `{label, description}` |
 | Dependency map | CMP-dependency-map | `task_id`, `blockedBy[]` | `{task_id, label, description, blockedBy[]}` |
 | Descriptions | CMP-descriptions | `activeForm` (replaces `description`) | `{task_id, label, description, activeForm, blockedBy[]}` |
-| Finalize | CMP-fsm-json | `metadata` | `{task_id, label/subject, description, activeForm, blockedBy[], metadata}` |
+| Finalize | CMP-fsm-json-finalize | `metadata` | `{task_id, label/subject, description, activeForm, blockedBy[], metadata}` |
 
 Task IDs (`task_id`) are assigned by CMP-dependency-map after dependencies order the tasks — not during normalization. The `label` field from normalize maps to `subject` in the final fsm.json output.
 
@@ -243,7 +249,7 @@ This approach is consistent with how FSM tasks already work — the agent retain
 The following protocol governs how the partial fsm.json artifact is maintained during progressive construction at runtime:
 
 - **Representation**: The artifact is maintained as a JSON structure in conversation context. Each phase updates the structure in place, producing a visible intermediate state that subsequent phases can reference.
-- **Verification**: Each phase updates all entries before completing. When dependency mapping adds `blockedBy`, it adds the field to every task stub. When description writing adds `description` and `activeForm`, it updates every entry. No phase completes with partial coverage across entries.
+- **Verification**: Each phase updates all entries before completing. When dependency mapping adds `blockedBy`, it adds the field to every task stub. When description writing adds `description` and `activeForm`, it updates every entry. No phase completes with partial coverage across entries. After each construction phase completes, the agent presents a phase-completion summary showing which entries were updated and the author confirms completeness before the next phase begins. This makes the all-entries-updated invariant observable during behavioral verification and aligns with the existing confirmation gate pattern.
 - **Recovery**: If the agent loses the in-progress artifact (e.g., due to context window limits), reconstruct from the most recent complete phase output visible in conversation history. The phase-gate validation at each step ensures that the last completed phase produced a verified artifact that can serve as the recovery baseline.
 
 ## Validation Scope
@@ -262,12 +268,13 @@ The following protocol governs how the partial fsm.json artifact is maintained d
 | Cycle detection (final) | CMP-final-validation | Final pass |
 | Self-containment audit (cross-cutting) | CMP-final-validation | Final pass |
 | Structural integrity (JSON, IDs, refs, types, metadata) | CMP-final-validation | Final pass |
+| Name consistency (SKILL.md name matches fsm.json metadata.fsm) | CMP-final-validation | Final pass |
 
 Phase checks handle format and completeness within one phase and use conversational validation — the agent identifies issues and works with the author to fix them inline during the task, with no formal output structure. CMP-skill-md self-validates SKILL.md content (frontmatter) and completes independently. CMP-descriptions runs the self-containment checklist on each description as it is drafted/approved, giving authors immediate feedback. Final checks handle cross-cutting concerns that require the complete fsm.json picture (self-containment audit as a safety net, cycle detection, structural integrity including field types and metadata content) and produce structured pass/fail results per check with specific issues listed for each failure — this is the only validation point with a defined presentation format. Cycle detection runs at both dependency-mapping and final-validation levels — early detection at CMP-dependency-map prevents wasted effort, while CMP-final-validation retains a cycle check as a final safety net.
 
 ## Confirmation Gate Mechanism
 
-Tasks that require author approval use AskUserQuestion (or equivalent user prompt) within task execution to implement confirmation gates. The task pauses execution, presents its output or proposal to the author, waits for approval or modification, incorporates any changes, then completes. The confirmation gate is not a separate task — it happens within the task that needs approval.
+Tasks that require author approval use a confirmation gate within task execution — any mechanism that blocks skill execution until the author responds. The task pauses execution, presents its output or proposal to the author, waits for approval or modification, incorporates any changes, then completes. The confirmation gate is not a separate task — it happens within the task that needs approval. Equivalence is defined by behavior (execution blocking until the author responds), not by tool name.
 
 ## Decisions
 

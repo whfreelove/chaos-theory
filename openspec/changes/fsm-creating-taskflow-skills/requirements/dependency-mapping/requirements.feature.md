@@ -111,13 +111,21 @@ The skill SHALL help authors express convergence (fan-in) and divergence (fan-ou
 Before finalizing, the skill SHALL present the complete dependency structure for author review and approval. The presentation MUST show all blocking relationships, parallel groups, and execution order clearly enough for the author to verify correctness.
 
 `@dependency-mapping:4.1`
-#### Scenario: Dependency summary presented to author
+#### Scenario: Dependency graph presented to author for review
 
 - Given the skill has encoded all task dependencies
 - When the skill reaches the confirmation step
-- Then the skill presents a summary showing every task and its blocking relationships
-- And the summary distinguishes serial chains from parallel groups
-- And the summary identifies fan-in and fan-out points
+- Then the skill SHALL present a summary showing every task and its blocking relationships
+- And the summary SHALL distinguish serial chains from parallel groups
+- And the summary SHALL identify fan-in and fan-out points
+
+`@dependency-mapping:4.1.1`
+#### Scenario: Dependency graph supports cycle detection via topological sort
+
+- Given the skill has encoded all task dependencies
+- When the skill constructs the dependency graph
+- Then the dependency graph SHALL support cycle detection via topological sort
+- And the skill SHALL be able to determine whether the graph is acyclic before proceeding
 
 `@dependency-mapping:4.2`
 #### Scenario: Author modifies dependencies after review
@@ -148,7 +156,7 @@ Before finalizing, the skill SHALL present the complete dependency structure for
 `@dependency-mapping:5`
 ### Rule: The skill SHALL support step list modifications during dependency mapping
 
-The step list is mutable during the dependency mapping phase. The author MAY add, remove, or rename tasks while encoding dependencies. Each modification SHALL trigger a dependency graph update and re-validation to maintain referential integrity.
+The step list SHALL be mutable during the dependency mapping phase. The author MAY add, remove, or rename tasks while encoding dependencies. Each modification SHALL trigger a dependency graph update and re-validation to maintain referential integrity.
 
 `@dependency-mapping:5.1`
 #### Scenario: Author removes a task during dependency mapping
@@ -166,9 +174,10 @@ The step list is mutable during the dependency mapping phase. The author MAY add
 - Given the author is in the dependency mapping phase with an approved step list
 - And the author identifies a missing task that needs to be added
 - When the author provides the new task's label and description
-- Then the skill adds the task to the step list and the dependency graph
-- And the skill asks the author to specify the new task's dependency relationships
-- And the skill re-validates the dependency graph for integrity
+- Then the skill SHALL apply a lightweight quality check against intake-quality criteria (specificity, actionability, scope) to the provided label and description
+- And the skill SHALL add the task to the step list and the dependency graph only after the quality check passes
+- And the skill SHALL ask the author to specify the new task's dependency relationships
+- And the skill SHALL re-validate the dependency graph for integrity
 
 `@dependency-mapping:5.3`
 #### Scenario: Author renames a task during dependency mapping
@@ -179,6 +188,16 @@ The step list is mutable during the dependency mapping phase. The author MAY add
 - Then the skill updates the task label in the step list and the dependency graph
 - And all existing dependency relationships for the renamed task are preserved
 - And the skill presents the updated graph to the author for confirmation
+
+`@dependency-mapping:5.4`
+#### Scenario: Author modifies a dependency during graph review introducing a circular dependency
+
+- Given the author is in the dependency mapping phase and is reviewing the dependency graph
+- And the current dependency graph is acyclic
+- When the author modifies a dependency relationship that introduces a circular dependency
+- Then the skill SHALL detect the cycle during re-validation
+- And the skill SHALL report the tasks involved in the cycle to the author
+- And the skill SHALL NOT accept the modification until the cycle is resolved
 
 `@dependency-mapping:6`
 ### Rule: The skill SHALL handle single-task workflows during dependency mapping

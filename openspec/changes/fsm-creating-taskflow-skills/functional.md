@@ -36,6 +36,7 @@ None.
 - Precision of internal terminology in capability descriptions (e.g., 'underlying task file structure' phrasing in skill-file-generation)
 - Verifiable criteria distinguishing "targeted questions" from "generic questions" in brainstorming intake guidance (workflow-intake:4.2)
 - Session resumption or recovery after workflow interruption
+- Recovery fallback for total context compaction — the scenario where aggressive compaction removes all intermediate artifacts from visible conversation history is deferred to a future release; the phase-gate architecture makes total context loss unlikely
 
 ### Known Risks
 
@@ -44,11 +45,13 @@ None.
 - Task granularity matters: overly broad tasks may lose important details during execution, while tasks that are too small create unnecessary overhead — the skill must guide authors toward appropriately-sized tasks
 - Input-based intake sources may yield no usable material — brainstorming runs sequentially after them to fill gaps or generate ideas from scratch; if brainstorming also yields nothing, the workflow terminates gracefully
 - Session interruption requires restarting the workflow from the beginning — no resume capability exists
-- Large workflows may have poor UX during dependency mapping when presenting all existing tasks for relationship specification — no upper workflow size limit is defined, and no scalability criteria (pagination, search, grouping) exist for presenting tasks during dependency mapping
+- Large workflows may have poor UX during dependency mapping when presenting all existing tasks for relationship specification — at 15-20 tasks, the agent warns the author and suggests grouping related tasks for review; no hard upper limit is enforced, and no scalability criteria (pagination, search) exist beyond the grouping suggestion
 
 ## Brainstorming Gap Taxonomy
 
-When the brainstorming gap-filling step reviews prior intake material to identify gaps or thin areas, verifiers evaluate brainstorming effectiveness against four categories:
+The Brainstorming Gap Taxonomy is a post-hoc evaluation framework, not an intake-time detection mechanism. The four categories below are used when verifiers evaluate whether brainstorming effectively filled gaps in prior intake material — not when the intake process itself runs. During intake, the brainstorming step simply identifies gaps and fills them; these categories structure how verifiers assess whether that gap-filling was thorough.
+
+When evaluating brainstorming effectiveness, verifiers assess against four categories:
 
 1. **Structural gaps** — Missing workflow phases. The intake material describes some phases of the workflow but omits entire phases that a complete workflow would include (e.g., intake material covers setup and execution but has no validation or cleanup phase).
 2. **Depth gaps** — Phases with insufficient detail to act on. A phase is named or mentioned but lacks enough specificity for an agent to execute it (e.g., "handle configuration" without specifying what configuration actions are performed).
@@ -63,3 +66,4 @@ These categories provide a concrete checklist for evaluating whether the brainst
 - Two input-based intake paths provide dedicated guidance for each source type (existing skill, written steps), with brainstorming as a gap-filling step that builds on prior intake material
 - The skill validates work at each phase and runs a comprehensive final check before deployment
 - Each task description is self-contained and serves as the sole instruction source — the author does not need to worry about what context survives after compaction
+- **Capability boundary expansion**: This change expands the FSM plugin's capability boundary to include authoring-time file production — the skill generates SKILL.md and fsm.json files on disk. The project-level functional description will be updated at merge time to reflect the expanded boundary

@@ -1049,3 +1049,255 @@
 - **Triage**: check-in
 - **Decision**: Add enumerated verification checklists to each behavioral verification task description in tasks.yaml. Each checklist itemizes the Rules from the corresponding infra.md coverage table, making coverage explicit and partial failures detectable without splitting into separate tasks.
 - **Outcome**: Added Rule-level verification checklists to all 5 behavioral-verification tasks in tasks.yaml. Each checklist itemizes the Rules from the corresponding infra.md coverage table: workflow-intake (4 Rules), dependency-mapping (5 Rules), self-contained-descriptions (4 Rules), skill-file-generation (3 Rules), workflow-validation (3 Rules). Checklists use [ ] checkbox format for tracking partial pass/fail at the Rule level.
+
+### GAP-137: Confirmation gate mechanism uses undefined "equivalent" qualifier
+- **Severity**: medium
+- **Source**: implicit-detection
+- **Status**: resolved
+- **Description**: The Confirmation Gate Mechanism (technical.md) specifies that confirmation gates use "AskUserQuestion (or equivalent user prompt)" but does not define what qualifies as an "equivalent" prompt mechanism. The same phrasing appears in infra.md's verification-by-design section. An implementor writing task descriptions that instruct the agent to pause for author approval would not know whether alternative mechanisms (e.g., a plain text question without AskUserQuestion, TodoWrite with a question, or other prompting patterns) satisfy the "equivalent" qualifier. This could lead to inconsistent confirmation gate implementations across tasks, where some use AskUserQuestion and others use an undefined alternative.
+- **Triage**: check-in
+- **Decision**: Replace "AskUserQuestion (or equivalent user prompt)" with a functional definition: "any mechanism that blocks skill execution until the author responds." Define equivalence by behavior (execution blocking), not by tool name. Apply consistently in technical.md Confirmation Gate Mechanism and infra.md verification-by-design.
+- **Outcome**: Updated technical.md Confirmation Gate Mechanism to use "any mechanism that blocks skill execution until the author responds" with behavioral equivalence definition. Updated infra.md "Verification by design" section header and body to remove tool-specific phrasing and use the functional definition consistently.
+
+### GAP-138: No recovery fallback for total context compaction
+- **Severity**: low
+- **Source**: implicit-detection
+- **Status**: resolved
+- **Description**: The Progressive Construction Protocol's Recovery clause (technical.md, State Management section) states that if the agent loses the in-progress artifact, it should "reconstruct from the most recent complete phase output visible in conversation history." The procedure assumes that at least one complete phase output remains visible after context compaction. No guidance exists for the scenario where aggressive compaction removes all intermediate artifacts from the visible conversation history, leaving no recovery baseline.
+- **Triage**: defer-release
+- **Decision**: Record in functional.md Out of Scope: "Recovery fallback for total context compaction" — the scenario where aggressive compaction removes all intermediate artifacts is deferred to a future release. The phase-gate architecture makes total context loss unlikely, and session resumption is already out of scope.
+- **Outcome**: Added "Recovery fallback for total context compaction" to functional.md Out of Scope section with rationale that phase-gate architecture makes total context loss unlikely.
+
+### GAP-139: No actionable guidance for large workflow UX during dependency mapping
+- **Severity**: medium
+- **Source**: implicit-detection
+- **Status**: resolved
+- **Description**: The Known Risks section (functional.md) documents that large workflows may have poor UX during dependency mapping because "no upper workflow size limit is defined, and no scalability criteria (pagination, search, grouping) exist for presenting tasks during dependency mapping." While this is acknowledged as a risk, neither functional.md nor technical.md provides any actionable guidance for the implementor: no recommended maximum task count, no warning threshold at which the skill should advise the author about potential UX issues, and no fallback presentation strategy.
+- **Triage**: check-in
+- **Decision**: Define a soft threshold of 15-20 tasks where the agent warns the author that the workflow is large and suggests grouping related tasks for review during dependency mapping. No hard limit. Add guidance to CMP-dependency-map and the Known Risks entry with the threshold and recommendation.
+- **Outcome**: Added soft threshold guidance (15-20 tasks) to CMP-dependency-map responsibilities in technical.md. Updated Known Risks entry in functional.md to reflect the threshold and grouping suggestion.
+
+### GAP-140: Author not informed of ID renumbering during finalization
+- **Severity**: low
+- **Source**: implicit-detection
+- **Status**: resolved
+- **Description**: During authoring, CMP-dependency-map assigns task IDs sequentially. However, CMP-fsm-json renumbers all task IDs to topological order. The documentation does not specify whether the author is informed that the IDs they interacted with during dependency mapping and description writing will change in the final output.
+- **Triage**: delegate
+- **Decision**: Add to CMP-fsm-json-finalize's responsibilities: after renumbering, present the old-to-new ID mapping to the author so they are aware of the ID changes. Minimal disclosure step, no workflow disruption.
+- **Outcome**: Added ID mapping disclosure step to CMP-fsm-json-finalize responsibilities in technical.md: "After renumbering, present the old-to-new ID mapping to the author so they are aware of the ID changes."
+
+### GAP-141: No cross-artifact name consistency check between SKILL.md and fsm.json metadata
+- **Severity**: medium
+- **Source**: design-critic
+- **Status**: resolved
+- **Description**: The SKILL.md template specifies a `name` field and CMP-fsm-json writes a `metadata.fsm` block. No cross-artifact consistency requirement exists ensuring that the skill name recorded in SKILL.md matches the corresponding identifier written into the FSM JSON metadata.
+- **Triage**: check-in
+- **Decision**: Add a name-consistency check to CMP-final-validation's structural integrity: verify that the metadata.fsm value in fsm.json matches the SKILL.md frontmatter `name` field. This creates a new dependency — CMP-final-validation needs access to SKILL.md content.
+- **Outcome**: Added "Name consistency" check to CMP-final-validation responsibilities in technical.md. Updated CMP-final-validation dependencies to note access to SKILL.md content from CMP-skill-md. Added name consistency row to Validation Scope table.
+
+### GAP-142: Progressive construction invariant has no observable verification criterion
+- **Severity**: high
+- **Source**: technical-critic
+- **Status**: resolved
+- **Description**: The Progressive Construction Protocol specifies that "each phase updates all entries before completing" as an invariant, but no workflow-validation requirement scenario covers this invariant, and no observable criterion exists to verify it holds.
+- **Triage**: check-in
+- **Decision**: Add a phase-completion summary gate: after each construction phase (dependency mapping adds blockedBy, description writing adds description + activeForm), the agent presents a summary showing which entries were updated and the author confirms completeness.
+- **Outcome**: Updated Progressive Construction Protocol Verification clause in technical.md to include phase-completion summary gate with author confirmation. Added workflow-validation:1.7 scenario to requirements/workflow-validation/requirements.feature.md for phase-completion summary confirmation.
+
+### GAP-143: Cycle detection execution model unspecified (agent reasoning vs tool invocation)
+- **Severity**: medium
+- **Source**: technical-critic
+- **Status**: resolved
+- **Description**: The dependency-mapping workflow specifies cycle detection using Kahn's algorithm at the graph review step. The technical design does not specify whether cycle detection is performed by the agent reasoning over the graph, by a programmatic tool invocation, or by some other mechanism.
+- **Triage**: check-in
+- **Decision**: Specify tool invocation as the execution model for cycle detection. The agent invokes a programmatic tool (e.g., a Python script) to perform Kahn's algorithm deterministically, rather than reasoning through the algorithm in natural language.
+- **Outcome**: Updated CMP-dependency-map and CMP-final-validation cycle detection in technical.md to specify programmatic tool invocation. Updated tasks.yaml entry 6 (dependency mapping) to include "via programmatic tool invocation" for cycle detection.
+
+### GAP-144: Mixed normative strength in self-contained-descriptions Then clauses
+- **Severity**: medium
+- **Source**: requirements-critic
+- **Status**: resolved
+- **Description**: The self-contained-descriptions rule in the requirements file mixes normative strength within a single Then block — some clauses use SHALL and others use plain present tense.
+- **Triage**: check-in
+- **Decision**: Normalize all Then clauses in the self-contained-descriptions requirements to consistent SHALL phrasing. Every Then clause in a Rule's scenarios imposes a testable obligation.
+- **Outcome**: Updated all Then and And clauses in requirements/self-contained-descriptions/requirements.feature.md to use consistent SHALL/SHALL NOT phrasing across all scenarios (1.1-1.5, 2.1-2.3, 3.1-3.3, 4.1-4.2).
+
+### GAP-145: Dependency-mapping Rule 5 preamble uses non-normative present tense
+- **Severity**: medium
+- **Source**: requirements-critic
+- **Status**: resolved
+- **Description**: The dependency-mapping Rule 5 preamble uses declarative present tense to express a mutability guarantee about the task list state.
+- **Triage**: check-in
+- **Decision**: Rewrite the Rule 5 preamble to use SHALL: "The step list SHALL be mutable during the dependency mapping phase."
+- **Outcome**: Updated Rule 5 preamble in requirements/dependency-mapping/requirements.feature.md from "The step list is mutable" to "The step list SHALL be mutable."
+
+### GAP-146: Workflow-validation final validation Then clause references internal state
+- **Severity**: medium
+- **Source**: requirements-critic
+- **Status**: resolved
+- **Description**: The workflow-validation final validation rule's Then clause describes internal algorithm state — it references what the validation pass has internally determined — rather than specifying an observable output or behavior that a tester can verify from outside the component.
+- **Triage**: check-in
+- **Decision**: Rewrite the Then clause to reference the validation report presented to the author rather than internal algorithm state.
+- **Outcome**: Rewrote workflow-validation:2.2 scenario Then clauses in requirements/workflow-validation/requirements.feature.md to reference observable output: "the skill SHALL present validation results indicating whether the dependency graph is acyclic" and "the skill SHALL report the set of task IDs and labels involved in cycle(s) to the author."
+
+### GAP-147: Compound Then block in dependency-mapping graph review mixes concerns
+- **Severity**: medium
+- **Source**: requirements-critic
+- **Status**: resolved
+- **Description**: The dependency-mapping graph review rule contains a compound Then block that mixes a presentation obligation (displaying the graph to the author) with a capability assertion (the graph representation supports cycle detection).
+- **Triage**: check-in
+- **Decision**: Split into two independently testable scenarios: one for graph presentation to the author, and one for cycle detection readiness.
+- **Outcome**: Split dependency-mapping:4.1 into two scenarios in requirements/dependency-mapping/requirements.feature.md: 4.1 (graph presentation to author for review) and 4.1.1 (dependency graph supports cycle detection via topological sort).
+
+### GAP-148: Workflow-intake scenarios use "accepted" as internal state label
+- **Severity**: low
+- **Source**: requirements-critic
+- **Status**: resolved
+- **Description**: The workflow-intake scenarios for the no-modification path and the minor-adjustment path define "accepted" as the observable outcome. "Accepted" is an internal state label, not an observable behavior.
+- **Triage**: delegate
+- **Decision**: Replace "accepted" in scenario outcomes with the observable behavior: "the skill advances to the normalization phase with the contributed material" or "the skill presents the step list for normalization."
+- **Outcome**: Updated workflow-intake:2.3 and 3.1 Then clauses in requirements/workflow-intake/requirements.feature.md to use observable behaviors: "the skill SHALL present the step list for normalization without modification" and "the skill SHALL advance to the normalization phase with the contributed material."
+
+### GAP-149: No scenario for cycle introduced by modification during dependency mapping review
+- **Severity**: medium
+- **Source**: requirements-coverage-critic
+- **Status**: resolved
+- **Description**: The requirements define scenarios for cycles introduced during the initial graph construction, but no scenario covers the case where a cycle is introduced by a task modification made during the dependency mapping graph review step.
+- **Triage**: check-in
+- **Decision**: Add a new scenario under dependency-mapping:5 (step list modifications): "Author modifies a dependency during the graph review step, introducing a circular dependency. The skill detects the cycle during re-validation and reports the involved tasks before accepting the modification."
+- **Outcome**: Added dependency-mapping:5.4 scenario to requirements/dependency-mapping/requirements.feature.md covering modification-introduced cycles during graph review with re-validation and cycle reporting.
+
+### GAP-150: Brainstorming Gap Taxonomy implies intake-time detection
+- **Severity**: medium
+- **Source**: validation-critic
+- **Status**: resolved
+- **Description**: The Brainstorming Gap Taxonomy (functional.md) defines depth and consistency as gap categories alongside coverage and clarity. No workflow-intake rule addresses depth gaps or consistency gaps. The taxonomy describes a classification the system is expected to support, but the intake requirements and verification infrastructure only demonstrably cover a subset of the defined categories.
+- **Triage**: check-in
+- **Decision**: Clarify that the Brainstorming Gap Taxonomy is a post-hoc evaluation framework, not an intake-time detection mechanism. Add clarifying language to functional.md's taxonomy section.
+- **Outcome**: Added clarifying preamble to functional.md Brainstorming Gap Taxonomy section explaining it is a post-hoc evaluation framework used by verifiers, not an intake-time detection mechanism.
+
+### GAP-151: No coverage row for SKILL.md self-validation path
+- **Severity**: low
+- **Source**: verification-critic
+- **Status**: resolved
+- **Description**: The infra.md coverage table for skill-file-generation does not include a row for the SKILL.md self-validation and re-validation scenario.
+- **Triage**: delegate
+- **Decision**: Add a coverage row to infra.md's skill-file-generation table for Rule 2 (self-validation).
+- **Outcome**: Added "Rule 2 (self-validation): SKILL.md self-validation" coverage row to infra.md skill-file-generation table with verification approach for triggering and verifying self-validation failure and re-validation.
+
+### GAP-152: No setup procedure for empty-sources precondition in verification
+- **Severity**: medium
+- **Source**: verification-critic
+- **Status**: resolved
+- **Description**: The workflow-intake requirements include a scenario where all brainstorming sources are empty. The infra.md verification approach does not specify how to reproducibly establish this precondition.
+- **Triage**: check-in
+- **Decision**: Add an explicit setup procedure to infra.md for the empty-sources precondition.
+- **Outcome**: Added empty-sources setup procedure to infra.md workflow-intake Rule 4 verification approach: start fresh session, invoke skill, provide no input to either intake source, brainstorming receives zero prior material.
+
+### GAP-153: No boundary verification example for single-task dependency prompting
+- **Severity**: low
+- **Source**: verification-critic
+- **Status**: resolved
+- **Description**: infra.md provides no boundary verification example for what "relationship prompting with all existing tasks" looks like at the boundary where the workflow contains exactly one existing task before the addition.
+- **Triage**: delegate
+- **Decision**: Add a boundary verification example to infra.md for single-task prompting.
+- **Outcome**: Added single-task boundary example to infra.md dependency-mapping Rule 5 verification approach with pass/fail criteria for referencing the existing task by name.
+
+### GAP-154: No coverage row for single-task workflow boundary case
+- **Severity**: medium
+- **Source**: design-for-test-critic
+- **Status**: resolved
+- **Description**: The infra.md coverage table for dependency-mapping does not include a row for the single-task boundary case (Rule 6).
+- **Triage**: check-in
+- **Decision**: Add a coverage row to infra.md's dependency-mapping table for Rule 6 (single-task workflows).
+- **Outcome**: Added "Rule 6: Single-task workflows" coverage row to infra.md dependency-mapping table with verification approach for empty dependency graph and immediate progression.
+
+### GAP-155: File-write mechanism unspecified for CMP-skill-md and CMP-fsm-json
+- **Severity**: medium
+- **Source**: logic-critic
+- **Status**: resolved
+- **Description**: The technical design describes CMP-skill-md and CMP-fsm-json as components that produce SKILL.md and the FSM JSON file respectively, but the mechanism by which these components write files to the filesystem is implicit.
+- **Triage**: check-in
+- **Decision**: Specify the Write tool (Claude Code's native file creation tool) as the file-write mechanism in CMP-skill-md and CMP-fsm-json-finalize component responsibilities.
+- **Outcome**: Added "Write the SKILL.md file to disk using the Write tool" to CMP-skill-md responsibilities and "Write the fsm.json file to disk using the Write tool" to CMP-fsm-json-finalize responsibilities in technical.md.
+
+### GAP-156: No CI/CD exclusion acknowledgment for behavioral verification
+- **Severity**: low
+- **Source**: test-tasks-critic
+- **Status**: resolved
+- **Description**: The infra.md Testing Strategy section does not acknowledge the absence of automated CI/CD integration for behavioral verification.
+- **Triage**: delegate
+- **Decision**: Add an explicit acknowledgment to infra.md Testing Strategy: "Behavioral verification is manual by design — no automated CI/CD integration is defined for behavioral tests because the outputs are agent actions guided by prose descriptions, not deterministic function outputs."
+- **Outcome**: Added "CI/CD exclusion" paragraph to infra.md Testing Strategy section explicitly stating behavioral verification is manual by design with no automated CI/CD integration.
+
+### GAP-157: Behavioral verification tasks lack setup preamble
+- **Severity**: high
+- **Source**: test-infra-critic
+- **Status**: resolved
+- **Description**: The behavioral verification tasks in the implementation plan do not include or reference a setup task that establishes the verification environment prerequisites described in infra.md.
+- **Triage**: check-in
+- **Decision**: Add a setup preamble task as the first entry in the behavioral-verification group of tasks.yaml.
+- **Outcome**: Added setup preamble task as the first entry in the behavioral-verification group of tasks.yaml with concrete steps: verify FSM plugin installation, verify skill deployment, start fresh session, invoke skill, verify hydration succeeds with 9 task files.
+
+### GAP-158: Testing strategy contradicts task plan on pytest test additions
+- **Severity**: medium
+- **Source**: test-infra-critic
+- **Status**: resolved
+- **Description**: The infra.md Testing Strategy states that no new pytest tests are added as part of this change. The validation-enhancement tasks in the implementation plan add new pytest tests. The strategy claim and the task plan are contradictory.
+- **Triage**: check-in
+- **Decision**: Update infra.md Testing Strategy to distinguish behavioral from structural tests.
+- **Outcome**: Updated infra.md Testing Strategy from "No new pytest tests are added" to "No new behavioral verification pytest tests are added. Structural validation tests in the validation-enhancement group extend the existing hydration pipeline's field checking — these are code changes to validate_fsm_tasks, not behavioral tests."
+
+### GAP-159: OBJ-requirements-coverage describes process goal, not verifiable state
+- **Severity**: low
+- **Source**: test-infra-critic
+- **Status**: resolved
+- **Description**: The OBJ-requirements-coverage objective in infra.md describes a process goal rather than a measurable operational outcome.
+- **Triage**: delegate
+- **Decision**: Reframe OBJ-requirements-coverage from a process goal to a verifiable state: "Each requirement rule in the requirements files has at least one corresponding scenario."
+- **Outcome**: Updated OBJ-requirements-coverage in infra.md from "Each requirement capability has a documented verification approach" to "Each requirement rule in the requirements files has at least one corresponding scenario with a documented verification approach."
+
+### GAP-160: File production capability not reflected in change functional boundary
+- **Severity**: low
+- **Source**: functional-consistency-critic
+- **Status**: resolved
+- **Description**: The skill-file-generation capability introduces filesystem write operations that expand the FSM plugin's scope beyond what project-level functional documentation describes for the plugin.
+- **Triage**: delegate
+- **Decision**: Add a delta note in the change's functional.md documenting that this change expands the FSM plugin's capability boundary to include authoring-time file production.
+- **Outcome**: Added "Capability boundary expansion" delta note to functional.md What Changes section documenting that this change adds authoring-time file production (SKILL.md + fsm.json generation), with note that project-level functional description will be updated at merge time.
+
+### GAP-161: Change-local CMP-fsm-json identifier collides with project-level component
+- **Severity**: medium
+- **Source**: technical-consistency-critic
+- **Status**: resolved
+- **Description**: This change defines a component using the identifier CMP-fsm-json. The same identifier is used by an existing project-level component in the technical architecture.
+- **Triage**: check-in
+- **Decision**: Rename the change-local component from CMP-fsm-json to CMP-fsm-json-finalize. This accurately describes the component's role (finalization of the progressively-built artifact, not full generation) and disambiguates it from the project-level CMP-fsm-json. All references in the change's specs must be updated.
+- **Outcome**: Renamed CMP-fsm-json to CMP-fsm-json-finalize across all change spec files: technical.md (component definition, architecture section, data flow table, data transformation table, dependencies), tasks.yaml (entry 8 Covers annotation). Description fields in gaps.md and resolved.md entries are immutable history and were not renamed.
+
+### GAP-162: Project-level no-cycle-detection Y-statement reads as blanket constraint
+- **Severity**: medium
+- **Source**: technical-consistency-critic
+- **Status**: resolved
+- **Description**: The project-level technical documentation includes a no-cycle-detection Y-statement scoped to runtime behavior, but the statement reads as a blanket constraint. This change adds authoring-time cycle detection as a new capability. The project Y-statement does not acknowledge the scope boundary between runtime and authoring-time.
+- **Triage**: check-in
+- **Decision**: Update the project-level Y-statement in project technical.md now to add a "runtime only" scope qualifier, clarifying that the no-cycle-detection decision applies to runtime execution, not authoring-time tooling.
+- **Outcome**: Updated the no-cycle-detection Y-statement in openspec/finite-skill-machine/technical.md to add "at runtime" scope qualifier and explicit note that authoring-time tooling may perform cycle detection during workflow construction.
+
+### GAP-163: Skill discoverability mechanism undefined after file generation
+- **Severity**: medium
+- **Source**: implementation-critic
+- **Status**: resolved
+- **Description**: No component in this change specifies what the FSM plugin requires to discover and register a newly generated skill beyond the file being placed in the expected directory structure.
+- **Triage**: check-in
+- **Decision**: Document that the FSM plugin discovers skills via filesystem convention: skills placed in `plugins/<plugin>/skills/<skill>/` with both SKILL.md and fsm.json are automatically discovered by Claude Code's plugin loading mechanism. No registration steps, index updates, manifest changes, or reload signals are required.
+- **Outcome**: Added "Skill discoverability" technical notes to both CMP-skill-md and CMP-fsm-json-finalize component descriptions in technical.md documenting the filesystem convention for automatic discovery by Claude Code's plugin loading mechanism.
+
+### GAP-164: Tasks added during dependency mapping bypass intake quality criteria
+- **Severity**: medium
+- **Source**: integration-coverage-critic
+- **Status**: resolved
+- **Description**: A task added during dependency mapping (per the dependency-mapping task-addition rule) bypasses the intake validation gate entirely. The label and initial description provided at the dependency-mapping step are never evaluated against intake-phase quality criteria for specificity, actionability, and scope.
+- **Triage**: check-in
+- **Decision**: Add a lightweight quality check during dependency-mapping task addition: when the author provides a new task's label and description, the agent applies intake-quality criteria (specificity, actionability, scope) before adding it to the graph. Update CMP-dependency-map responsibilities and the dependency-mapping:5.2 scenario.
+- **Outcome**: Added lightweight quality check against intake-quality criteria to CMP-dependency-map responsibilities in technical.md for task additions during dependency mapping. Updated dependency-mapping:5.2 scenario in requirements/dependency-mapping/requirements.feature.md to include quality check step before task addition.

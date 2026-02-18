@@ -85,7 +85,7 @@ When the author provides an existing skill, the skill SHALL analyze its structur
 - Given the skill has presented extracted steps from an existing skill
 - When the skill asks the author to review the extracted steps
 - And the author confirms the steps as presented
-- Then the skill accepts the step list without modification
+- Then the skill SHALL present the step list for normalization without modification
 
 `@workflow-intake:2.4`
 #### Scenario: Author modifies extracted steps
@@ -115,8 +115,8 @@ When the author provides written step descriptions, the skill SHALL normalize th
 
 - Given the author provides step descriptions that are specific, actionable, and appropriately scoped
 - When the skill evaluates the descriptions
-- Then the skill accepts the descriptions with at most minor formatting adjustments
-- And the skill presents the normalized step list for confirmation
+- Then the skill SHALL advance to the normalization phase with the contributed material, applying at most minor formatting adjustments
+- And the skill SHALL present the normalized step list for confirmation
 
 `@workflow-intake:3.2`
 #### Scenario: Descriptions that do not specify what work is performed prompt clarifying questions
