@@ -96,7 +96,12 @@ Thinking like an experienced technical writer improving documentation accuracy, 
 
 2. Call a Task tool subagent with the code block below as a prompt:
     - Model: Opus
-    - Skills: `ce:documenting-systems`, `tokamak:managing-spec-gaps`
+    - Skills:
+      - `tokamak:managing-spec-gaps`
+      - `writing-functional-specs`
+      - `writing-markdown-gherkin`
+      - `writing-technical-design`
+      - `writing-y-statements`
     - Files: `${PROJECT_ROOT}/openspec/changes/<change>`
         - `gaps.md`
         - `resolved.md`

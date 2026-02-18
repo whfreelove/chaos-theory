@@ -178,6 +178,9 @@ artifacts:
       infrastructure to document — work with user on all choices.
 
 
+      Invoke skill: `tokamak:writing-infra-specs` for infrastructure specification concepts.
+
+
       Section purposes:
 
       - **Context**: Infrastructure constraints, hosting preferences,

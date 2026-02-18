@@ -215,6 +215,9 @@ artifacts:
       operate, and validate this change using EXISTING infrastructure.
 
 
+      Invoke skill: `tokamak:writing-infra-specs` for infrastructure specification concepts.
+
+
       IMPORTANT: infra.md does NOT propose infrastructure changes. Changes to
       infrastructure itself (new services, topology changes, new dependencies)
       belong in technical.md because they affect other work in flight.

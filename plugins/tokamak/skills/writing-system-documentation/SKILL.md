@@ -63,4 +63,16 @@ Every concept needs a concrete example.
 
 ## Diagrams
 
-Use `Skill(ce:visualizing-with-mermaid)` for architecture and flow diagrams.
+Use Mermaid for architecture and flow diagrams. Key principles:
+- **Visual hierarchy over decoration** — use fills for grouping, stroke for critical paths
+- **Semantic shapes** — consistent shape-to-role mapping at your level of abstraction:
+
+  | Role | System level | Component level | Data flow level |
+  |------|-------------|-----------------|-----------------|
+  | Processing | rectangles (services, apps) | rounded rectangles (modules, classes) | rectangles (transforms, steps) |
+  | Boundaries | subgraphs (system boundaries) | rounded rectangles (interfaces, ports) | diamonds (decisions, branches) |
+  | Storage | cylinders (databases, stores) | cylinders (caches, queues) | parallelograms (inputs, outputs) |
+
+- **7-12 nodes max** — if you can't grasp it in 10 seconds, split it
+- **Layout** — LR for pipelines/data flow, TB for hierarchies/decision trees
+- **Styling** — max 5 colors, avoid pure black, ensure contrast on dark backgrounds

@@ -79,7 +79,7 @@ Respond with findings summary JSON list, e.g. [{"finding": "...", "status": "COV
 1. Get the next available gap ID: `${CLAUDE_PLUGIN_ROOT}/scripts/next_gap.sh openspec/changes/$0`
 2. Call a Task tool documentation subagent with the code block below as a prompt:
     - Model: Sonnet
-    - Skills: `ce:documenting-systems`, `tokamak:managing-spec-gaps`
+    - Skills: `tokamak:managing-spec-gaps`
     - Pass: critic findings, validation results, next available gap ID
     - Files: `${PROJECT_ROOT}/openspec/changes/$0`
         - `gaps.md`

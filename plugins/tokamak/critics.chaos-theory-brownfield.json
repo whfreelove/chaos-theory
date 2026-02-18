@@ -68,7 +68,7 @@
       "name": "Design for Test",
       "files": ["infra.md", "requirements", "integration.feature.md"],
       "model": "sonnet",
-      "skills": ["ce:writing-tests"],
+      "skills": ["writing-infra-specs"],
       "evaluate": "`infra.md` defines test environments, tooling, and data management needed to execute requirement scenarios; flag missing infrastructure"
     },
     {

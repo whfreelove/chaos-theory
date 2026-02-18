@@ -189,6 +189,9 @@ artifacts:
       Derive from actual infrastructure, not aspirational plans.
 
 
+      Invoke skill: `tokamak:writing-infra-specs` for infrastructure specification concepts.
+
+
       Section purposes:
 
       - **Context**: Current infrastructure state. Derived from CI configs,

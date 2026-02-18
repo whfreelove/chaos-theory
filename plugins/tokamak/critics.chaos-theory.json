@@ -68,7 +68,7 @@
       "name": "Design for Test",
       "files": ["infra.md", "requirements", "integration.feature.md"],
       "model": "sonnet",
-      "skills": ["ce:writing-tests"],
+      "skills": ["writing-infra-specs"],
       "evaluate": "`infra.md` defines test environments, tooling, and data management needed to execute requirement scenarios; flag missing infrastructure"
     },
     {
@@ -89,7 +89,7 @@
       "name": "Test Tasks",
       "files": ["tasks.yaml", "requirements", "infra.md", "integration.feature.md"],
       "model": "sonnet",
-      "skills": ["tokamak:writing-markdown-gherkin", "ce:writing-tests"],
+      "skills": ["tokamak:writing-markdown-gherkin", "writing-infra-specs"],
       "evaluate": "Tasks implement requirement scenarios as E2E/integration tests, following `infra.md` Testing Strategy"
     },
     {

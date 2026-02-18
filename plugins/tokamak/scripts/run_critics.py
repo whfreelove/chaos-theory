@@ -20,6 +20,15 @@ import sys
 from pathlib import Path
 
 
+def resolve_skill_content(skill_name: str) -> str | None:
+    """Read a tokamak skill's SKILL.md content."""
+    name = skill_name.removeprefix('tokamak:')
+    skill_file = Path(__file__).parent.parent / 'skills' / name / 'SKILL.md'
+    if skill_file.exists():
+        return skill_file.read_text()
+    return None
+
+
 ACCURACY_CRITICS = frozenset({
     "Capability Accuracy",
     "Requirement Accuracy",
@@ -98,6 +107,17 @@ def build_prompt(critic: dict, change_dir: Path,
     for f in critic['files']:
         parts.append(f"- `{change_dir}/{f}`")
     parts.append("")
+
+    # Skills guidance
+    skills = critic.get('skills', [])
+    if skills:
+        parts.append("## Skills Guidance\n")
+        for skill_name in skills:
+            content = resolve_skill_content(skill_name)
+            if content:
+                parts.append(f"### {skill_name}\n")
+                parts.append(content)
+                parts.append("")
 
     # Schema template instructions
     templates = critic.get('templates', {})
