@@ -96,9 +96,9 @@ The skill SHALL validate outputs at the end of each phase (intake, dependency ma
 `@workflow-validation:1.7`
 #### Scenario: Phase-completion summary confirms all entries updated before advancing
 
-- Given the agent has completed a construction phase (dependency mapping or description writing) for all tasks
+- Given the skill has completed a construction phase (dependency mapping or description writing) for all tasks
 - When the phase finishes updating all entries
-- Then the agent SHALL present a phase-completion summary showing which entries were updated
+- Then the skill SHALL present a phase-completion summary showing which entries were updated
 - And the author SHALL confirm completeness before the next phase begins
 - And the skill SHALL not advance to the next phase until the author confirms the summary
 
@@ -204,6 +204,16 @@ The skill SHALL run a complete validation pass across all workflow outputs befor
 - Then the structural validation check fails
 - And the skill reports the specific task entry and the invalid `blockedBy` reference
 - And the skill does not finalize until the dangling reference is corrected
+
+`@workflow-validation:2.12`
+#### Scenario: Structural validation fails when metadata.fsm does not match SKILL.md name
+
+- Given the skill is performing final validation on the generated task definition and SKILL.md
+- And the `metadata.fsm` value in a task entry does not match the SKILL.md frontmatter `name` field
+- When the skill checks the name consistency between fsm.json and SKILL.md
+- Then the structural validation check fails
+- And the skill reports the mismatch between the `metadata.fsm` value and the SKILL.md `name` field
+- And the skill does not finalize until the name mismatch is corrected
 
 `@workflow-validation:3`
 ### Rule: The skill SHALL present validation results clearly to the author

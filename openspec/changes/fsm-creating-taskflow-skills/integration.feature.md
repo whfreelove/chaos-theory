@@ -21,7 +21,7 @@ Cross-capability coverage is already captured by single-capability requirements:
 - `workflow-intake:1.2` + `workflow-validation:1.1` — Intake output is validated before dependency mapping begins, ensuring intake-to-normalization quality
 - `self-contained-descriptions:2.3` + `workflow-validation:2.1` — Descriptions are checked for self-containment both during writing and during final validation, catching implicit assumptions from dependency mapping
 - `workflow-validation:1.1`–`1.6` — Incremental phase-gate validation at each handoff point catches per-phase issues before they propagate
-- `workflow-validation:2.1`–`2.11` — Comprehensive final validation catches cross-cutting issues (cycles, self-containment, structural integrity) that span multiple artifacts
+- `workflow-validation:2.1`–`2.12` — Comprehensive final validation catches cross-cutting issues (cycles, self-containment, structural integrity, name consistency) that span multiple artifacts. CMP-final-validation fans in from CMP-fsm-json-finalize (blocking task dependency) and reads SKILL.md content produced by CMP-skill-md from disk for the name-consistency check (data-read dependency)
 
 Additionally, format specifications are repeated verbatim in each consuming task description (per technical.md decision on self-contained format specs), preventing format drift between phases by design rather than by integration test.
 

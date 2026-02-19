@@ -55,7 +55,7 @@ The skill SHALL provide dedicated guidance for transforming workflows from two i
 - When the brainstorming gap-filling step runs after the input-based intakes complete
 - Then the skill reviews the material from prior intakes and identifies gaps or thin areas
 - And the skill brainstorms additional steps to fill the identified gaps
-- And CMP-normalize combines all contributed material into a single step list
+- And the normalization step combines all contributed material into a single step list
 - And the author reviews the merged step list during the normalization confirmation gate
 - And the author SHALL be able to remove duplicates, resolve conflicts, or reorder steps in the combined list
 

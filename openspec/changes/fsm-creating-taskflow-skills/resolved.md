@@ -1301,3 +1301,183 @@
 - **Triage**: check-in
 - **Decision**: Add a lightweight quality check during dependency-mapping task addition: when the author provides a new task's label and description, the agent applies intake-quality criteria (specificity, actionability, scope) before adding it to the graph. Update CMP-dependency-map responsibilities and the dependency-mapping:5.2 scenario.
 - **Outcome**: Added lightweight quality check against intake-quality criteria to CMP-dependency-map responsibilities in technical.md for task additions during dependency mapping. Updated dependency-mapping:5.2 scenario in requirements/dependency-mapping/requirements.feature.md to include quality check step before task addition.
+
+### GAP-165: Lightweight quality check undefined for dependency-mapping task additions
+- **Severity**: Low
+- **Source**: implicit-detection
+- **Status**: resolved
+- **Description**: CMP-dependency-map responsibilities and dependency-mapping:5.2 require a "lightweight quality check against intake-quality criteria (specificity, actionability, scope)" when a task is added during dependency mapping, but do not define what makes the check "lightweight" versus the full intake evaluation performed by CMP-intake-written. An implementor cannot determine which checks to abbreviate or omit relative to the full intake path.
+- **Category**: delegate
+- **Decision**: Define "lightweight quality check" by enumeration in CMP-dependency-map and dependency-mapping:5.2. The lightweight check verifies: label is present and non-empty, description is non-empty and identifies distinct work (specificity), and the task describes a concrete action (actionability). It omits: splitting guidance for overly broad steps, iterative prompting for clarification, and full scope evaluation.
+- **Outcome**: Enumerated the lightweight quality check criteria in CMP-dependency-map responsibilities in technical.md (3 checks performed, 3 checks omitted). Updated dependency-mapping:5.2 scenario to specify the enumerated criteria and explicitly state what the lightweight check omits.
+
+### GAP-166: Cycle detection tool invocation uses "e.g." without commitment
+- **Severity**: Medium
+- **Source**: implicit-detection
+- **Status**: resolved
+- **Description**: CMP-dependency-map and CMP-final-validation both specify cycle detection "via programmatic tool invocation (e.g., a Python script)" but use "e.g." both times without committing to a specific invocation method. An implementor must decide the concrete tool mechanism (inline Python via Bash tool, standalone script file, or another approach) with no guidance on which to use or where to place a script if one is created.
+- **Category**: check-in
+- **Decision**: Remove "e.g." from both occurrences — commit to "a Python script." Python is the natural choice: hydrate-tasks.py is already Python, Python has built-in data structures for graph algorithms, and Kahn's algorithm is straightforward to implement. Whether inline or standalone is left to the implementor.
+- **Outcome**: Changed "via programmatic tool invocation (e.g., a Python script)" to "via programmatic tool invocation (a Python script)" in CMP-dependency-map and CMP-final-validation in technical.md. Also updated the matching text in tasks.yaml entry 6.
+
+### GAP-167: Minor formatting adjustments boundary undefined
+- **Severity**: Low
+- **Source**: implicit-detection
+- **Status**: resolved
+- **Description**: CMP-intake-written responsibilities and workflow-intake:3.1 specify accepting well-structured descriptions "with at most minor formatting adjustments" but do not define the boundary between minor formatting adjustments and substantive content changes. An implementor cannot distinguish permissible silent adjustments from changes that require author review.
+- **Category**: defer-release
+- **Decision**: Add to functional.md Out of Scope: precise boundary between minor formatting adjustments and substantive content changes during written step intake is deferred to implementation judgment.
+- **Outcome**: Added Out of Scope entry to functional.md deferring the minor formatting vs. substantive content boundary to implementation judgment.
+
+### GAP-168: SKILL.md body content structure undefined
+- **Severity**: Low
+- **Source**: implicit-detection
+- **Status**: resolved
+- **Description**: CMP-skill-md responsibilities and skill-file-generation Rule 1 specify SKILL.md frontmatter fields precisely but define body content only as "describing workflow steps in terms the skill's end user understands" in "author-facing language." No template, section structure, or content guidelines exist for the body beyond avoiding internal identifiers. An implementor must invent the body structure without reference material.
+- **Category**: defer-release
+- **Decision**: Add to functional.md Out of Scope: SKILL.md body content template or section structure guidelines are deferred — implementor determines body structure based on the existing constraint of author-facing language without internal identifiers.
+- **Outcome**: Added Out of Scope entry to functional.md deferring SKILL.md body content template to implementor judgment.
+
+### GAP-169: Task dependency diagram missing SKILL.md to final-validation edge
+- **Severity**: Medium
+- **Source**: design-critic
+- **Status**: resolved
+- **Description**: The task dependency graph mermaid diagram in technical.md does not include an edge from the SKILL.md component to the final validation component. GAP-141 resolved the name-consistency check by adding CMP-final-validation's dependency on SKILL.md content to the component text, but the authoritative diagram was not updated to reflect this fan-in dependency. The diagram and the component description are now inconsistent.
+- **Category**: delegate
+- **Decision**: Add a dashed edge `SM -.->|reads output| FV` to the mermaid diagram in technical.md. The dashed edge accurately represents a data-read dependency (name-consistency check reads SKILL.md from disk) without implying a blocking task dependency. CMP-skill-md completes independently; CMP-final-validation reads its output from disk.
+- **Outcome**: Added dashed edge `SM -.->|reads output| FV` to the mermaid diagram in technical.md. Updated the CMP-skill-md and CMP-final-validation bullet points below the diagram to describe the data-read dependency relationship.
+
+### GAP-170: Progressive Construction Protocol scale threshold undefined
+- **Severity**: Medium
+- **Source**: technical-critic
+- **Status**: resolved
+- **Description**: The Progressive Construction Protocol in technical.md defines no feasibility boundary for the protocol itself. The protocol maintains a JSON artifact in conversation context across all construction phases, and for larger workflows this artifact grows with every phase. No documented scale threshold identifies when the progressively maintained artifact itself creates context pressure that undermines the protocol's purpose.
+- **Category**: defer-release
+- **Decision**: Add to functional.md Out of Scope: scale threshold for the Progressive Construction Protocol's in-context artifact growth is deferred — real-world usage will reveal actual limits before a formal boundary is needed.
+- **Outcome**: Added Out of Scope entry to functional.md deferring the Progressive Construction Protocol scale threshold to real-world usage feedback.
+
+### GAP-171: Automatic graph updates vs prompted interaction conflict
+- **Severity**: Medium
+- **Source**: implementation-critic
+- **Status**: resolved
+- **Description**: The dependency-mapping capability description in functional.md states the skill performs automatic graph updates when new tasks are added. The CMP-dependency-map component in technical.md specifies that adding new dependency relationships requires prompted author interaction. The functional claim of automatic updates conflicts with the technical requirement of author-prompted interaction for new relationships.
+- **Category**: check-in
+- **Decision**: Two-phase clarification in functional.md. Update the dependency-mapping capability to distinguish automatic structural maintenance (node addition, dangling reference cleanup, rename propagation) from prompted author interaction for new dependency relationships. Both documents were partially correct — the functional description should clarify this nuance.
+- **Outcome**: Updated the dependency-mapping capability in functional.md to distinguish automatic structural maintenance (node addition, dangling reference cleanup, rename propagation) from prompted author interaction for new dependency relationships.
+
+### GAP-172: Internal component identifiers in requirement scenarios
+- **Severity**: Medium
+- **Source**: requirements-critic
+- **Status**: resolved
+- **Description**: Internal technical component identifiers appear in requirement scenario bodies. The skill-file-generation requirements reference a component identifier by name in a Rule body, and the workflow-intake requirements reference another component identifier in a Then clause. Requirement scenarios should describe observable author-facing behavior; exposing internal component names at the requirements layer creates coupling between the requirements and the technical design's naming choices.
+- **Category**: delegate
+- **Decision**: Rewrite affected scenarios to use purpose-based language. Replace "CMP-skill-md" with "the skill's documentation generation step" in skill-file-generation:2 Rule header and 2.1 scenario. Replace "CMP-normalize" with "the normalization step" in workflow-intake:1.4.
+- **Outcome**: Replaced "CMP-skill-md" with "the skill's documentation generation step" in skill-file-generation:2 Rule header and 2.1 scenario. Replaced "CMP-normalize" with "the normalization step" in workflow-intake:1.4 Then clause.
+
+### GAP-173: Inconsistent actor terminology in workflow-validation:1.7
+- **Severity**: Low
+- **Source**: requirements-critic
+- **Status**: resolved
+- **Description**: The phase-completion summary scenario in workflow-validation uses "agent" as the subject in one Then clause but "skill" in all other Then clauses within the same scenario. All other requirement scenarios consistently use "the skill" as the subject of Then clauses. This inconsistency creates ambiguity about whether the two subjects refer to different actors.
+- **Category**: delegate
+- **Decision**: Change "the agent" to "the skill" in workflow-validation:1.7 Then clause for consistency with the established convention across all requirement scenarios.
+- **Outcome**: Changed "the agent" to "the skill" in the Given and Then clauses of workflow-validation:1.7 for consistency with all other requirement scenarios.
+
+### GAP-174: Task definition serialization format unspecified
+- **Severity**: Medium
+- **Source**: requirements-coverage-critic
+- **Status**: resolved
+- **Description**: No requirement scenario specifies that the task definition output must be in JSON format. The skill-file-generation requirements list required fields but do not pin the serialization format. An implementor could produce the task definition as YAML, TOML, or any other structured format and satisfy all field-presence scenarios without producing valid JSON.
+- **Category**: delegate
+- **Decision**: Add a new scenario under skill-file-generation Rule 3 requiring the task definition to be serialized as a JSON array. JSON is the format specified by the INT-fsm-json schema and consumed by hydrate-tasks.py.
+- **Outcome**: Added scenario @skill-file-generation:3.4 requiring JSON array serialization. Renumbered existing 3.4 (display-friendly names) to 3.5. Updated tasks.yaml coverage annotations to reflect renumbering.
+
+### GAP-175: Verification setup incompatible with directory-state scenarios
+- **Severity**: Medium
+- **Source**: verification-critic
+- **Status**: resolved
+- **Description**: The verification environment setup procedure documented in technical.md always creates the target skill directory before verification begins. This makes it impossible to verify the directory-creation scenario (when the target directory does not exist) and the collision-detection scenario (when a pre-existing skill directory is present) in the defined environment. No documented procedure exists for establishing either precondition in a reproducible way for verification purposes.
+- **Category**: check-in
+- **Decision**: Restructure verification setup into base + scenario-specific preconditions. Base setup verifies FSM plugin presence and skill deployment but does not manipulate the target skill directory. Add documented scenario-specific setup steps: remove target directory for directory-creation testing, pre-populate target directory for collision-detection testing.
+- **Outcome**: Restructured infra.md Verification Environment Setup into "Base Setup Steps" (applies to all scenarios) and "Scenario-Specific Setup" subsection documenting directory-state preconditions for skill-file-generation:4.3 and 4.4. Updated the skill-file-generation behavioral verification task in tasks.yaml to reference scenario-specific setup from infra.md.
+
+### GAP-176: Name-consistency check has no requirement coverage
+- **Severity**: High
+- **Source**: logic-critic
+- **Status**: resolved
+- **Description**: CMP-final-validation defines four checks in technical.md: cycle detection, self-containment audit, structural integrity, and name consistency. The workflow-validation requirements include scenarios covering the first three checks but contain no scenario for the name-consistency check (verifying that the metadata.fsm value in fsm.json matches the SKILL.md frontmatter name field). The fourth check has no requirement coverage.
+- **Category**: check-in
+- **Decision**: Add a dedicated fail scenario @workflow-validation:2.12 for the name-consistency check. The scenario covers the case where metadata.fsm in fsm.json does not match the SKILL.md frontmatter name field, resulting in a validation failure with a specific report.
+- **Outcome**: Added scenario @workflow-validation:2.12 for the name-consistency check. Updated CMP-final-validation description from "3 cross-cutting checks" to "4 cross-cutting checks" in technical.md (component description and data flow table). Updated tasks.yaml entry 9 to cover 4 checks and reference 2.12. Updated infra.md workflow-validation coverage table Rule 2 to mention name-consistency. Updated integration.feature.md cross-artifact dependency description to reference the name-consistency check.
+
+### GAP-177: No explicit dependency between skill-directory and skill-md groups
+- **Severity**: Low
+- **Source**: code-tasks-critic
+- **Status**: resolved
+- **Description**: In tasks.yaml, the skill-directory group and the skill-md group are ordered implicitly by document position only. No explicit dependency declaration exists between these groups in the task schema, so an implementor could execute them in any order without violating any stated constraint. The schema has no ordering mechanism beyond document sequence.
+- **Category**: delegate
+- **Decision**: Add a YAML comment above skill-md group documenting that it depends on skill-directory completing first (SKILL.md is placed in the directory that skill-directory creates).
+- **Outcome**: Added YAML comment `# Depends on skill-directory completing first (SKILL.md placed in created directory)` above the skill-md group in tasks.yaml.
+
+### GAP-178: Cross-group dependency in tasks.yaml not explicitly declared
+- **Severity**: Medium
+- **Source**: code-tasks-critic
+- **Status**: resolved
+- **Description**: The behavioral-verification group in tasks.yaml depends on the validation-enhancement, skill-directory, skill-md, and fsm-json groups completing first. No explicit cross-group dependency declaration captures this ordering constraint, leaving the dependency implicit and unenforceable through the task schema.
+- **Category**: check-in
+- **Decision**: Accept document position as the ordering mechanism. tasks.yaml groups execute in document order by convention. No schema change needed — the implicit ordering is the design.
+- **Outcome**: No artifact changes. Document position is the accepted ordering mechanism for tasks.yaml groups.
+
+### GAP-179: SKILL.md body coverage not verified by any task
+- **Severity**: Low
+- **Source**: code-tasks-critic
+- **Status**: resolved
+- **Description**: The skill-md group tasks in tasks.yaml cover SKILL.md frontmatter but do not verify that the SKILL.md body addresses the collision detection and name normalization behaviors defined in the CMP-skill-md component responsibilities. The behavioral-verification group checks frontmatter structure only; body coverage of these behaviors is not verified by any task.
+- **Category**: defer-release
+- **Decision**: Add to functional.md Out of Scope: verification of SKILL.md body content completeness — frontmatter structure is verified; body coverage of all component behaviors deferred to implementation judgment.
+- **Outcome**: Added Out of Scope entry to functional.md deferring SKILL.md body content completeness verification to implementation judgment.
+
+### GAP-180: Integration feature missing SKILL.md fan-in for CMP-final-validation
+- **Severity**: Low
+- **Source**: integration-coverage-critic
+- **Status**: resolved
+- **Description**: The integration.feature.md states that CMP-final-validation fans in from CMP-fsm-json-finalize only. GAP-141 resolved the name-consistency check by adding CMP-final-validation's dependency on SKILL.md content from CMP-skill-md. The integration.feature.md cross-artifact dependency description was not updated to reflect this new fan-in relationship.
+- **Category**: delegate
+- **Decision**: Update integration.feature.md to reflect that CMP-final-validation also reads SKILL.md content produced by CMP-skill-md for the name-consistency check. The statement that CMP-final-validation fans in from CMP-fsm-json-finalize "only" is no longer accurate.
+- **Outcome**: Updated integration.feature.md cross-artifact dependency description to reflect CMP-final-validation's data-read dependency on SKILL.md content for the name-consistency check, including both the blocking task dependency (CMP-fsm-json-finalize) and the data-read dependency (CMP-skill-md).
+
+### GAP-181: Authoring-time file writes may trigger runtime protection guard
+- **Severity**: Low
+- **Source**: functional-consistency-critic
+- **Status**: resolved
+- **Description**: The authoring-time file write path places SKILL.md and fsm.json under the runtime skill discovery directory. The FSM plugin's runtime active-work-protection guard monitors this directory for in-progress tasks. A partially written fsm.json produced during an authoring session could be detected by the guard, potentially triggering unexpected abort or protection behavior before the file is complete.
+- **Category**: defer-release
+- **Decision**: Add to functional.md Known Risks: authoring-time file writes may trigger runtime active-work-protection guard. Phase-gate architecture makes this unlikely — files are written near end of the workflow after validation passes.
+- **Outcome**: Added Known Risks entry to functional.md documenting the potential for authoring-time file writes to trigger the runtime active-work-protection guard, with mitigation note about phase-gate architecture.
+
+### GAP-182: Data Transformation table column header semantically incorrect
+- **Severity**: Low
+- **Source**: design-critic
+- **Status**: resolved
+- **Description**: The data transformation table in technical.md uses "Fields added" as the column header for all component rows. The CMP-descriptions row describes replacement semantics (replacing the normalize-phase brief description with the full self-contained instruction), not addition. GAP-97 updated the cell content to say "replaces description" but the column header itself still reads "Fields added," which is semantically incorrect for the replacement case. Similar concern to resolved GAP-97, which updated cell content but not the header.
+- **Category**: delegate
+- **Decision**: Change the column header from "Fields added" to "Fields added/modified" in the Data Transformation table in technical.md. This accurately covers both addition semantics (most rows) and replacement semantics (CMP-descriptions row).
+- **Outcome**: Changed the column header from "Fields added" to "Fields added/modified" in the Data Transformation table in technical.md.
+
+### GAP-183: No intake-phase check for trivially small step descriptions
+- **Severity**: Medium
+- **Source**: requirements-coverage-critic
+- **Status**: resolved
+- **Description**: No requirement scenario addresses evaluation of trivially small step descriptions at the intake phase. The self-contained-descriptions requirements cover overly small descriptions during the description writing phase, but a step that is too small to be meaningful could be accepted through the intake and normalization phases without any quality check. Intake-phase evaluation for minimum meaningful size is not covered. Similar concern to resolved GAP-66, which defined the "overly small" threshold at the description writing phase rather than the intake phase.
+- **Category**: check-in
+- **Decision**: Rely on existing description-phase check — no intake change needed. At intake, steps are labels + brief descriptions, not self-contained instructions. The "overly small" threshold is defined by the self-containment checklist (can you populate all 4 items?), which is a description-writing concern. A step like "Validate config" is appropriately sized for intake but correctly flagged during description writing. Intake already has specificity criteria (workflow-intake:3.2) that catch truly meaningless steps.
+- **Outcome**: No artifact changes. The existing description-phase check (self-containment checklist) and intake-phase specificity criteria (workflow-intake:3.2) together cover the concern without requiring a new intake-phase size check.
+
+### GAP-184: ID renumbering transformation has no requirement coverage
+- **Severity**: Medium
+- **Source**: logic-critic
+- **Status**: resolved
+- **Description**: No requirement scenario covers the ID renumbering transformation that CMP-fsm-json-finalize performs at the end of the authoring workflow. The renumbering strategy (next-sequential during authoring, topological order at finalization) and the old-to-new ID mapping disclosure are documented as technical decisions, but no requirement scenario specifies the transformation itself, author notification, or post-renumber verification that all blockedBy references are consistent. Similar concern to resolved GAP-96 and GAP-140, which established the technical design and author disclosure decisions without adding requirement coverage.
+- **Category**: delegate
+- **Decision**: Add a scenario under skill-file-generation Rule 3 covering the ID renumbering transformation and author notification. The scenario specifies that task IDs are renumbered to topological order at finalization with an old-to-new mapping presented to the author. Post-renumber reference consistency is already covered by structural integrity (workflow-validation:2.11 checks blockedBy resolution).
+- **Outcome**: Added scenario @skill-file-generation:3.5 for the ID renumbering transformation and author notification. Renumbered existing 3.5 (display-friendly names, previously 3.4) to 3.6. Updated tasks.yaml coverage annotations to reflect renumbering.

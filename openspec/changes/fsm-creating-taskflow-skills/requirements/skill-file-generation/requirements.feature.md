@@ -42,13 +42,13 @@ The skill SHALL produce a SKILL.md with frontmatter containing name and descript
 `@skill-file-generation:2`
 ### Rule: The skill SHALL self-validate SKILL.md before finalizing
 
-CMP-skill-md self-validates the generated SKILL.md (frontmatter correctness) and does not finalize until self-validation passes.
+The skill's documentation generation step self-validates the generated SKILL.md (frontmatter correctness) and does not finalize until self-validation passes.
 
 `@skill-file-generation:2.1`
 #### Scenario: SKILL.md self-validation failure triggers correction and re-validation
 
 - Given the skill has generated SKILL.md content
-- And CMP-skill-md's self-validation detects a missing frontmatter field
+- And the skill's documentation generation step's self-validation detects a missing frontmatter field
 - When the skill reports the self-validation failure to the author
 - Then the author corrects the identified issue
 - And the skill re-validates the corrected SKILL.md before completing
@@ -89,6 +89,24 @@ The skill SHALL produce a task definition file that encodes the workflow steps w
 - And each task entry contains `metadata` with the skill name for scoped identification
 
 `@skill-file-generation:3.4`
+#### Scenario: Task definition file serialized as JSON array
+
+- Given the author has completed the workflow definition
+- When the skill generates the task definition file
+- Then the task definition SHALL be serialized as a JSON array
+- And each element in the array SHALL be a JSON object representing one task entry
+
+`@skill-file-generation:3.5`
+#### Scenario: Task IDs renumbered to topological order at finalization with author notification
+
+- Given the author has completed the workflow definition with tasks that were assigned IDs during authoring
+- When the skill finalizes the task definition file
+- Then the skill SHALL renumber all task IDs to topological order (sequential starting at 1)
+- And the skill SHALL update all dependency references to match the renumbered IDs
+- And the skill SHALL present the old-to-new ID mapping to the author
+- And the author SHALL be informed of all ID changes before finalization completes
+
+`@skill-file-generation:3.6`
 #### Scenario: Display-friendly names auto-normalized to directory-safe format
 
 - Given the author has specified a plugin name or skill name containing spaces, uppercase letters, or special characters (e.g., "My Cool Skill")

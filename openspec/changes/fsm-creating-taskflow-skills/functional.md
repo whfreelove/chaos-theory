@@ -7,7 +7,7 @@ Creating FSM-enabled skills requires understanding the structural conventions, e
 ### New Capabilities
 
 - `workflow-intake`: Skill authors can transform workflows from two input-based sources — existing skills and written step descriptions — with brainstorming as a gap-filling step that builds on whatever material the input-based sources produced, combining inputs through discussion when material spans multiple sources
-- `dependency-mapping`: Skill authors can encode serial, parallel, fan-in, and fan-out execution patterns as task dependencies that preserve intended workflow order, and can add, remove, or rename tasks during dependency mapping with automatic graph updates and re-validation
+- `dependency-mapping`: Skill authors can encode serial, parallel, fan-in, and fan-out execution patterns as task dependencies that preserve intended workflow order, and can add, remove, or rename tasks during dependency mapping with automatic structural maintenance (node addition, dangling reference cleanup, rename propagation) and prompted author interaction for new dependency relationships, plus re-validation
 - `self-contained-descriptions`: Skill authors can write small, focused task descriptions where each task contains all context needed to execute independently — the sole source of truth once the original skill text is compacted away
 - `skill-file-generation`: Skill authors can produce a deployable skill with author-facing documentation and a structured workflow definition
 - `workflow-validation`: Skill authors can verify generated workflows incrementally — including self-containment feedback on each description as it is written — and through a comprehensive final check before deployment
@@ -37,6 +37,10 @@ None.
 - Verifiable criteria distinguishing "targeted questions" from "generic questions" in brainstorming intake guidance (workflow-intake:4.2)
 - Session resumption or recovery after workflow interruption
 - Recovery fallback for total context compaction — the scenario where aggressive compaction removes all intermediate artifacts from visible conversation history is deferred to a future release; the phase-gate architecture makes total context loss unlikely
+- Scale threshold for the Progressive Construction Protocol's in-context artifact growth — real-world usage will reveal actual limits before a formal boundary is needed
+- Verification of SKILL.md body content completeness — frontmatter structure is verified; body coverage of all component behaviors deferred to implementation judgment
+- Precise boundary between minor formatting adjustments and substantive content changes during written step intake — deferred to implementation judgment
+- SKILL.md body content template or section structure guidelines — implementor determines body structure based on the existing constraint of author-facing language without internal identifiers
 
 ### Known Risks
 
@@ -46,6 +50,7 @@ None.
 - Input-based intake sources may yield no usable material — brainstorming runs sequentially after them to fill gaps or generate ideas from scratch; if brainstorming also yields nothing, the workflow terminates gracefully
 - Session interruption requires restarting the workflow from the beginning — no resume capability exists
 - Large workflows may have poor UX during dependency mapping when presenting all existing tasks for relationship specification — at 15-20 tasks, the agent warns the author and suggests grouping related tasks for review; no hard upper limit is enforced, and no scalability criteria (pagination, search) exist beyond the grouping suggestion
+- Authoring-time file writes may trigger runtime active-work-protection guard — the FSM plugin's runtime guard monitors the skill discovery directory for in-progress tasks, and a partially written fsm.json could be detected. Phase-gate architecture makes this unlikely since files are written near end of the workflow after validation passes
 
 ## Brainstorming Gap Taxonomy
 

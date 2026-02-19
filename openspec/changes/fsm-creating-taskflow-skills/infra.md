@@ -83,7 +83,7 @@ This means the blocking behavior is **guaranteed by construction**, not by testi
 | Rule | What it covers | Verification approach |
 |------|---------------|----------------------|
 | Rule 1: Incremental phase validation | Intake output validated (labels, descriptions, minimum steps); dependency mapping validated (all tasks present, no dangling refs, no cycles); description writing validated (non-empty, non-placeholder, self-containment checklist per description); description phase failure (placeholder text caught, specific task reported); advancement blocked when skipped tasks have incomplete descriptions (1.3.2); failure blocks progression | Manual: invoke skill, verify each phase gate blocks on invalid input and passes on valid input; verify self-containment checklist runs on each description during writing; verify placeholder text in a description is caught and reported; skip tasks during description writing and attempt to advance, verify the skill reports incomplete tasks and blocks advancement |
-| Rule 2: Comprehensive final validation | Self-containment audit as cross-cutting safety net (with in-place correction), cycle detection, structural integrity (pass when all 5 core fields + metadata with correct types present; fail when field missing or wrong type with specific report; fail when metadata has empty fsm value (2.10); fail when blockedBy references non-existent task ID (2.11)) | Manual: complete workflow, verify final validation reports pass/fail per check with specific issues for failures; verify self-containment failures can be corrected in-place without phase regression; verify structural check catches missing fields and type mismatches; verify metadata content validation catches empty or wrong-key metadata; verify dangling blockedBy reference is caught and reported with the specific task entry and invalid reference |
+| Rule 2: Comprehensive final validation | Self-containment audit as cross-cutting safety net (with in-place correction), cycle detection, structural integrity (pass when all 5 core fields + metadata with correct types present; fail when field missing or wrong type with specific report; fail when metadata has empty fsm value (2.10); fail when blockedBy references non-existent task ID (2.11)), name consistency (metadata.fsm matches SKILL.md frontmatter name; fail when mismatch detected (2.12)) | Manual: complete workflow, verify final validation reports pass/fail per check with specific issues for failures; verify self-containment failures can be corrected in-place without phase regression; verify structural check catches missing fields and type mismatches; verify metadata content validation catches empty or wrong-key metadata; verify dangling blockedBy reference is caught and reported with the specific task entry and invalid reference; verify name-consistency check catches mismatch between metadata.fsm and SKILL.md name |
 | Rule 3: Clear validation results | Passing validation confirms readiness; failing validation lists specific issues with actionable guidance | Manual: trigger both passing and failing validations, verify result presentation includes specific issues and guidance |
 
 ## Verification Environment
@@ -94,13 +94,22 @@ This means the blocking behavior is **guaranteed by construction**, not by testi
 - **FSM plugin enabled**: The `finite-skill-machine` plugin must be installed and active in the Claude Code plugin configuration.
 - **Fresh session**: Each verification attempt should start a new Claude Code session to avoid state contamination from prior skill invocations. A fresh session ensures the task directory is clean and no prior FSM tasks interfere with verification.
 
-### Setup Steps
+### Base Setup Steps
+
+These steps apply to all verification scenarios.
 
 1. **Ensure FSM plugin is in the plugins directory**: Verify that the `plugins/finite-skill-machine/` directory exists and contains the plugin configuration (`plugin.json`), hooks (`hooks/hooks.json`), and scripts (`scripts/hydrate-tasks.py`, `scripts/block-skill-internals.sh`).
 2. **Verify the skill is deployed**: Confirm that `plugins/finite-skill-machine/skills/creating-taskflow-skills/` contains both `SKILL.md` and `fsm.json`.
 3. **Start a new session**: Open a new Claude Code session. This ensures a clean task directory at `~/.claude/tasks/{session_id}/` with no pre-existing tasks.
 4. **Invoke the skill**: Use the skill invocation command (e.g., `finite-skill-machine:creating-taskflow-skills`) to trigger the FSM hook pipeline. The hook should hydrate the skill's tasks into the session's task directory.
 5. **Verify hydration succeeded**: Confirm that the task directory contains the expected task files (9 tasks for this skill). If the hook fails, check stderr output for validation or resolution errors before proceeding with behavioral verification.
+
+### Scenario-Specific Setup
+
+Some verification scenarios require directory-state preconditions that must be established after base setup but before exercising the scenario:
+
+- **Directory-creation scenario** (skill-file-generation:4.3): Remove the target skill directory (`plugins/<plugin>/skills/<skill>/`) if it exists, so the skill must create it during file placement.
+- **Collision-detection scenario** (skill-file-generation:4.4): Pre-populate the target skill directory (`plugins/<plugin>/skills/<skill>/`) with existing files, so the skill detects the collision and offers resolution options.
 
 ### Session Management
 

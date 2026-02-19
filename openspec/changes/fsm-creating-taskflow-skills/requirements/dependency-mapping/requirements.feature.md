@@ -174,7 +174,8 @@ The step list SHALL be mutable during the dependency mapping phase. The author M
 - Given the author is in the dependency mapping phase with an approved step list
 - And the author identifies a missing task that needs to be added
 - When the author provides the new task's label and description
-- Then the skill SHALL apply a lightweight quality check against intake-quality criteria (specificity, actionability, scope) to the provided label and description
+- Then the skill SHALL apply a lightweight quality check to the provided label and description verifying: the label is present and non-empty, the description is non-empty and identifies distinct work (specificity), and the task describes a concrete action (actionability)
+- And the lightweight check SHALL omit splitting guidance, iterative prompting for clarification, and full scope evaluation
 - And the skill SHALL add the task to the step list and the dependency graph only after the quality check passes
 - And the skill SHALL ask the author to specify the new task's dependency relationships
 - And the skill SHALL re-validate the dependency graph for integrity
