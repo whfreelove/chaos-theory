@@ -143,8 +143,8 @@ fsm-json:
     existing relationships; newly added tasks get next sequential ID (max existing + 1),
     existing IDs remain stable; re-validate after each modification; (h) if validation fails,
     present the issue and ask the author to correct it, then re-validate before completing.
-    Covers: CMP-dependency-map, dependency-mapping:1.1-1.3, 2.1-2.2, 3.1-3.4, 4.1-4.4,
-    5.1-5.3, workflow-validation:1.2, 1.5, 1.6
+    Covers: CMP-dependency-map, dependency-mapping:1.1-1.3, 2.1-2.3, 3.1-3.4, 4.1-4.4,
+    5.1-5.3, 5.5, workflow-validation:1.2, 1.5, 1.6
   - >-
     Write entry 7 — id: 7, subject: "Write self-contained task descriptions", activeForm:
     "Writing self-contained task descriptions", blockedBy: [6]. Description must cover: (a)
@@ -163,9 +163,14 @@ fsm-json:
     references (references to other tasks by name, "the previous task," implicit ordering
     assumptions like "at this point X will already exist") — instruct the author to state
     preconditions explicitly; (g) evaluate task sizing: flag descriptions covering multiple
-    objectives (recommend splitting); flag descriptions that cannot meaningfully populate all
-    4 checklist items because items become trivially redundant (recommend merging with a
-    related task); (h) auto-generate activeForm by deriving present-continuous form from task
+    objectives and, when the author elects to split, execute the split with these mechanics:
+    all parents of the pre-split task become parents of all post-split tasks, all children of
+    the pre-split task become children of all post-split tasks, new tasks receive the next
+    sequential ID (max existing + 1), warn the author that inherited relationships may be
+    imprecise and should be cleaned up later, then re-validate after the split; flag
+    descriptions that cannot meaningfully populate all 4 checklist items because items become
+    trivially redundant (recommend merging with a related task); (h) auto-generate activeForm
+    by deriving present-continuous form from task
     label (e.g., "Validate dependencies" becomes "Validating dependencies"), present to author
     for confirmation/override — accept any author-provided override as-is without format
     validation (present-continuous form is a generation requirement, not an override constraint);
@@ -181,7 +186,8 @@ fsm-json:
     workflow definition into a valid JSON array with one entry per workflow task; (b) renumber
     all task IDs to topological order (sequential starting at 1) and update all dependency
     references to match — tie-breaking for same-precedence nodes: retain original authoring
-    order for deterministic output; (c) verify each entry contains 5 core fields with correct
+    order for deterministic output; after renumbering, present the old-to-new ID mapping to the
+    author so they are aware of the ID changes; (c) verify each entry contains 5 core fields with correct
     types: id (integer, sequential starting at 1), subject (string, short task title),
     description (string, self-contained instructions), activeForm (string — present-continuous
     form auto-generated, author overrides accepted as-is), blockedBy (array of integers, local
@@ -189,8 +195,9 @@ fsm-json:
     entry contains metadata (object) with an fsm key whose value is a non-empty string
     matching the delivered skill's name, for scoped identification; (e) other optional fields (owner,
     status, blocks) are omitted — defaults apply at runtime; (f) validate all dependency
-    references point to IDs that exist in the same array; (g) guide the author on file
-    placement alongside the delivered skill's documentation file. Covers: CMP-fsm-json-finalize,
+    references point to IDs that exist in the same array; (g) check whether the target
+    directory (plugins/<plugin>/skills/<skill>/) exists and create it if absent; guide the
+    author on file placement alongside the delivered skill's documentation file. Covers: CMP-fsm-json-finalize,
     skill-file-generation:3.1-3.6, 4.1-4.2
   - >-
     Write entry 9 — id: 9, subject: "Run final validation", activeForm: "Running final
@@ -210,7 +217,10 @@ fsm-json:
     integers), all IDs unique, all dependency references resolve, metadata present as object
     with fsm key whose value is non-empty string matching the delivered skill's name, file targets correct
     directory (plugins/<plugin>/skills/<skill>/); (d) check 4 — name consistency: verify that
-    the metadata.fsm value in fsm.json matches the SKILL.md frontmatter name field; (e)
+    the metadata.fsm value in fsm.json matches the SKILL.md frontmatter name field — for the
+    name-consistency check, read the SKILL.md file from the target directory
+    (plugins/<plugin>/skills/<skill>/SKILL.md) and compare the frontmatter name field against the
+    metadata.fsm value; (e)
     present pass/fail results per check with specific issues listed per failure; do not
     finalize until all checks pass. Covers:
     CMP-final-validation, workflow-validation:2.1-2.8, 2.10-2.12, 3.1-3.2
@@ -314,7 +324,7 @@ behavioral-verification:
     the specific task entry and invalid reference. Confirm that the author confirmation
     gate (AskUserQuestion) is observed at each phase boundary where approval is required.
     Rule-level verification checklist:
-    [ ] Rule 1 — Incremental phase validation: intake output validated (labels, descriptions, minimum steps); dependency mapping validated (all tasks, no dangling refs, no cycles); description writing validated (non-empty, non-placeholder, self-containment checklist per description); placeholder text caught with specific task reported; advancement blocked when skipped tasks have incomplete descriptions.
+    [ ] Rule 1 — Incremental phase validation: intake output validated (labels, descriptions, minimum steps); dependency mapping validated (all tasks, no dangling refs, no cycles); description writing validated (non-empty, non-placeholder, self-containment checklist per description); placeholder text caught with specific task reported; advancement blocked when skipped tasks have incomplete descriptions; phase-completion summary presented after each phase listing all updated tasks; advancement blocked when summary reveals incomplete or skipped entries with specific report of which entries were not updated; in-context artifact reconstructed from most recent complete phase output when lost and reconstructed artifact presented to author for verification.
     [ ] Rule 2 — Comprehensive final validation: self-containment audit with in-place correction; cycle detection; structural integrity (5 core fields + metadata with correct types; missing field caught; wrong type caught; empty fsm value caught; dangling blockedBy reference caught).
     [ ] Rule 3 — Clear validation results: passing validation confirms readiness; failing validation lists specific issues with actionable guidance.
 

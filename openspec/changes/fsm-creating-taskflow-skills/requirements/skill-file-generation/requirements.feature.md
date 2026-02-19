@@ -52,7 +52,6 @@ The skill's documentation generation step self-validates the generated SKILL.md 
 - When the skill reports the self-validation failure to the author
 - Then the author corrects the identified issue
 - And the skill re-validates the corrected SKILL.md before completing
-- And the skill does not finalize SKILL.md until self-validation passes
 
 `@skill-file-generation:3`
 ### Rule: The skill SHALL generate a task definition file

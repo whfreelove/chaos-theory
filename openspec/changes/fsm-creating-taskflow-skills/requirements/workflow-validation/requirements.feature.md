@@ -99,8 +99,25 @@ The skill SHALL validate outputs at the end of each phase (intake, dependency ma
 - Given the skill has completed a construction phase (dependency mapping or description writing) for all tasks
 - When the phase finishes updating all entries
 - Then the skill SHALL present a phase-completion summary showing which entries were updated
-- And the author SHALL confirm completeness before the next phase begins
 - And the skill SHALL not advance to the next phase until the author confirms the summary
+
+`@workflow-validation:1.7.1`
+#### Scenario: Advancement blocked when phase-completion summary reveals incomplete entries
+
+- Given the skill has presented a phase-completion summary after a construction phase
+- And the summary reveals that one or more entries were not updated during the phase
+- When the author does not confirm the summary due to incomplete entries
+- Then the skill SHALL report which specific entries were not updated
+- And the skill SHALL not advance to the next phase until the incomplete entries are addressed
+
+`@workflow-validation:1.8`
+#### Scenario: Artifact recovery after in-context artifact loss
+
+- Given the skill is performing progressive construction of the fsm.json artifact
+- And the in-context artifact is lost due to context window limits
+- When the skill detects the artifact is no longer available in context
+- Then the skill SHALL reconstruct the artifact from the most recent complete phase output visible in conversation history
+- And the skill SHALL present the reconstructed artifact to the author for verification before resuming construction
 
 `@workflow-validation:2`
 ### Rule: The skill SHALL perform comprehensive final validation before deployment
