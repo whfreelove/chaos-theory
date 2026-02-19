@@ -1,0 +1,12 @@
+{
+  ".sections/functional.yaml": "954e3831a507186e",
+  ".sections/infra.yaml": "5df18ae0a45a0ae1",
+  ".sections/integration.yaml": "a8a028e2bc35b3b8",
+  ".sections/requirements.yaml": "e6847b10a524bd30",
+  ".sections/tasks.yaml": "9551fa4ab7aa6d50",
+  ".sections/technical.yaml": "8fb3f15247ac4a57",
+  "project:functional.md": "5bec8f5e0ca5cef2",
+  "project:integration.feature.md": "80d40d5cc3ce2834",
+  "project:requirements": "9c0ef7bfbfa62770",
+  "project:technical.md": "68c4ca3c24988f3b"
+}

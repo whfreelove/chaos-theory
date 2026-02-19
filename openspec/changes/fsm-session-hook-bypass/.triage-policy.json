@@ -1,0 +1,21 @@
+{
+  "high": {
+    "authority": "agent",
+    "actions": [
+      "delegate"
+    ]
+  },
+  "medium": {
+    "authority": "agent",
+    "actions": [
+      "delegate"
+    ]
+  },
+  "low": {
+    "authority": "agent",
+    "actions": [
+      "delegate",
+      "defer-release"
+    ]
+  }
+}
