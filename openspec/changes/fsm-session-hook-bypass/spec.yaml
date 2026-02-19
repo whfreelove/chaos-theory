@@ -3,23 +3,26 @@
 # ── FUNCTIONAL ──────────────────────────────────────────────
 functional:
   why: >-
-    When block-skill-internals.sh denies access, its only advice is to disable
-    the entire finite-skill-machine plugin — losing task hydration and all other
-    FSM functionality just to read a skill file during development.
+    When a developer is denied access to a skill file, the only suggested
+    workaround is to disable the entire finite-skill-machine plugin — losing
+    task hydration and all other FSM functionality just to read one file during
+    development. The cost is disproportionate to the need.
   capabilities:
     CAP-session-bypass: >-
-      Developer can temporarily bypass block-skill-internals.sh for the current
-      shell session without disabling the plugin.
+      Developer can temporarily allow skill file access for the current shell
+      session without disabling the plugin.
     CAP-actionable-denial: >-
-      Developer sees how to bypass the hook directly in the denial message
-      instead of being told to disable the whole plugin.
+      Developer sees how to allow skill file access directly in the denial
+      message instead of being told to disable the whole plugin.
   user-impact:
     scope: >-
       Developers working on skill files (SKILL.md, fsm.json, hooks.json) who
       hit the deny wall during plugin or skill development.
     out-of-scope: >-
       Persistent hook configuration changes. Plugin-level enable/disable.
-      Changes to which file patterns are blocked.
+      Changes to which file patterns are blocked. Individual denial message
+      field coverage beyond the primary developer-visible text — deferred
+      to a future iteration.
     known-risks: >-
       A developer who sets the bypass env var and forgets may have reduced
       protection for the rest of the session. This is acceptable because
@@ -27,13 +30,14 @@ functional:
   what-changes:
     CHG-env-bypass:
       description: >-
-        block-skill-internals.sh checks an environment variable and skips
-        denial when set.
+        Setting a shell environment variable allows skill file reads for the
+        current session without disabling the plugin.
       type: minor
     CHG-denial-message:
       description: >-
-        Denial systemMessage and reason updated to tell users how to set the
-        bypass env var instead of suggesting plugin disablement.
+        When a skill file read is denied, the message tells the developer how
+        to set the bypass environment variable instead of suggesting plugin
+        disablement.
       type: patch
 
 # ── REQUIREMENTS ────────────────────────────────────────────
@@ -42,7 +46,7 @@ requirements:
     added:
       REQ-env-var-bypass:
         rule: >-
-          When FSM_BYPASS is set to a non-empty value, the hook must allow
+          When FSM_BYPASS is set to a non-empty value, the hook MUST allow
           Read, Glob, and Grep access to skill files without emitting a deny.
         scenarios:
           SCN-bypass-active:
@@ -53,10 +57,42 @@ requirements:
               - block-skill-internals.sh executes
             then:
               - The hook exits 0 with no JSON output
-              - The Read proceeds normally
           SCN-bypass-not-set:
             given:
               - FSM_BYPASS is not set or is empty
+              - Agent attempts to Read a SKILL.md file
+            when:
+              - block-skill-internals.sh executes
+            then:
+              - The hook emits a deny decision
+              - The deny message includes instructions to set FSM_BYPASS
+          SCN-bypass-active-glob:
+            given:
+              - FSM_BYPASS is exported and non-empty in the shell environment
+              - Agent attempts to Glob a pattern matching a skill-internal file
+            when:
+              - block-skill-internals.sh executes
+            then:
+              - The hook exits 0 with no JSON output
+          SCN-bypass-active-grep:
+            given:
+              - FSM_BYPASS is exported and non-empty in the shell environment
+              - Agent attempts to Grep with a path targeting a skill-internal file
+            when:
+              - block-skill-internals.sh executes
+            then:
+              - The hook exits 0 with no JSON output
+          SCN-bypass-active-hooks-json:
+            given:
+              - FSM_BYPASS is exported and non-empty in the shell environment
+              - Agent attempts to Read a hooks.json file
+            when:
+              - block-skill-internals.sh executes
+            then:
+              - The hook exits 0 with no JSON output
+          SCN-bypass-empty-string:
+            given:
+              - FSM_BYPASS is exported as an empty string
               - Agent attempts to Read a SKILL.md file
             when:
               - block-skill-internals.sh executes
@@ -67,19 +103,26 @@ requirements:
     added:
       REQ-updated-denial-message:
         rule: >-
-          The denial systemMessage must tell the user to export FSM_BYPASS=1
+          The denial systemMessage MUST tell the user to export FSM_BYPASS=1
           to bypass the hook for the session, replacing the current advice to
           disable the plugin.
         scenarios:
-          SCN-denial-shows-bypass-instructions:
+          SCN-denial-contains-bypass-instructions:
             given:
               - FSM_BYPASS is not set
               - Agent attempts to Glob for fsm.json files
             when:
               - block-skill-internals.sh emits a deny
             then:
-              - systemMessage contains "export FSM_BYPASS=1"
-              - systemMessage does not contain "Disable finite-skill-machine"
+              - The denial message contains "export FSM_BYPASS=1"
+          SCN-denial-removes-plugin-advice:
+            given:
+              - FSM_BYPASS is not set
+              - Agent attempts to Glob for fsm.json files
+            when:
+              - block-skill-internals.sh emits a deny
+            then:
+              - The denial message does not contain "Disable finite-skill-machine"
 
 # ── TECHNICAL ───────────────────────────────────────────────
 technical:
@@ -89,12 +132,12 @@ technical:
     fsm.json, and hooks.json. The hook receives tool input as JSON on stdin and
     outputs a deny JSON object to block access.
   objectives:
-    OBJ-zero-state: >-
-      Bypass mechanism requires no files, no config changes, and no persistent
-      state — only a shell environment variable.
-    OBJ-minimal-diff: >-
-      Change is confined to block-skill-internals.sh with no new files or
-      dependencies.
+    OBJ-session-bypass: >-
+      Developer can allow skill file access for a shell session using only an
+      environment variable — no files, config changes, or persistent state.
+    OBJ-self-contained: >-
+      The bypass is fully implemented within the existing hook script with no
+      new files, dependencies, or plugin configuration changes.
   architecture:
     system-overview: |
       graph LR
@@ -113,12 +156,38 @@ technical:
         - Pattern-match tool input paths against protected file names
         - Emit deny JSON with actionable bypass instructions
       dependencies: []
-  interfaces: {}
+  interfaces:
+    INT-deny-response:
+      description: >-
+        JSON object emitted to stdout when the hook denies access to a
+        skill-internal file.
+      fields:
+        decision: >-
+          Always "deny". Signals to Claude Code that the tool use is blocked.
+        systemMessage: >-
+          Developer-visible text explaining the denial and how to set
+          FSM_BYPASS=1 to allow access for the session. MUST contain
+          "export FSM_BYPASS=1". MUST NOT contain "Disable finite-skill-machine".
+        permissionDecisionReason: >-
+          Brief reason for the denial shown alongside the tool use block.
+          Updated to reference the bypass mechanism instead of plugin
+          disablement.
   decisions:
     DEC-env-var-over-file-flag: >-
-      We chose an environment variable (FSM_BYPASS) over a temp file or config
-      flag because env vars are session-scoped by default, require no cleanup,
-      and are the standard shell mechanism for temporary behavior changes.
+      In the context of the skill-internals access gate, facing the need for a
+      session-scoped bypass that requires no setup or cleanup, we decided on a
+      shell environment variable (FSM_BYPASS) and neglected a temporary file
+      flag and a plugin config flag, to achieve zero-configuration bypass that
+      is session-scoped by default and follows standard shell conventions,
+      accepting that the bypass is inherited by child processes and that
+      environment inspection is the only discovery method.
+    DEC-null-component-interactions: >-
+      In the context of a single-component change with no inter-component
+      interactions, facing the ambiguity of an empty schema-expected key, we
+      decided to leave component-interactions null rather than removing the
+      key, to preserve schema compliance while signaling deliberate omission,
+      accepting that the null value may appear ambiguous to future readers
+      without the accompanying integration section comment.
   risks:
     RSK-forgotten-bypass:
       risk: >-
@@ -145,7 +214,25 @@ infra:
     coverage-mapping:
       SCN-bypass-active: manual
       SCN-bypass-not-set: manual
-      SCN-denial-shows-bypass-instructions: manual
+      SCN-bypass-active-glob: manual
+      SCN-bypass-active-grep: manual
+      SCN-bypass-active-hooks-json: manual
+      SCN-bypass-empty-string: manual
+      SCN-denial-contains-bypass-instructions: manual
+      SCN-denial-removes-plugin-advice: manual
+    manual-test-procedure: >-
+      Invoke block-skill-internals.sh directly with fabricated JSON payloads
+      via stdin. For bypass scenarios, export FSM_BYPASS=1 before invocation.
+      For denial scenarios, unset FSM_BYPASS or export FSM_BYPASS="" before
+      invocation. For Read scenarios, provide {"tool_input": {"file_path":
+      "/path/to/SKILL.md"}} on stdin. For Glob and Grep scenarios, provide
+      {"tool_input": {"pattern": "**/SKILL.md"}} on stdin (the script
+      extracts paths from .tool_input.pattern for these tool types). Verify
+      bypass: hook exits 0 with empty stdout. Verify denial: hook exits 0 and
+      stdout contains a JSON object with "decision", "systemMessage", and
+      "permissionDecisionReason" fields. Inspect the denial message for
+      expected content (contains "export FSM_BYPASS=1", does not contain
+      "Disable finite-skill-machine").
   observability:
     logging: {}
     metrics: {}
@@ -153,8 +240,11 @@ infra:
   migration: null
 
 # ── INTEGRATION ─────────────────────────────────────────────
-# No cross-capability interactions — both capabilities modify the same script
-# in non-conflicting ways (early-exit guard + message text).
+# Intentionally empty: cross-capability interaction is already covered by
+# single-capability scenarios. SCN-bypass-not-set spans both capabilities
+# (bypass check + denial message). The two capabilities modify the same
+# script in non-conflicting ways (early-exit guard + message text) with no
+# emergent behavior from their combination.
 integration: {}
 
 # ── TASKS ───────────────────────────────────────────────────
@@ -171,5 +261,8 @@ tasks:
   verification:
     - id: TSK-verify-bypass
       description: >-
-        Test: export FSM_BYPASS=1, confirm skill file reads are allowed.
-        Unset FSM_BYPASS, confirm deny with new message text.
+        Test using the manual test procedure from infra testing-strategy:
+        export FSM_BYPASS=1, invoke hook with fabricated JSON payload, confirm
+        exit 0 with empty stdout. Unset FSM_BYPASS, invoke hook again, confirm
+        deny JSON is emitted. Verify systemMessage contains "export FSM_BYPASS=1"
+        and does not contain "Disable finite-skill-machine".
