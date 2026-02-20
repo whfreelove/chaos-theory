@@ -63,7 +63,6 @@ requirements:
               - The agent attempts to Read a skill-internal file (SKILL.md)
             then:
               - The hook emits a deny decision
-              - The deny message includes instructions to set FSM_BYPASS
           SCN-bypass-active-glob:
             given:
               - FSM_BYPASS is exported and non-empty in the shell environment
@@ -92,14 +91,20 @@ requirements:
               - The agent attempts to Read a skill-internal file (SKILL.md)
             then:
               - The hook emits a deny decision
-              - The deny message includes instructions to set FSM_BYPASS
+          SCN-denial-grep:
+            given:
+              - FSM_BYPASS is not set
+            when:
+              - The agent attempts to Grep with a path targeting a skill-internal file
+            then:
+              - The hook emits a deny decision
   CAP-actionable-denial:
     added:
       REQ-updated-denial-message:
         rule: >-
           The denial message MUST tell the user to export FSM_BYPASS=1
-          to bypass the hook for the session, replacing the current advice to
-          disable the plugin.
+          to allow skill file access for the session, replacing the current
+          advice to disable the plugin.
         scenarios:
           SCN-denial-contains-bypass-instructions:
             given:
@@ -151,7 +156,7 @@ technical:
         Shell script hook that gates agent access to skill internals.
       responsibilities:
         - Check FSM_BYPASS env var non-empty early-exit
-        - Pattern-match tool input paths against protected file names
+        - Extract target path from tool-specific input fields (file_path for Read, pattern for Glob, path for Grep) and pattern-match against protected file names
         - Emit deny JSON with actionable bypass instructions
       dependencies: []
   interfaces:
@@ -167,9 +172,8 @@ technical:
           FSM_BYPASS=1 to allow access for the session. MUST contain
           "export FSM_BYPASS=1". MUST NOT contain "Disable finite-skill-machine".
         permissionDecisionReason: >-
-          Brief reason for the denial shown alongside the tool use block.
-          Updated to reference the bypass mechanism instead of plugin
-          disablement.
+          Brief denial reason referencing the bypass mechanism rather than
+          plugin disablement.
   decisions:
     DEC-env-var-over-file-flag: >-
       In the context of the skill-internals access gate, facing the need for a
@@ -216,6 +220,7 @@ infra:
       SCN-bypass-active-grep: manual
       SCN-bypass-active-hooks-json: manual
       SCN-bypass-empty-string: manual
+      SCN-denial-grep: manual
       SCN-denial-contains-bypass-instructions: manual
       SCN-denial-removes-plugin-advice: manual
     manual-test-procedure: |
@@ -224,23 +229,29 @@ infra:
       For denial scenarios, unset FSM_BYPASS or export FSM_BYPASS="" before
       invocation.
 
+      Note: The hook script routes via tool_input key presence (file_path,
+      pattern, or path), not via tool_name. The tool_name field is included
+      in payloads for production fidelity, not as a routing key.
+
       Per-scenario payloads:
         SCN-bypass-active (Read SKILL.md):
-          {"tool_input": {"file_path": "/path/to/skills/SKILL.md"}}
+          {"tool_name": "Read", "tool_input": {"file_path": "/path/to/skills/SKILL.md"}}
         SCN-bypass-not-set (Read SKILL.md):
-          {"tool_input": {"file_path": "/path/to/skills/SKILL.md"}}
+          {"tool_name": "Read", "tool_input": {"file_path": "/path/to/skills/SKILL.md"}}
         SCN-bypass-active-glob (Glob skill-internal):
-          {"tool_input": {"pattern": "**/SKILL.md"}}
+          {"tool_name": "Glob", "tool_input": {"pattern": "**/SKILL.md"}}
         SCN-bypass-active-grep (Grep skill-internal):
-          {"tool_input": {"pattern": "some_regex", "path": "/path/to/skills/"}}
+          {"tool_name": "Grep", "tool_input": {"pattern": "some_regex", "path": "/path/to/skills/SKILL.md"}}
         SCN-bypass-active-hooks-json (Read hooks.json):
-          {"tool_input": {"file_path": "/path/to/skills/hooks.json"}}
+          {"tool_name": "Read", "tool_input": {"file_path": "/path/to/skills/hooks.json"}}
         SCN-bypass-empty-string (Read SKILL.md):
-          {"tool_input": {"file_path": "/path/to/skills/SKILL.md"}}
+          {"tool_name": "Read", "tool_input": {"file_path": "/path/to/skills/SKILL.md"}}
+        SCN-denial-grep (Grep skill-internal):
+          {"tool_name": "Grep", "tool_input": {"pattern": "some_regex", "path": "/path/to/skills/SKILL.md"}}
         SCN-denial-contains-bypass-instructions (Glob fsm.json):
-          {"tool_input": {"pattern": "**/fsm.json"}}
+          {"tool_name": "Glob", "tool_input": {"pattern": "**/fsm.json"}}
         SCN-denial-removes-plugin-advice (Glob fsm.json):
-          {"tool_input": {"pattern": "**/fsm.json"}}
+          {"tool_name": "Glob", "tool_input": {"pattern": "**/fsm.json"}}
 
       Verify bypass: hook exits 0 with empty stdout. Verify denial: hook
       exits 0 and stdout contains a JSON object with "decision",
@@ -270,31 +281,36 @@ tasks:
         exits 0 immediately when set and non-empty.
     - id: TSK-update-denial-message
       description: >-
-        Replace systemMessage and permissionDecisionReason with text that
-        instructs setting FSM_BYPASS=1 instead of disabling the plugin.
+        Update systemMessage with developer-facing bypass instructions per
+        INT-deny-response content constraints (MUST contain "export FSM_BYPASS=1",
+        MUST NOT contain "Disable finite-skill-machine"). Update
+        permissionDecisionReason with a brief denial reason referencing the
+        bypass mechanism.
   verification:
     - id: TSK-verify-bypass
       description: |
         Verify all requirement scenarios using fabricated JSON payloads via
         stdin per the manual test procedure in infra testing-strategy.
 
+        For all denial scenarios, verify: hook exits 0, stdout is a JSON
+        object containing decision, systemMessage, and
+        permissionDecisionReason fields.
+
         Bypass scenarios (export FSM_BYPASS=1 before each):
           1. SCN-bypass-active: Read SKILL.md — exits 0, empty stdout
           2. SCN-bypass-active-glob: Glob **/SKILL.md — exits 0, empty stdout
-          3. SCN-bypass-active-grep: Grep with path to skills/ — exits 0, empty stdout
+          3. SCN-bypass-active-grep: Grep with path to SKILL.md — exits 0, empty stdout
           4. SCN-bypass-active-hooks-json: Read hooks.json — exits 0, empty stdout
 
         Denial scenarios (unset FSM_BYPASS or export FSM_BYPASS="" before each):
-          5. SCN-bypass-not-set: Read SKILL.md — deny JSON emitted, denial
-             message contains "export FSM_BYPASS=1" and instructions to set
-             FSM_BYPASS
+          5. SCN-bypass-not-set: Read SKILL.md — deny JSON emitted
           6. SCN-bypass-empty-string: Export FSM_BYPASS="" then Read SKILL.md —
-             deny JSON emitted, denial message contains instructions to set
-             FSM_BYPASS
+             deny JSON emitted
+          7. SCN-denial-grep: Grep with path to SKILL.md — deny JSON emitted
 
         Denial message content scenarios (unset FSM_BYPASS before each):
-          7. SCN-denial-contains-bypass-instructions: Glob **/fsm.json — deny
+          8. SCN-denial-contains-bypass-instructions: Glob **/fsm.json — deny
              JSON emitted, denial message contains "export FSM_BYPASS=1"
-          8. SCN-denial-removes-plugin-advice: Glob **/fsm.json — deny JSON
+          9. SCN-denial-removes-plugin-advice: Glob **/fsm.json — deny JSON
              emitted, denial message does not contain "Disable
              finite-skill-machine"

@@ -173,6 +173,51 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Co-resolved by GAP-3. TSK-verify-bypass description now explicitly includes verification that systemMessage contains "export FSM_BYPASS=1" and does not contain "Disable finite-skill-machine".
 
+### GAP-36: `permissionDecisionReason` lacks implementer-actionable content contract
+- **Source**: design-critic
+- **Severity**: medium
+- **Description**: In `INT-deny-response`, `permissionDecisionReason` retains changelog language rather than a stable content contract. Unlike `systemMessage`, which carries explicit MUST/MUST NOT constraints, `permissionDecisionReason` provides no concrete content requirement an implementer can follow to produce a conforming value. The intended "brief denial reason referencing bypass mechanism" is not reflected as a normative constraint in the artifact.
+- **Triage**: delegate
+- **Decision**: Rewrite `permissionDecisionReason` field description to remove changelog language ("Updated to reference") and replace with a stable descriptive contract: "Brief denial reason referencing the bypass mechanism rather than plugin disablement." No MUST constraints added — aligns with GAP-19's established deferral of field-level normative coverage beyond systemMessage.
+- **Status**: resolved
+- **Outcome**: Replaced 'Brief reason for the denial shown alongside the tool use block. Updated to reference the bypass mechanism instead of plugin disablement.' with 'Brief denial reason referencing the bypass mechanism rather than plugin disablement.' in INT-deny-response fields. [diff: +2/-3 spec.yaml]
+
+### GAP-37: `CMP-block-skill-internals` does not specify per-tool path field extraction
+- **Source**: technical-critic
+- **Severity**: medium
+- **Description**: The `CMP-block-skill-internals` responsibility to "pattern-match tool input paths against protected file names" does not specify that path extraction requires reading different JSON fields depending on the invoking tool (`tool_input.file_path` for Read, `tool_input.pattern` for Glob, `tool_input.path` for Grep). An implementer reading only the technical component responsibility would likely implement single-field extraction, silently allowing Glob and Grep invocations to pass without matching. The infra manual-test-procedure documents correct payload shapes, but the behavioral contract for field selection belongs at the component responsibility level.
+- **Triage**: delegate
+- **Decision**: Expand the existing CMP responsibility from "Pattern-match tool input paths against protected file names" to include per-tool field extraction: "Extract target path from tool-specific input fields (file_path for Read, pattern for Glob, path for Grep) and pattern-match against protected file names."
+- **Status**: resolved
+- **Outcome**: Changed responsibility from 'Pattern-match tool input paths against protected file names' to 'Extract target path from tool-specific input fields (file_path for Read, pattern for Glob, path for Grep) and pattern-match against protected file names'. [diff: +1/-1 spec.yaml]
+
+### GAP-38: No denial scenario for Grep tool path
+- **Source**: requirements-coverage-critic
+- **Severity**: medium
+- **Description**: Denial behavior is verified for the Read and Glob tools, but no scenario verifies that Grep is denied when bypass is inactive. The Grep tool uses a different JSON field for path extraction (`tool_input.path`) than Read or Glob. Because denial scenarios cover only Glob, a silent pass-through caused by wrong-field extraction for Grep would be indistinguishable from a correctly denied request. The denial content scenarios for `CAP-actionable-denial` similarly cover only Glob, leaving the Grep code branch without denial coverage.
+- **Triage**: delegate
+- **Decision**: Add SCN-denial-grep scenario under REQ-env-var-bypass: Given FSM_BYPASS not set, When agent Greps with path targeting a skill-internal file, Then hook emits deny. Denial message content is tool-agnostic and already covered by CAP-actionable-denial scenarios. Also add corresponding coverage-mapping and manual-test-procedure payload entries.
+- **Status**: resolved
+- **Outcome**: Added SCN-denial-grep scenario (given FSM_BYPASS not set, when Grep targets skill-internal file, then deny emitted) under REQ-env-var-bypass. Added SCN-denial-grep to coverage-mapping as manual. Added SCN-denial-grep payload to manual-test-procedure. Added SCN-denial-grep to TSK-verify-bypass denial scenarios checklist. [diff: +10/-0 spec.yaml]
+
+### GAP-39: Grep bypass test payload uses directory path rather than a skill-internal file
+- **Source**: verification-critic
+- **Severity**: medium
+- **Description**: The infra manual-test-procedure payload for the Grep bypass scenario specifies a directory path rather than a specific skill-internal file name. If the hook matches on file names such as SKILL.md, fsm.json, or hooks.json, a directory path would not match any blocked pattern, causing the bypass assertion to pass trivially regardless of whether bypass logic fired. This is the same distinguishability concern identified for other scenarios, applied to the Grep payload specifically.
+- **Triage**: delegate
+- **Decision**: Update SCN-bypass-active-grep payload path from directory ("/path/to/skills/") to a specific skill-internal file ("/path/to/skills/SKILL.md") so the hook's pattern matching would trigger without bypass, making bypass behavior distinguishable from non-triggered hook.
+- **Status**: resolved
+- **Outcome**: Changed SCN-bypass-active-grep payload path from '/path/to/skills/' to '/path/to/skills/SKILL.md' so the hook's pattern matching would trigger without bypass, making bypass behavior distinguishable. Also updated TSK-verify-bypass description from 'path to skills/' to 'path to SKILL.md' for consistency. [diff: +2/-2 spec.yaml]
+
+### GAP-40: Infra payloads omit `tool_name` field, leaving hook routing behavior undocumented
+- **Source**: design-for-test-critic
+- **Severity**: medium
+- **Description**: The manual test procedure provides fabricated JSON payloads containing only `tool_input`, but Claude Code PreToolUse hooks receive a payload that also includes a `tool_name` field. The infra does not document whether the hook script uses `tool_name` to distinguish tool types or infers the tool from which `tool_input` keys are present. If the script routes on `tool_name`, payloads missing that field would not faithfully reproduce real invocations, causing bypass and tool-routing tests to behave differently in the test harness than in production.
+- **Triage**: delegate
+- **Decision**: Add tool_name field to all manual-test-procedure payloads (Read, Glob, Grep as appropriate per scenario) for production-faithful payloads. Add a note documenting that the hook script routes via tool_input key presence (not tool_name), so tool_name serves as documentation fidelity, not a routing key.
+- **Status**: resolved
+- **Outcome**: Added tool_name field (Read, Glob, or Grep as appropriate) to all 9 per-scenario payloads. Added a note explaining that the hook script routes via tool_input key presence, not via tool_name, so tool_name serves as documentation fidelity. [diff: +13/-9 spec.yaml]
+
 ## Low
 
 ### GAP-17: Capabilities reference internal component names
@@ -337,3 +382,39 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Description**: The functional user-impact section uses the word "hook" in two places: once in an out-of-scope item referencing persistent bypass configuration changes, and once in a known-risks entry describing the access gate as a development guardrail. A developer experiencing a denial does not think in terms of hooks — they interact with a denial message. Both uses expose implementation framing where behavioral or user-experience language is appropriate.
 - **Status**: resolved
 - **Outcome**: Replaced "Persistent hook configuration changes" with "Persistent bypass configuration changes" in out-of-scope. Replaced "the hook is a development guardrail" with "the access gate is a development guardrail" in known-risks.
+
+### GAP-41: Bypass env-var scenarios couple allow/deny behavior with denial message content assertions
+- **Source**: requirements-critic
+- **Severity**: low
+- **Description**: The bypass env-var requirement scenarios for the "bypass not set" and "bypass empty string" cases each contain a second then-clause asserting denial message content. The scope of `REQ-env-var-bypass` is allow/deny behavior based on env var state; message content is the domain of `REQ-updated-denial-message` and is covered by dedicated denial content scenarios. These second then-clauses couple two capabilities' assertions in a single scenario, violating the one-scenario-one-behavior principle.
+- **Triage**: delegate
+- **Decision**: Remove the second Then clauses ("The deny message includes instructions to set FSM_BYPASS") from SCN-bypass-not-set and SCN-bypass-empty-string. Each scenario keeps only "The hook emits a deny decision." Message content is already covered by dedicated scenarios under CAP-actionable-denial. Consistent with GAP-9's established one-scenario-one-behavior pattern.
+- **Status**: resolved
+- **Outcome**: Removed 'The deny message includes instructions to set FSM_BYPASS' from both SCN-bypass-not-set and SCN-bypass-empty-string Then clauses. Each scenario now asserts only 'The hook emits a deny decision.' Message content is covered by dedicated scenarios under CAP-actionable-denial. [diff: +0/-2 spec.yaml]
+
+### GAP-42: "the hook" in `REQ-updated-denial-message` uses internal implementation terminology
+- **Source**: requirements-critic
+- **Severity**: low
+- **Description**: The normative rule in `REQ-updated-denial-message` retains the phrase "to bypass the hook for the session," where "the hook" refers to the Claude Code PreToolUse hook mechanism — an internal implementation concept, not a user-observable behavior. Established cleanup patterns in this spec removed "hook" from user-impact language and "systemMessage" from the same rule body, but this phrase was not addressed. The rule should use behavioral language consistent with those prior cleanups.
+- **Triage**: delegate
+- **Decision**: Rephrase REQ-updated-denial-message rule from "to bypass the hook for the session" to "to allow skill file access for the session." Eliminates internal mechanism terminology and uses positive behavioral language consistent with prior cleanups (GAP-1, GAP-5, GAP-25, GAP-26, GAP-29).
+- **Status**: resolved
+- **Outcome**: Changed rule text from 'to bypass the hook for the session' to 'to allow skill file access for the session', eliminating internal mechanism terminology consistent with prior cleanups. [diff: +2/-2 spec.yaml]
+
+### GAP-43: `TSK-update-denial-message` implies identical treatment of `systemMessage` and `permissionDecisionReason`
+- **Source**: code-tasks-critic
+- **Severity**: low
+- **Description**: `TSK-update-denial-message` describes updating both `systemMessage` and `permissionDecisionReason` with unified language, implying identical treatment of both fields. `INT-deny-response` in the technical section makes their requirements qualitatively different: `systemMessage` carries explicit MUST/MUST NOT content constraints, while `permissionDecisionReason` requires only a brief reason referencing the bypass mechanism. The task's unified framing could lead an implementer to write full instructional text in `permissionDecisionReason` or a brief reason in `systemMessage`, both of which would violate the respective field's contract.
+- **Triage**: delegate
+- **Decision**: Rewrite TSK-update-denial-message to differentiate field treatment: "Update systemMessage with developer-facing bypass instructions per INT-deny-response content constraints (MUST/MUST NOT). Update permissionDecisionReason with a brief denial reason referencing the bypass mechanism." One task, distinct guidance per field.
+- **Status**: resolved
+- **Outcome**: Replaced unified 'Replace systemMessage and permissionDecisionReason with text that instructs...' with differentiated guidance: 'Update systemMessage with developer-facing bypass instructions per INT-deny-response content constraints (MUST/MUST NOT). Update permissionDecisionReason with a brief denial reason referencing the bypass mechanism.' [diff: +5/-2 spec.yaml]
+
+### GAP-44: `TSK-verify-bypass` denial scenario assertions are underspecified
+- **Source**: test-tasks-critic
+- **Severity**: low
+- **Description**: Denial scenario assertions in `TSK-verify-bypass` state only "deny JSON emitted" without asserting exit code or JSON structure. The infra testing-strategy explicitly distinguishes denial-via-JSON (hook exits 0 with JSON) from denial-via-nonzero-exit, and requires verifying that stdout contains a JSON object with `decision`, `systemMessage`, and `permissionDecisionReason` fields. The task's reference to the manual test procedure is scoped to payload construction, not verification criteria. A tester following only the task's enumerated assertions would skip both exit-code verification and structural field checks, leaving distinct observable behaviors unasserted.
+- **Triage**: delegate
+- **Decision**: Add a general verification preamble to TSK-verify-bypass before the scenario list: "For all denial scenarios, verify: hook exits 0, stdout is a JSON object containing decision, systemMessage, and permissionDecisionReason fields." Avoids per-scenario repetition while making structural requirements explicit. Also add the new SCN-denial-grep scenario to the verification checklist.
+- **Status**: resolved
+- **Outcome**: Added preamble: 'For all denial scenarios, verify: hook exits 0, stdout is a JSON object containing decision, systemMessage, and permissionDecisionReason fields.' Added SCN-denial-grep as item 7 in denial scenarios. Simplified denial scenario assertions for SCN-bypass-not-set and SCN-bypass-empty-string to 'deny JSON emitted' (structural checks now covered by preamble). Renumbered denial message content scenarios to 8-9. [diff: +11/-8 spec.yaml]
