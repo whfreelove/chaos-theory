@@ -54,6 +54,15 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Enhanced YAML comment above `integration: {}` to explain that cross-capability interaction is already covered by single-capability scenarios, SCN-bypass-not-set spans both capabilities, and the two capabilities modify the same script in non-conflicting ways with no emergent behavior.
 
+### GAP-34: TSK-verify-bypass omits code paths added by later gap resolutions
+- **Source**: code-tasks-critic
+- **Severity**: high
+- **Triage**: delegate
+- **Decision**: Expand TSK-verify-bypass to explicitly enumerate all requirement scenarios, replacing the generic reference to "the manual test procedure" with a complete checklist covering bypass for Read, Glob, Grep, and hooks.json patterns, plus the empty-string FSM_BYPASS denial case.
+- **Description**: TSK-verify-bypass covers only the original bypass and denial scenarios present at the time of GAP-3's resolution. Scenarios added by later gap resolutions — bypass for Glob tool, Grep tool, hooks.json file pattern, and the empty-string FSM_BYPASS denial case — are absent from the task description. An implementer executing only the steps in the task would skip these distinct code paths. The task's deferral to "the manual test procedure" does not enumerate which scenarios must be executed, leaving coverage gaps undetectable.
+- **Status**: resolved
+- **Outcome**: Rewrote TSK-verify-bypass description to enumerate all 8 requirement scenarios explicitly: 4 bypass scenarios (Read SKILL.md, Glob, Grep, Read hooks.json), 2 denial scenarios (FSM_BYPASS unset, FSM_BYPASS empty string), and 2 denial message content scenarios (contains bypass instructions, does not contain plugin-disable advice). Each scenario lists the expected payload and assertion.
+
 ## Medium
 
 ### GAP-5: `why` references script name instead of human burden
@@ -238,3 +247,93 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Description**: Resolution of GAP-9 introduced "systemMessage contains..." and "systemMessage does not contain..." in Then clauses, referencing the internal hook API field name. GAP-1 explicitly identified "systemMessage" as a hook API field, not a user-facing concept. Other scenarios use behavioral language ("The deny message includes instructions to set FSM_BYPASS") for equivalent assertions.
 - **Status**: resolved
 - **Outcome**: Changed SCN-denial-contains-bypass-instructions from "systemMessage contains" to "The denial message contains" and SCN-denial-removes-plugin-advice from "systemMessage does not contain" to "The denial message does not contain", consistent with behavioral language in other scenarios.
+
+### GAP-27: System-overview diagram contradicts established empty-string bypass semantics
+- **Source**: design-critic
+- **Severity**: medium
+- **Triage**: delegate
+- **Decision**: Update diagram labels from "FSM_BYPASS set/unset" to "FSM_BYPASS non-empty" / "FSM_BYPASS empty or unset" while keeping the two-branch structure. Update CMP responsibility to "Check FSM_BYPASS env var non-empty early-exit."
+- **Description**: The system-overview diagram models bypass as a two-state decision: FSM_BYPASS set leads to Allow, FSM_BYPASS unset leads to Deny. In shell semantics, a variable exported as an empty string counts as "set." The requirements section (per the resolution that added the empty-string denial scenario) establish that bypass requires a non-empty value. The diagram's two-state model does not reflect this and would lead an implementer to use a presence check rather than a non-empty value check. The CMP responsibility describing the bypass check also omits the non-empty constraint.
+- **Status**: resolved
+- **Outcome**: Updated system-overview diagram edge labels from "FSM_BYPASS set" to "FSM_BYPASS non-empty" and "FSM_BYPASS unset" to "FSM_BYPASS empty or unset". Updated CMP-block-skill-internals responsibility from "Check FSM_BYPASS env var early-exit" to "Check FSM_BYPASS env var non-empty early-exit."
+
+### GAP-28: DEC-env-var-over-file-flag does not establish inheritance chain feasibility
+- **Source**: technical-critic
+- **Severity**: medium
+- **Triage**: delegate
+- **Decision**: Add a feasibility note to the technical context documenting that Claude Code hooks execute as child processes (standard Unix subprocess model), and that environment variables are inherited by default in this model. The project's own Context section already states hooks communicate via stdin/stdout, confirming standard subprocess behavior. The manual test procedure provides empirical validation by testing with FSM_BYPASS exported in the shell.
+- **Description**: DEC-env-var-over-file-flag accepts that bypass is inherited by child processes as a known trade-off, but neither the decision nor any other section documents that the full inheritance chain — from the developer's shell through the Claude Code process to the hook subprocess — is actually preserved. If Claude Code strips or resets environment variables when invoking hooks, FSM_BYPASS would never be visible to the hook at runtime. No feasibility evidence or reference appears anywhere in the spec.
+- **Status**: resolved
+- **Outcome**: Extended technical context to document that Claude Code hooks execute as child processes following the standard Unix subprocess model where environment variables are inherited by default, that stdin/stdout communication confirms standard subprocess behavior, and that the manual test procedure provides empirical validation.
+
+### GAP-29: REQ-updated-denial-message rule body uses hook API field name
+- **Source**: requirements-critic
+- **Severity**: medium
+- **Triage**: delegate
+- **Decision**: Replace "systemMessage" with "denial message" in the REQ-updated-denial-message rule statement, consistent with GAP-25's approach in the Then clauses.
+- **Description**: The normative rule statement for REQ-updated-denial-message instructs what "the denial systemMessage MUST tell the user." GAP-25 updated the Then clauses in the scenarios under this requirement to use behavioral language, but the rule statement itself was not updated. The word "systemMessage" in the rule body is a hook API field name, not a user-facing concept — the same class of issue GAP-25 resolved in the Then clauses. The rule and its scenarios now use inconsistent language for the same concept.
+- **Status**: resolved
+- **Outcome**: Changed REQ-updated-denial-message rule from "The denial systemMessage MUST tell the user" to "The denial message MUST tell the user", consistent with GAP-25's behavioral language in the Then clauses.
+
+### GAP-30: REQ-env-var-bypass scenario When clauses name an internal script
+- **Source**: requirements-critic
+- **Severity**: medium
+- **Triage**: delegate
+- **Decision**: Rewrite all REQ-env-var-bypass When clauses to use behavioral action framing: "The agent attempts to [Read/Glob/Grep] a skill-internal file" instead of naming the internal script. Co-thematic with GAP-31 for denial scenario When clauses.
+- **Description**: Every scenario under REQ-env-var-bypass uses an internal script name as the When step trigger. BDD When clauses should describe the external action that initiates behavior, not the name of the internal component that runs. Coupling When to a script name means any rename of that component invalidates all scenario statements. GAP-1, GAP-5, and GAP-17 removed internal component names from other spec sections but the scenario When clauses were not addressed.
+- **Status**: resolved
+- **Outcome**: Rewrote all 6 REQ-env-var-bypass scenario When clauses from "block-skill-internals.sh executes" to behavioral action framing (e.g., "The agent attempts to Read a skill-internal file (SKILL.md)"). Moved the agent action from Given to When, making When the behavioral trigger and Given purely preconditions. Co-thematic with GAP-31.
+
+### GAP-32: Manual test procedure Grep payload places file path in wrong field
+- **Source**: verification-critic
+- **Severity**: medium
+- **Triage**: delegate
+- **Decision**: Split Glob and Grep payload examples in the manual test procedure. Glob uses `{"tool_input": {"pattern": "..."}}` (file glob). Grep uses `{"tool_input": {"pattern": "some_regex", "path": "/path/to/skills/"}}` (search regex + file path). Co-resolves with GAP-33 for per-scenario payload examples.
+- **Description**: The manual test procedure's Glob and Grep payload example uses `{"tool_input": {"pattern": "..."}}` for both tools. In the Claude Code Grep tool schema, `pattern` carries the search regex and `path` carries the file path to search within. Placing a file path in the `pattern` field constructs a syntactically valid but semantically incorrect payload. A tester following the procedure literally for a Grep scenario does not exercise real Grep behavior; the hook would receive a path where a regex is expected.
+- **Status**: resolved
+- **Outcome**: Rewrote manual-test-procedure to list per-scenario payload examples. Glob scenarios use {"tool_input": {"pattern": "..."}} (file glob). Grep scenario uses {"tool_input": {"pattern": "some_regex", "path": "/path/to/skills/"}} (search regex + file path). Read scenarios use {"tool_input": {"file_path": "..."}} with the correct file path per scenario (SKILL.md or hooks.json). Co-resolves with GAP-33.
+
+### GAP-31: Denial scenario When clauses use deny emission as the triggering action
+- **Source**: requirements-critic
+- **Severity**: low
+- **Triage**: delegate
+- **Decision**: Restructure SCN-denial-contains-bypass-instructions and SCN-denial-removes-plugin-advice Given/When/Then: move the tool invocation to When (agent attempts to Glob a skill-internal file), make the denial content a Then assertion. Co-thematic with GAP-30 for When clause consistency.
+- **Description**: SCN-denial-contains-bypass-instructions and SCN-denial-removes-plugin-advice both describe the When step as the hook emitting a deny. In BDD structure, the When step is the external action that initiates the behavior under test; the deny emission is the behavioral outcome that belongs in the Then step. Using an outcome as the When conflates the action being taken with the result being asserted, making the scenario's causal structure ambiguous.
+- **Status**: resolved
+- **Outcome**: Restructured SCN-denial-contains-bypass-instructions and SCN-denial-removes-plugin-advice: moved tool invocation from Given to When ("The agent attempts to Glob a skill-internal file (fsm.json)"), added "The hook emits a deny decision" as a Then assertion before the denial content assertions. Given now contains only preconditions (FSM_BYPASS not set). Co-thematic with GAP-30.
+
+### GAP-33: Manual test procedure hooks.json scenario uses SKILL.md path example
+- **Source**: design-for-test-critic
+- **Severity**: low
+- **Triage**: delegate
+- **Decision**: Add per-scenario payload examples to the manual test procedure showing the correct file path for each scenario (SKILL.md, fsm.json, or hooks.json). Co-resolves with GAP-32 for comprehensive payload restructuring.
+- **Description**: The manual test procedure provides a SKILL.md file path as the example path for all Read scenarios, including the scenario added specifically to verify hooks.json blocking behavior. A tester following the procedure literally for the hooks.json scenario would supply a SKILL.md path, never exercising the hooks.json file pattern that the scenario was created to cover.
+- **Status**: resolved
+- **Outcome**: Co-resolved with GAP-32. Manual-test-procedure now lists per-scenario payload examples with correct file paths: SCN-bypass-active and SCN-bypass-not-set use SKILL.md, SCN-bypass-active-hooks-json uses hooks.json, SCN-denial-contains-bypass-instructions and SCN-denial-removes-plugin-advice use fsm.json glob pattern.
+
+### GAP-35: what-changes descriptions say "reads"/"read" but feature covers Read, Glob, and Grep
+- **Source**: implicit-detection
+- **Severity**: low
+- **Triage**: delegate
+- **Decision**: Update CHG-env-bypass from "skill file reads" to "skill file access" and CHG-denial-message from "skill file read is denied" to "skill file access is denied," consistent with the broader tool coverage established by GAP-10.
+- **Description**: CHG-env-bypass says "allows skill file reads" and CHG-denial-message says "When a skill file read is denied" but the bypass and denial cover Read, Glob, and Grep operations. The what-changes descriptions were written before GAP-10 broadened scope to include Glob/Grep scenarios, creating an inconsistency between functional change descriptions and the capabilities/requirements they support.
+- **Status**: resolved
+- **Outcome**: Updated CHG-env-bypass from "allows skill file reads" to "allows skill file access" and CHG-denial-message from "When a skill file read is denied" to "When skill file access is denied."
+
+### GAP-24: Functional `why` uses "task hydration" implementation term
+- **Source**: resolution-leakage-detection
+- **Severity**: low
+- **Triage**: delegate
+- **Decision**: Replace "task hydration" with behavioral language ("automatic task creation") in functional `why`. The developer's experience is that tasks appear automatically — "task hydration" is internal FSM mechanism terminology.
+- **Description**: Resolution of GAP-5 introduced "task hydration" in functional `why`. This is an implementation mechanism name (internal FSM jargon for how the plugin populates task lists). The rewrite removed script names but substituted an internal term.
+- **Status**: resolved
+- **Outcome**: Replaced "task hydration" with "automatic task creation" in functional `why`.
+
+### GAP-26: User-impact section uses "hook" terminology in two places
+- **Source**: functional-critic
+- **Severity**: low
+- **Triage**: delegate
+- **Decision**: Replace "hook" with behavioral language in user-impact: out-of-scope "Persistent hook configuration changes" → "Persistent bypass configuration changes"; known-risks "the hook is a development guardrail" → "the access gate is a development guardrail."
+- **Description**: The functional user-impact section uses the word "hook" in two places: once in an out-of-scope item referencing persistent bypass configuration changes, and once in a known-risks entry describing the access gate as a development guardrail. A developer experiencing a denial does not think in terms of hooks — they interact with a denial message. Both uses expose implementation framing where behavioral or user-experience language is appropriate.
+- **Status**: resolved
+- **Outcome**: Replaced "Persistent hook configuration changes" with "Persistent bypass configuration changes" in out-of-scope. Replaced "the hook is a development guardrail" with "the access gate is a development guardrail" in known-risks.
