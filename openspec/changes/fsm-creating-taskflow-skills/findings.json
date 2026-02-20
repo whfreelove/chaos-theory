@@ -1,0 +1,239 @@
+[
+  {
+    "round": 1,
+    "timestamp": "2026-02-20T20:02:19Z",
+    "findings": [
+      {
+        "critic": "functional-critic",
+        "finding": "Functional-1: IMPL-LEAKAGE-1 \u2014 \"compaction\" is internal mechanism language",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. No project doc section acknowledges that 'compaction' is internal-facing language."
+      },
+      {
+        "critic": "functional-critic",
+        "finding": "Functional-2: IMPL-LEAKAGE-2 \u2014 What Changes describes internal workflow structure",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. No project doc section acknowledges that 'intake paths' and 'gap-filling step' in What Changes are internal workflow terminology."
+      },
+      {
+        "critic": "design-critic",
+        "finding": "Design-1: TECHNICAL-1 \u2014 OBJ-incremental-validation contradicts artifact write order",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. OBJ-incremental-validation states final validation runs 'before file generation,' but CMP-skill-md and CMP-fsm-json-finalize write artifacts before CMP-final-validation runs."
+      },
+      {
+        "critic": "design-critic",
+        "finding": "Design-2: TECHNICAL-2 \u2014 Progressively-built fsm.json mechanism undocumented and blockedBy source unresolved",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. No Decision entry documents the incremental-build contract or where blockedBy data originates for CMP-fsm-json-finalize."
+      },
+      {
+        "critic": "design-critic",
+        "finding": "Design-3: TECHNICAL-3 \u2014 System overview diagram omits SKILL.md to Final Validation data-read dependency",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. No project doc section acknowledges the inconsistency between the system overview diagram and the authoritative task dependency graph."
+      },
+      {
+        "critic": "technical-critic",
+        "finding": "Technical-1: TECH-FEASIBILITY-1 \u2014 Topological sort Python script has no feasibility or testability documentation",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. technical.md prescribes 'topological sort via programmatic tool invocation (Python script)' with no documentation of script location, invocation interface, or testability."
+      },
+      {
+        "critic": "technical-critic",
+        "finding": "Technical-2: TECH-FEASIBILITY-2 \u2014 Deterministic node expansion lacks feasibility documentation for mid-pipeline graph mutation",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. Describes deterministic node expansion but does not document what artifact is mutated, how new IDs are allocated, or what 're-validate the dependency graph after splitting' invokes."
+      },
+      {
+        "critic": "dependency-critic",
+        "finding": "Dependency-1: DEPENDENCY-1 \u2014 Python script for cycle detection specified without Y-statement justification",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. The Decisions section contains Y-statement decisions but none address why a Python script was chosen over LLM-native cycle detection."
+      },
+      {
+        "critic": "implementation-critic",
+        "finding": "Implementation-1: CMP-dependency-map add-task behavior missing from responsibilities",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. CMP-dependency-map states uniform modification behavior but omits the dependency-prompt-before-graph-update behavior required for adds per @dependency-mapping:5.2."
+      },
+      {
+        "critic": "implementation-critic",
+        "finding": "Implementation-2: CMP-skill-md validation failure behavior undocumented",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. CMP-skill-md lists self-validation but states no failure path, unlike every other validating component."
+      },
+      {
+        "critic": "implementation-critic",
+        "finding": "Implementation-3: blockedBy data flow not carried through to CMP-fsm-json-finalize",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. CMP-descriptions output format has no blockedBy field, yet CMP-fsm-json-finalize's only listed dependency is the enriched task list."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "Requirements-1: normative-1 \u2014 Weak language 'can' in Then step",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. dependency-mapping:2.1 Then step uses weak normative language 'can run simultaneously'."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "Requirements-2: atomicity-1 \u2014 Author confirmation action placed in Then step",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. dependency-mapping:1.2 and 2.2 place actor actions inside Then steps."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "Requirements-3: atomicity-2 \u2014 Three distinct outcomes in a single Then step",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. dependency-mapping:3.4 bundles three independently verifiable outcomes in one Then step."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "Requirements-4: testability-1 \u2014 Scenario tests ordering, not self-containment",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. self-contained-descriptions:1.4 is misclassified under Rule 1 (self-containment) when it actually tests presentation ordering."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "Requirements-5: testability-2 \u2014 Then step describes absence of internal process",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. self-contained-descriptions:4.2 Then step describes an internal non-event rather than an observable outcome."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "Requirements-6: atomicity-3 \u2014 Multi-condition Then steps across workflow-validation",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. workflow-validation:1.2, 1.3, and 2.1 bundle multiple independently falsifiable conditions into single Then steps."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "Requirements-7: title-1 \u2014 Scenario titles use em-dash to join two distinct behaviors",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. dependency-mapping:5.1 and workflow-validation:1.5 scenario titles concatenate two distinct behaviors."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "Requirements-Coverage-1: Final validation checks structural sub-components never defined during description writing",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. workflow-validation:2.1 references goal/action/acceptance criteria sub-components that self-contained-descriptions never defines or requires."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "Requirements-Coverage-2: Task removal garbage-collects references without reconnecting dependents to predecessors",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. dependency-mapping:5.1 specifies reference garbage collection but no reconnection of orphaned dependents."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "Requirements-Coverage-3: Task split/merge during description writing has undefined outcome for task list and dependencies",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. self-contained-descriptions:3.1 and 3.2 end at suggestion/prompt without specifying confirmed-outcome behavior."
+      },
+      {
+        "critic": "validation-critic",
+        "finding": "Validation-1: RULE-1 \u2014 workflow-validation:2.1 references undefined structural fields",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. workflow-validation:2.1 references 'goal/action/acceptance criteria' fields not in skill-file-generation:3.3 task schema."
+      },
+      {
+        "critic": "validation-critic",
+        "finding": "Validation-2: RULE-2 \u2014 integration.feature.md cites non-existent scenario IDs",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. integration.feature.md cites phantom scenario tags: self-contained-descriptions:2.3, workflow-validation:1.6, workflow-validation:2.5 through 2.12."
+      },
+      {
+        "critic": "validation-critic",
+        "finding": "Validation-3: SCENARIO-1 \u2014 Multi-source intake path lacks user-interaction coverage",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. No scenario covers the user experience of working through both intake sources simultaneously."
+      },
+      {
+        "critic": "verification-critic",
+        "finding": "Verification-1: TESTABILITY-1 \u2014 workflow-validation:2.1 pass condition tests the wrong check",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. workflow-validation:2.1 titled 'Structural completeness check passes' but Then clause tests self-containment checklist instead of structural integrity (JSON field presence, types, unique IDs)."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "Design-for-Test-1: infra-1 \u2014 Coverage table references non-existent requirement IDs",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. infra.md references requirement handles (1.3.2), (1.7), (1.7.1), (1.8), skill-file-generation:4.3 and 4.4 that do not exist."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "Design-for-Test-2: infra-2 \u2014 dependency-mapping:3.4 absent from infra coverage table",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. infra.md Rule 3 coverage row omits the cycle rejection/resolution scenario."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "Design-for-Test-3: infra-3 \u2014 No verification command for validate_fsm_tasks structural validation code change",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. infra.md classifies validate_fsm_tasks as automated but provides no runnable verification command."
+      },
+      {
+        "critic": "logic-critic",
+        "finding": "Logic-1: technical-critic-1 \u2014 Correction path for cycle and structural integrity failures at CMP-final-validation is undefined",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. technical.md defines correction path only for self-containment failures; cycle and structural integrity correction paths are absent."
+      },
+      {
+        "critic": "logic-critic",
+        "finding": "Logic-2: technical-critic-2 \u2014 Task merge mechanism is unspecified",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. technical.md covers split mechanism in full but leaves merge mechanism (ID survival, blockedBy reconciliation, re-validation) completely undefined."
+      },
+      {
+        "critic": "logic-critic",
+        "finding": "Logic-3: technical-critic-3 \u2014 Enriched task list output format excludes blockedBy",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. Same structural concern as Implementation-3: data flow table defines CMP-descriptions output without blockedBy, leaving CMP-fsm-json-finalize's blockedBy source unresolved."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "Integration-Coverage-1: INTEGRATION-1 \u2014 Description-phase task restructuring invalidates the finalized dependency graph",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. The Decisions section documents deterministic node expansion for splits but does not address the integration concern that this happens after dependency mapping has been finalized."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "Technical-Consistency-1: ARCHITECTURE-CONFLICT-1 \u2014 Integration justification cites non-existent requirement scenario tags",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "gaps.md and resolved.md are empty. Semantically identical to Validation-2: integration.feature.md justification cites phantom scenario IDs from the change's own requirements files."
+      }
+    ]
+  }
+]

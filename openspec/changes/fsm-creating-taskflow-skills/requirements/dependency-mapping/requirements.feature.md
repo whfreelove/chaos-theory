@@ -1,238 +1,142 @@
-# Feature: Dependency Mapping (dependency-mapping)
-
-<!--
-MDG format. Invoke skill: tokamak:writing-markdown-gherkin for full reference.
-
-TERMINOLOGY (proposal language → Gherkin keyword):
-- "Capability" → "Feature" (one Feature per capability)
-- "Requirement" → "Rule" (requirements are grouped as Rules)
--->
+# Feature: Dependency mapping (dependency-mapping)
 
 ## ADDED Requirements
 
 `@dependency-mapping:1`
-### Rule: The skill SHALL guide encoding of serial execution patterns
-
-The skill SHALL help authors express sequential task dependencies where each task must complete before the next begins. Serial chains are presented as ordered sequences where each task blocks the next.
+### Rule: Serial execution patterns are encoded as sequential blockedBy relationships
 
 `@dependency-mapping:1.1`
-#### Scenario: Linear chain of three tasks produces correct dependency ordering
+#### Scenario: Linear chain encoded as sequential dependencies
 
-- Given the author has defined three tasks: "scaffold," "implement," and "verify"
-- And the author indicates they must execute in that exact order
-- When the skill encodes the serial dependency chain
-- Then the skill presents "scaffold" as blocking "implement"
-- And the skill presents "implement" as blocking "verify"
-- And no task is shown as executable before its predecessor completes
+- Given the author identifies three tasks that must execute in order
+- When dependency mapping runs
+- Then each task is configured to block the next task in the chain
 
 `@dependency-mapping:1.2`
-#### Scenario: Author specifies explicit ordering for steps with no natural sequence
+#### Scenario: Author confirms explicit ordering
 
-- Given the author has defined two tasks with no inherent ordering relationship
-- When the author specifies that the first task must complete before the second
-- Then the skill encodes the first task as blocking the second
-- And the skill confirms the serial dependency back to the author
+- Given the author specifies that two tasks must run in a particular sequence
+- When the dependency is presented for confirmation
+- Then the author confirms and the ordering is recorded
 
-`@dependency-mapping:1.3`
-#### Scenario: Blocking direction presented correctly to the author
-
-- Given the author declares that task "setup" blocks task "build"
-- When the skill encodes the dependency
-- Then the skill presents task "build" as blocked by "setup"
-- And the skill does not present "setup" as blocked by "build"
+---
 
 `@dependency-mapping:2`
-### Rule: The skill SHALL guide encoding of parallel execution patterns
-
-The skill SHALL help authors identify tasks that can execute concurrently with no dependencies between them. Tasks with no blocking relationship between them are presented as independent.
+### Rule: Parallel execution patterns are encoded as tasks with no blocking relationship
 
 `@dependency-mapping:2.1`
-#### Scenario: Independent tasks presented with no blocking relationship between them
+#### Scenario: Independent tasks encoded with no blockedBy
 
-- Given the author has defined three tasks: "lint," "unit-test," and "type-check"
-- And no task depends on the output of another
-- When the skill analyzes the dependency relationships
-- Then the skill presents all three tasks with no blocking relationship between them
-- And no task is shown as blocked by another
+- Given the author identifies tasks that can execute concurrently
+- When dependency mapping runs
+- Then those tasks have no blockedBy entries and can run simultaneously
 
 `@dependency-mapping:2.2`
 #### Scenario: Author confirms parallel grouping
 
-- Given the skill has identified two tasks with no blocking relationship between them
-- When the skill presents the parallel grouping to the author
-- And the author confirms that neither task depends on the other
-- Then the skill encodes both tasks with no dependency between them
+- Given the skill identifies tasks that appear to be independent
+- When the parallel grouping is presented for author confirmation
+- Then the author confirms and the tasks remain ungrouped with no blocking relationships
 
-`@dependency-mapping:2.3`
-#### Scenario: All tasks in a multi-task workflow are fully independent
-
-- Given the author has defined four tasks with no dependencies between any of them
-- When the skill analyzes the dependency relationships for the entire workflow
-- Then the skill presents all four tasks with empty blockedBy arrays
-- And the dependency summary shows no blocking relationships in the workflow
-- And the author confirms the fully parallel workflow
+---
 
 `@dependency-mapping:3`
-### Rule: The skill SHALL guide encoding of fan-in and fan-out patterns
-
-The skill SHALL help authors express convergence (fan-in) and divergence (fan-out) in task dependencies. Fan-out produces multiple independent tasks from a single predecessor; fan-in requires multiple tasks to complete before a single successor begins.
+### Rule: Fan-in and fan-out patterns are encoded using blockedBy relationships
 
 `@dependency-mapping:3.1`
-#### Scenario: Fan-out from single task to multiple independent tasks
+#### Scenario: Fan-out pattern encoded from one task to multiple independent tasks
 
-- Given the author has defined a task "generate-config" that must complete first
-- And the author has defined three tasks that each depend only on "generate-config"
-- When the skill encodes the fan-out pattern
-- Then the skill presents "generate-config" as blocking all three downstream tasks
-- And no blocking relationship is shown between the three downstream tasks
+- Given the author identifies a task that must complete before several independent tasks can begin
+- When dependency mapping runs
+- Then each downstream task lists the upstream task in its blockedBy field
 
 `@dependency-mapping:3.2`
-#### Scenario: Fan-in where multiple tasks converge to a single successor
+#### Scenario: Fan-in pattern encoded from multiple tasks to one successor
 
-- Given the author has defined three tasks: "build-api," "build-ui," and "build-docs"
-- And the author has defined a task "deploy" that depends on all three
-- When the skill encodes the fan-in pattern
-- Then the skill presents each of the three tasks as blocking "deploy"
-- And "deploy" is shown as not executable until all three predecessors complete
+- Given the author identifies several tasks that must all complete before a successor can begin
+- When dependency mapping runs
+- Then the successor task lists all predecessor tasks in its blockedBy field
 
 `@dependency-mapping:3.3`
-#### Scenario: Multi-stage fan-out followed by fan-in (diamond pattern)
+#### Scenario: Diamond pattern encoded as fan-out followed by fan-in
 
-- Given the author has defined a task "setup" that fans out to "path-a" and "path-b"
-- And the author has defined a task "merge" that depends on both "path-a" and "path-b"
-- When the skill encodes the diamond dependency pattern
-- Then "setup" is presented as blocking both "path-a" and "path-b"
-- And no blocking relationship is shown between "path-a" and "path-b"
-- And both "path-a" and "path-b" are presented as blocking "merge"
+- Given the author identifies a source task, two parallel tasks, and a convergence task
+- When dependency mapping runs
+- Then the two parallel tasks block on the source and the convergence task blocks on both parallel tasks
 
 `@dependency-mapping:3.4`
-#### Scenario: Circular dependency detected during dependency mapping
+#### Scenario: Circular dependency detected and rejected
 
-- Given the author has encoded dependencies where task A blocks task B, task B blocks task C, and task C blocks task A
-- When the skill validates the dependency graph during the dependency mapping phase
-- Then the skill detects the circular dependency before proceeding to description writing
-- And the skill reports the tasks involved in the cycle
-- And the skill asks the author to resolve the cycle before continuing
+- Given the author specifies dependencies that form a cycle
+- When dependency mapping validates the graph
+- Then the skill rejects the cycle, identifies the tasks involved, and prompts the author to resolve it
+
+---
 
 `@dependency-mapping:4`
-### Rule: The skill SHALL present the dependency graph for author confirmation
-
-Before finalizing, the skill SHALL present the complete dependency structure for author review and approval. The presentation MUST show all blocking relationships, parallel groups, and execution order clearly enough for the author to verify correctness.
+### Rule: The dependency graph is presented for author confirmation before proceeding
 
 `@dependency-mapping:4.1`
-#### Scenario: Dependency graph presented to author for review
+#### Scenario: Dependency graph presented for review
 
-- Given the skill has encoded all task dependencies
-- When the skill reaches the confirmation step
-- Then the skill SHALL present a summary showing every task and its blocking relationships
-- And the summary SHALL distinguish serial chains from parallel groups
-- And the summary SHALL identify fan-in and fan-out points
+- Given dependency mapping has produced a complete graph
+- When the graph is ready
+- Then the skill presents the full dependency graph to the author before proceeding
 
 `@dependency-mapping:4.2`
-#### Scenario: Author modifies dependencies after review
+#### Scenario: Author approves dependency graph
 
-- Given the skill has presented the dependency summary to the author
-- And the author identifies a dependency that SHALL be changed
-- When the author requests a modification to the blocking relationship
-- Then the skill updates the dependency encoding to reflect the change
-- And the skill presents the revised summary for further review
+- Given the dependency graph has been presented
+- When the author confirms the graph is correct
+- Then dependency mapping is finalized and the workflow advances
 
 `@dependency-mapping:4.3`
-#### Scenario: Author approves dependencies as presented
+#### Scenario: Author modifies dependency graph
 
-- Given the skill has presented the dependency summary to the author
-- When the author confirms the dependencies are correct
-- Then the skill finalizes the dependency encoding
-- And no further dependency modifications are made for this workflow
+- Given the dependency graph has been presented
+- When the author requests changes to dependencies
+- Then the skill incorporates the changes and presents the updated graph for re-confirmation
 
-`@dependency-mapping:4.4`
-#### Scenario: Author reviews complex graph with fan-out and fan-in combined
-
-- Given the skill has encoded a dependency graph containing both fan-out and fan-in patterns
-- When the skill presents the dependency summary to the author
-- Then the summary shows every task and its blocking relationships including the fan-out and fan-in points
-- And the summary distinguishes which tasks have no blocking relationship between them within the complex graph
-- And the author SHALL be able to confirm the graph matches the intended workflow
+---
 
 `@dependency-mapping:5`
-### Rule: The skill SHALL support step list modifications during dependency mapping
-
-The skill SHALL support step list modifications during the dependency mapping phase. The author MAY add, remove, or rename tasks while encoding dependencies. After any step list modification, the dependency graph SHALL reflect the change and referential integrity SHALL be maintained.
+### Rule: Task list modifications during dependency mapping update the dependency graph
 
 `@dependency-mapping:5.1`
-#### Scenario: Author removes a task during dependency mapping
+#### Scenario: Author removes a task — dependencies garbage-collected
 
-- Given the author is in the dependency mapping phase with an approved step list
-- And the author determines that a task is redundant
-- When the author requests removal of the task from the step list
-- Then the skill removes the task and all dependency references to that task from the graph
-- And the skill re-validates the dependency graph for integrity
-- And the skill presents the updated graph to the author for confirmation
+- Given the dependency graph has been presented
+- When the author removes a task from the step list
+- Then all blockedBy references to the removed task are removed from remaining tasks
 
 `@dependency-mapping:5.2`
 #### Scenario: Author adds a task during dependency mapping
 
-- Given the author is in the dependency mapping phase with an approved step list
-- And the author identifies a missing task that needs to be added
-- When the author provides the new task's label and description
-- Then the skill SHALL apply a lightweight quality check to the provided label and description verifying: the label is present and non-empty, the description is non-empty and identifies distinct work (specificity), and the task describes a concrete action (actionability)
-- And the lightweight check SHALL omit splitting guidance, iterative prompting for clarification, and full scope evaluation
-- And the skill SHALL add the task to the step list and the dependency graph only after the quality check passes
-- And the skill SHALL ask the author to specify the new task's dependency relationships
-- And the skill SHALL re-validate the dependency graph for integrity
+- Given the dependency graph has been presented
+- When the author adds a new task
+- Then the skill prompts the author to specify the new task's dependencies before re-presenting the graph
 
 `@dependency-mapping:5.3`
-#### Scenario: Author renames a task during dependency mapping
+#### Scenario: Author renames a task — dependencies preserved
 
-- Given the author is in the dependency mapping phase with an approved step list
-- And the author wants to change a task's label to better reflect its purpose
-- When the author provides the new label for the task
-- Then the skill updates the task label in the step list and the dependency graph
-- And all existing dependency relationships for the renamed task are preserved
-- And the skill presents the updated graph to the author for confirmation
+- Given the dependency graph has been presented
+- When the author renames a task
+- Then all blockedBy references to the renamed task are updated to the new name
 
-`@dependency-mapping:5.4`
-#### Scenario: Author modifies a dependency during graph review introducing a circular dependency
-
-- Given the author is in the dependency mapping phase and is reviewing the dependency graph
-- And the current dependency graph is acyclic
-- When the author modifies a dependency relationship that introduces a circular dependency
-- Then the skill SHALL detect the cycle during re-validation
-- And the skill SHALL report the tasks involved in the cycle to the author
-- And the skill SHALL NOT accept the modification until the cycle is resolved
-
-`@dependency-mapping:5.5`
-#### Scenario: Lightweight quality check fails for a newly added task
-
-- Given the author is in the dependency mapping phase with an approved step list
-- And the author requests to add a new task
-- When the author provides a task with a label or description that fails the lightweight quality check (e.g., empty label, non-specific description, or non-actionable task)
-- Then the skill reports which quality criterion the submission failed
-- And the skill prompts the author to correct the submission
-- And the skill does not add the task to the step list or the dependency graph until the quality check passes
+---
 
 `@dependency-mapping:6`
-### Rule: The skill SHALL handle single-task workflows during dependency mapping
-
-When the workflow contains only one task, the dependency mapping phase SHALL confirm the trivially empty dependency graph with the author and produce an empty blockedBy array for the single task.
+### Rule: Single-task workflows produce a valid but empty dependency graph
 
 `@dependency-mapping:6.1`
-#### Scenario: Single-task workflow produces empty dependency graph
+#### Scenario: Single task produces empty dependency graph
 
-- Given the author has defined a workflow with exactly one task
-- When the skill performs dependency mapping for the single task
-- Then the task's blockedBy array is empty (no dependencies to encode)
-- And the skill confirms the trivially empty dependency graph with the author
-- And the skill proceeds to the next phase after author confirmation
+- Given the workflow contains exactly one task
+- When dependency mapping runs
+- Then the task has no blockedBy entries and the graph is presented with a note that no dependencies exist
 
 ## MODIFIED Requirements
 
-None.
-
 ## REMOVED Requirements
 
-None.
-
 ## RENAMED Requirements
-
-None.

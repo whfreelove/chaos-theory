@@ -1,166 +1,97 @@
-# Feature: Skill File Generation (skill-file-generation)
-
-<!--
-MDG format. Invoke skill: tokamak:writing-markdown-gherkin for full reference.
-
-TERMINOLOGY (proposal language -> Gherkin keyword):
-- "Capability" → "Feature" (one Feature per capability)
-- "Requirement" → "Rule" (requirements are grouped as Rules)
--->
+# Feature: Skill file generation (skill-file-generation)
 
 ## ADDED Requirements
 
 `@skill-file-generation:1`
-### Rule: The skill SHALL generate a SKILL.md file
-
-The skill SHALL produce a SKILL.md with frontmatter containing name and description fields and body content that describes the workflow in author-facing language without exposing internal task file structure.
+### Rule: A SKILL.md file is generated with valid structure
 
 `@skill-file-generation:1.1`
-#### Scenario: Generated SKILL.md contains valid frontmatter with name and description
+#### Scenario: SKILL.md contains valid YAML frontmatter
 
-- Given the author has completed the workflow intake and task definition steps
-- When the skill generates the SKILL.md file
-- Then the file begins with YAML frontmatter delimited by `---`
-- And the frontmatter contains a `name` field with the skill's display name
-- And the frontmatter contains a `description` field summarizing the skill's purpose
+- Given the skill workflow is complete
+- When SKILL.md is generated
+- Then SKILL.md contains YAML frontmatter with at minimum a `name` and `description` field
 
 `@skill-file-generation:1.2`
-#### Scenario: Generated SKILL.md describes workflow steps in author-facing language
+#### Scenario: SKILL.md body content uses author-facing language
 
-- Given the author has defined a workflow with multiple steps
-- When the skill generates the SKILL.md file
-- Then the body content describes each workflow step in terms the end user of the skill understands
-- And the language references tasks by their purpose, not by file names or internal identifiers
+- Given SKILL.md is being generated
+- When the body content is written
+- Then the body describes the workflow in author-facing terms without referencing internal task identifiers or fsm.json fields
 
-`@skill-file-generation:1.3`
-#### Scenario: Generated SKILL.md placed in correct skill directory
-
-- Given the author has specified a plugin name and skill name
-- When the skill generates the SKILL.md file
-- Then the skill guides the author to place SKILL.md at `plugins/<plugin>/skills/<skill>/SKILL.md`
+---
 
 `@skill-file-generation:2`
-### Rule: The skill SHALL self-validate SKILL.md before finalizing
-
-The skill's documentation generation step self-validates the generated SKILL.md (frontmatter correctness) and does not finalize until self-validation passes.
+### Rule: SKILL.md is self-validated before finalization
 
 `@skill-file-generation:2.1`
-#### Scenario: SKILL.md self-validation failure triggers correction and re-validation
+#### Scenario: SKILL.md validation failure triggers correction
 
-- Given the skill has generated SKILL.md content
-- And the skill's documentation generation step's self-validation detects a missing frontmatter field
-- When the skill reports the self-validation failure to the author
-- Then the author corrects the identified issue
-- And the skill re-validates the corrected SKILL.md before completing
+- Given SKILL.md has been generated
+- When SKILL.md validation detects a structural problem
+- Then the skill identifies the issue and prompts the author to correct it before proceeding
+
+---
 
 `@skill-file-generation:3`
-### Rule: The skill SHALL generate a task definition file
-
-The skill SHALL produce a task definition file that encodes the workflow steps with their dependencies, descriptions, and metadata so tasks are created in the correct execution order.
+### Rule: A task definition file (fsm.json) is generated with all workflow tasks
 
 `@skill-file-generation:3.1`
-#### Scenario: Generated task definition contains all workflow steps
+#### Scenario: Task definition file contains all workflow steps
 
-- Given the author has defined a workflow with five steps
-- When the skill generates the task definition file
-- Then the task definition contains exactly five task entries
-- And each task entry corresponds to one workflow step
+- Given the workflow contains N tasks
+- When fsm.json is generated
+- Then fsm.json contains exactly N task entries
 
 `@skill-file-generation:3.2`
-#### Scenario: Generated task definition encodes dependencies correctly
+#### Scenario: Task dependencies encoded correctly
 
-- Given the author has defined step B as dependent on step A
-- And step C as dependent on both step A and step B
-- When the skill generates the task definition file
-- Then step B's entry lists step A's ID in its dependency field
-- And step C's entry lists both step A's and step B's IDs in its dependency field
+- Given the workflow has tasks with blockedBy relationships
+- When fsm.json is generated
+- Then each task's blockedBy field references the correct predecessor task IDs
 
 `@skill-file-generation:3.3`
-#### Scenario: Each task entry has required fields
+#### Scenario: Each task entry contains required fields
 
-- Given the author has completed the workflow definition
-- When the skill generates the task definition file
-- Then each task entry contains an `id` field with a unique numeric identifier
-- And each task entry contains a `subject` field with a short task title
-- And each task entry contains a `description` field with self-contained instructions
-- And each task entry contains an `activeForm` field with present-continuous form for status display (auto-generated default; author overrides are accepted as-is per self-contained-descriptions:4.2)
-- And each task entry contains a `blockedBy` field encoding dependency references
-- And each task entry contains `metadata` with the skill name for scoped identification
+- Given a task in the workflow has a subject, description, activeForm, and dependency information
+- When fsm.json is generated
+- Then the task entry contains `id`, `subject`, `description`, `activeForm`, `blockedBy`, and `metadata` fields
 
 `@skill-file-generation:3.4`
-#### Scenario: Task definition file serialized as JSON array
+#### Scenario: Task definition serialized as a JSON array
 
-- Given the author has completed the workflow definition
-- When the skill generates the task definition file
-- Then the task definition SHALL be serialized as a JSON array
-- And each element in the array SHALL be a JSON object representing one task entry
+- Given fsm.json is generated
+- When the file is written
+- Then the root structure is a JSON array where each element is a task object
 
 `@skill-file-generation:3.5`
-#### Scenario: Task IDs renumbered to topological order at finalization with author notification
+#### Scenario: Task IDs renumbered to topological order with author notification
 
-- Given the author has completed the workflow definition with tasks that were assigned IDs during authoring
-- When the skill finalizes the task definition file
-- Then the skill SHALL renumber all task IDs to topological order (sequential starting at 1)
-- And the skill SHALL update all dependency references to match the renumbered IDs
-- And the skill SHALL present the old-to-new ID mapping to the author
-- And the author SHALL be informed of all ID changes before finalization completes
+- Given the workflow has tasks with dependencies that impose a topological ordering
+- When fsm.json is generated
+- Then task IDs are assigned in topological order and the author is notified of any ID changes
 
-`@skill-file-generation:3.6`
-#### Scenario: Display-friendly names auto-normalized to directory-safe format
-
-- Given the author has specified a plugin name or skill name containing spaces, uppercase letters, or special characters (e.g., "My Cool Skill")
-- When the skill processes the name for directory placement
-- Then the skill converts the name to a directory-safe format (lowercase, hyphens replacing spaces, no special characters) (e.g., "my-cool-skill")
-- And the skill presents the normalized name to the author for confirmation
-- And the author SHALL be able to confirm or override the normalized name
+---
 
 `@skill-file-generation:4`
-### Rule: The skill SHALL place generated files in the correct directory structure
-
-The skill SHALL guide the author on where to place the SKILL.md and task definition file within the plugin's skill directory so the files conform to the expected plugin convention.
+### Rule: Generated files are placed in the correct plugin directory
 
 `@skill-file-generation:4.1`
-#### Scenario: Skill files placed under plugin skills directory
+#### Scenario: Generated files placed in the plugin's skills directory
 
-- Given the author has specified plugin name "my-plugin" and skill name "my-skill"
-- When the skill presents the generated files to the author
-- Then the skill instructs the author to place files under `plugins/my-plugin/skills/my-skill/`
+- Given the author has specified a target skill name and plugin directory
+- When file generation completes
+- Then SKILL.md and fsm.json are written to `<plugin>/skills/<skill-name>/`
 
 `@skill-file-generation:4.2`
-#### Scenario: Directory structure matches plugin convention
+#### Scenario: Existing skill directory collision prompts author to choose resolution
 
-- Given the skill has generated both a SKILL.md and a task definition file
-- When the skill presents the directory layout to the author
-- Then the layout shows SKILL.md at the skill directory root
-- And the layout shows the task definition file alongside SKILL.md in the same directory
-
-`@skill-file-generation:4.3`
-#### Scenario: Non-existent target directory created during file placement
-
-- Given the author has specified a plugin name and skill name
-- And the target directory `plugins/<plugin>/skills/<skill>/` does not yet exist
-- When the skill places the generated files
-- Then the skill creates the target directory structure
-- And the skill places the generated files in the newly created directory
-
-`@skill-file-generation:4.4`
-#### Scenario: Existing skill directory detected and author chooses resolution
-
-- Given the author has specified a plugin name and skill name
-- And the target directory `plugins/<plugin>/skills/<skill>/` already exists and contains files
-- When the skill detects the existing directory
-- Then the skill informs the author that the target directory already exists
-- And the skill offers the author options to overwrite the existing files, choose a different skill name, or abort file placement
-- And the skill does not place files until the author selects an option
+- Given the target skill directory already exists
+- When file generation would overwrite existing files
+- Then the skill presents the author with options: overwrite, choose a different name, or abort
 
 ## MODIFIED Requirements
 
-None.
-
 ## REMOVED Requirements
 
-None.
-
 ## RENAMED Requirements
-
-None.

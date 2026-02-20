@@ -1,269 +1,99 @@
-# Feature: Workflow Validation (workflow-validation)
-
-<!--
-MDG format. Invoke skill: tokamak:writing-markdown-gherkin for full reference.
-
-TERMINOLOGY (proposal language → Gherkin keyword):
-- "Capability" → "Feature" (one Feature per capability)
-- "Requirement" → "Rule" (requirements are grouped as Rules)
--->
+# Feature: Workflow validation (workflow-validation)
 
 ## ADDED Requirements
 
 `@workflow-validation:1`
-### Rule: The skill SHALL perform incremental validation at each workflow phase
-
-The skill SHALL validate outputs at the end of each phase (intake, dependency mapping, description writing) before proceeding to the next phase. Validation failure at any phase SHALL prevent progression until the author resolves the identified issues.
+### Rule: Incremental validation gates progression at each phase
 
 `@workflow-validation:1.1`
-#### Scenario: Intake phase output validated before proceeding to dependency mapping
+#### Scenario: Intake phase validation passes when step list is complete
 
-- Given the author has completed the intake phase and the skill has produced a step list
-- When the skill validates the intake phase output
-- Then the skill SHALL check that every step has a label and a description of the work it performs
-- And the skill SHALL check that the step list contains at least one step
-- And the skill confirms the intake output is valid before presenting the dependency mapping phase
+- Given the author has completed workflow intake
+- When intake validation runs
+- Then validation passes if the step list contains at least one labeled step
 
 `@workflow-validation:1.2`
-#### Scenario: Dependency mapping output validated before proceeding to description writing
+#### Scenario: Dependency phase validation passes when graph is valid
 
-- Given the author has completed the dependency mapping phase
-- When the skill validates the dependency mapping output
-- Then the skill SHALL check that every task appears in the dependency graph
-- And the skill SHALL check that no task references a dependency that does not exist in the step list
-- And the skill SHALL check that no circular dependencies exist in the graph
-- And the skill confirms the dependency output is valid before presenting the description writing phase
+- Given dependency mapping has produced a dependency graph
+- When dependency validation runs
+- Then validation passes if the graph is acyclic and all task references resolve to existing tasks
 
 `@workflow-validation:1.3`
-#### Scenario: Description writing output validated before proceeding to file generation
+#### Scenario: Description phase validation passes when all tasks are described
 
-- Given the author has completed the description writing phase for all tasks
-- When the skill validates the description writing output
-- Then the skill SHALL check that every task has a written description
-- And the skill SHALL check that no description is empty or contains only placeholder text
-- And the skill confirms the description output is valid before presenting the file generation phase
-
-`@workflow-validation:1.3.1`
-#### Scenario: Validation failure at description writing phase catches placeholder text
-
-- Given the author has written a task description
-- And the description contains only placeholder text (e.g., "TODO: write this later")
-- When the skill validates the description writing output
-- Then the skill reports the specific task whose description contains placeholder text
-- And the skill does not present the file generation phase
-- And the skill asks the author to write a substantive description before proceeding
-
-`@workflow-validation:1.3.2`
-#### Scenario: Advancement blocked when skipped tasks have incomplete descriptions
-
-- Given the author has skipped one or more tasks during the description writing phase
-- And those skipped tasks do not have written descriptions
-- When the author attempts to advance to the file generation phase
-- Then the skill reports which tasks have incomplete descriptions
-- And the skill does not present the file generation phase
-- And the skill blocks advancement until all tasks have descriptions
+- Given description writing has produced task descriptions
+- When description validation runs
+- Then validation passes if all tasks have descriptions and no descriptions contain placeholder text
 
 `@workflow-validation:1.4`
-#### Scenario: Validation failure at intake phase prevents progression
+#### Scenario: Validation failure blocks phase progression
 
-- Given the author has completed the intake phase
-- And the step list contains a step with no description of the work it performs
-- When the skill validates the intake phase output
-- Then the skill reports the specific step that lacks a description
-- And the skill does not present the dependency mapping phase
-- And the skill asks the author to correct the issue before proceeding
+- Given validation has run at the end of a phase
+- When validation detects an issue
+- Then the skill reports the issue and does not advance to the next phase
 
 `@workflow-validation:1.5`
-#### Scenario: Validation failure at dependency mapping phase prevents progression
+#### Scenario: Author corrects validation error — re-validation unblocks progression
 
-- Given the author has completed the dependency mapping phase
-- And a task references a dependency that does not exist in the step list
-- When the skill validates the dependency mapping output
-- Then the skill reports the task and the nonexistent dependency it references
-- And the skill does not present the description writing phase
-- And the skill asks the author to correct the dependency before proceeding
+- Given a validation failure has blocked phase progression
+- When the author corrects the reported issue
+- Then the skill re-runs validation and advances to the next phase if validation passes
 
-`@workflow-validation:1.6`
-#### Scenario: Author corrects validation error and re-validates successfully
-
-- Given the skill has reported a validation error within a task
-- And the skill has presented the issue and asked the author to correct it
-- And the author has corrected the issue the skill identified
-- When the skill re-validates the phase output within the same task
-- Then the skill confirms the output is now valid
-- And the task completes and the skill proceeds to the next phase
-
-`@workflow-validation:1.7`
-#### Scenario: Phase-completion summary confirms all entries updated before advancing
-
-- Given the skill has completed a construction phase (dependency mapping or description writing) for all tasks
-- When the phase finishes updating all entries
-- Then the skill SHALL present a phase-completion summary showing which entries were updated
-- And the skill SHALL not advance to the next phase until the author confirms the summary
-
-`@workflow-validation:1.7.1`
-#### Scenario: Advancement blocked when phase-completion summary reveals incomplete entries
-
-- Given the skill has presented a phase-completion summary after a construction phase
-- And the summary reveals that one or more entries were not updated during the phase
-- When the author does not confirm the summary due to incomplete entries
-- Then the skill SHALL report which specific entries were not updated
-- And the skill SHALL not advance to the next phase until the incomplete entries are addressed
-
-`@workflow-validation:1.8`
-#### Scenario: Artifact recovery after in-context artifact loss
-
-- Given the skill is performing progressive construction of the fsm.json artifact
-- And the in-context artifact is lost due to context window limits
-- When the skill detects the artifact is no longer available in context
-- Then the skill SHALL reconstruct the artifact from the most recent complete phase output visible in conversation history
-- And the skill SHALL present the reconstructed artifact to the author for verification before resuming construction
+---
 
 `@workflow-validation:2`
-### Rule: The skill SHALL perform comprehensive final validation before deployment
-
-The skill SHALL run a complete validation pass across all workflow outputs before the skill files are finalized. This final check covers cross-cutting concerns that incremental phase checks cannot catch, including self-containment of descriptions, dependency graph integrity, and structural correctness of the task definition.
+### Rule: A comprehensive final validation runs before deployment
 
 `@workflow-validation:2.1`
-#### Scenario: Final validation checks structural completeness of each task description
+#### Scenario: Structural completeness check passes
 
-- Given the author has completed all phases and the skill is performing final validation
-- When the skill evaluates each task description against the self-containment checklist
-- Then the skill SHALL verify each description contains a goal statement (what the task accomplishes), specific actions (what the agent should do), and acceptance criteria (how to know when done)
-
-`@workflow-validation:2.1.1`
-#### Scenario: Final validation checks term definition coverage in each task description
-
-- Given the author has completed all phases and the skill is performing final validation
-- When the skill evaluates each task description against the self-containment checklist
-- Then the skill SHALL verify every term in each description is either defined within the description or includes a pointer to its definition in code or project documentation
-
-`@workflow-validation:2.1.2`
-#### Scenario: Final validation detects external references in task descriptions
-
-- Given the author has completed all phases and the skill is performing final validation
-- When the skill evaluates each task description against the self-containment checklist
-- Then the skill SHALL flag any description that references the SKILL.md text, sibling tasks, or assumes context not present in the description
+- Given the workflow tasks have been finalized
+- When final validation runs the structural completeness check
+- Then validation passes if each task has a goal, at least one action, and acceptance criteria
 
 `@workflow-validation:2.2`
-#### Scenario: Final validation checks dependency graph for cycles using topological sort
+#### Scenario: Final cycle detection catches dependency issues
 
-- Given the author has completed all phases and the skill is performing final validation
-- When the skill performs cycle detection on the dependency graph
-- Then the skill SHALL present validation results indicating whether the dependency graph is acyclic
-- And if cycles are detected, the skill SHALL report the set of task IDs and labels involved in cycle(s) to the author
+- Given the workflow's dependency graph has been finalized
+- When final validation runs cycle detection
+- Then validation reports any cycles found and blocks deployment until they are resolved
+
+`@workflow-validation:2.3`
+#### Scenario: Self-containment audit passes
+
+- Given all task descriptions have been written
+- When final validation runs the self-containment audit
+- Then validation passes if no description contains cross-task references or external references
 
 `@workflow-validation:2.4`
-#### Scenario: Final validation failure identifies specific issues to fix
+#### Scenario: Final validation failure identifies specific issues with correction guidance
 
-- Given the skill is performing final validation
-- And the final validation detects one or more issues across different validation checks
-- When the skill reports the final validation results
-- Then the skill lists each issue with the affected task or artifact
-- And each listed issue includes a description of what is wrong
-- And the skill does not finalize the skill files until all issues are resolved
+- Given final validation has run
+- When one or more checks fail
+- Then the skill lists each failed check with the specific task or field involved and guidance for correction
 
-`@workflow-validation:2.5`
-#### Scenario: Self-containment failure corrected in-place during final validation
-
-- Given the skill is performing final validation
-- And the self-containment audit flags a description that references context not present in the description itself
-- When the skill reports the self-containment issue to the author
-- Then the author edits the description directly within the final validation task
-- And the skill re-evaluates the corrected description for self-containment
-- And no phase regression to the description writing phase is required
-
-`@workflow-validation:2.6`
-#### Scenario: Structural validation passes when all required fields and metadata are present
-
-- Given the skill is performing final validation on the generated task definition
-- And every task entry contains all 5 core fields (`id`, `subject`, `description`, `activeForm`, `blockedBy`) and `metadata` with the skill name
-- When the skill checks the structural integrity of the task definition
-- Then the structural validation check passes
-- And the skill confirms the task definition structure is valid
-
-`@workflow-validation:2.7`
-#### Scenario: Structural validation fails when a required field is missing
-
-- Given the skill is performing final validation on the generated task definition
-- And one task entry is missing a required field (e.g., `activeForm` is absent)
-- When the skill checks the structural integrity of the task definition
-- Then the structural validation check fails
-- And the skill reports the specific task entry and the specific missing field
-- And the skill does not finalize until the missing field is added
-
-`@workflow-validation:2.8`
-#### Scenario: Structural validation fails when a field has the wrong type
-
-- Given the skill is performing final validation on the generated task definition
-- And one task entry has a field with an incorrect type (e.g., `blockedBy` is a string instead of an array of integers)
-- When the skill checks the structural integrity of the task definition
-- Then the structural validation check fails
-- And the skill reports the specific task entry, the field name, the expected type, and the actual type
-- And the skill does not finalize until the field type is corrected
-
-`@workflow-validation:2.10`
-#### Scenario: Structural validation fails when metadata has empty fsm value
-
-- Given the skill is performing final validation on the generated task definition
-- And one task entry has metadata with an `fsm` key but the value is an empty string
-- When the skill checks the structural integrity of the task definition
-- Then the structural validation check fails
-- And the skill reports the specific task entry and that the `fsm` metadata value must be a non-empty string matching the skill name
-- And the skill does not finalize until the metadata content is corrected
-
-`@workflow-validation:2.11`
-#### Scenario: Structural validation fails when blockedBy references a non-existent task ID
-
-- Given the skill is performing final validation on the generated task definition
-- And one task entry's `blockedBy` array contains an ID that does not correspond to any task in the generated output
-- When the skill checks the structural integrity of the task definition
-- Then the structural validation check fails
-- And the skill reports the specific task entry and the invalid `blockedBy` reference
-- And the skill does not finalize until the dangling reference is corrected
-
-`@workflow-validation:2.12`
-#### Scenario: Structural validation fails when metadata.fsm does not match SKILL.md name
-
-- Given the skill is performing final validation on the generated task definition and SKILL.md
-- And the `metadata.fsm` value in a task entry does not match the SKILL.md frontmatter `name` field
-- When the skill checks the name consistency between fsm.json and SKILL.md
-- Then the structural validation check fails
-- And the skill reports the mismatch between the `metadata.fsm` value and the SKILL.md `name` field
-- And the skill does not finalize until the name mismatch is corrected
+---
 
 `@workflow-validation:3`
-### Rule: The skill SHALL present validation results clearly to the author
-
-The skill SHALL communicate validation outcomes so the author can identify what passed, what failed, and how to fix any issues. Passing validations confirm readiness to proceed; failing validations provide actionable guidance.
+### Rule: Validation results are presented clearly to the author
 
 `@workflow-validation:3.1`
-#### Scenario: Passing validation confirms readiness to proceed
+#### Scenario: Passing validation confirms readiness for deployment
 
-- Given the skill has completed a validation check at any phase or during final validation
-- And all checks in that validation pass
-- When the skill presents the validation results to the author
-- Then the skill confirms that validation passed
-- And the skill states that the workflow is ready to proceed to the next step
+- Given all validation checks have passed
+- When the final validation result is presented
+- Then the skill confirms the workflow is valid and ready to be written to disk
 
 `@workflow-validation:3.2`
-#### Scenario: Failing validation lists specific issues with actionable guidance
+#### Scenario: Failing validation lists specific issues with guidance
 
-- Given the skill has completed a validation check at any phase or during final validation
-- And one or more checks in that validation have failed
-- When the skill presents the validation results to the author
-- Then the skill lists each failing check with the specific issue detected
-- And each listed issue includes guidance on how the author can resolve it
-- And the skill does not proceed until the author addresses the reported issues
+- Given one or more validation checks have failed
+- When the validation result is presented
+- Then the skill lists each issue specifically, identifying the affected task and providing actionable correction guidance
 
 ## MODIFIED Requirements
 
-None.
-
 ## REMOVED Requirements
 
-None.
-
 ## RENAMED Requirements
-
-None.
