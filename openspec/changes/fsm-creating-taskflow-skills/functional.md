@@ -1,3 +1,7 @@
+## Context
+
+**Audience**: Claude Code skill authors. This spec uses the term "compaction" intentionally — skill authors working with Claude Code understand that conversation context is periodically compacted, and task descriptions must remain executable without relying on pre-compaction context.
+
 ## Why
 
 Creating FSM-enabled skills requires encoding dependency relationships, ensuring each task description is self-contained, and meeting structural conventions — all before the skill does any real work. Skill authors spend time debugging structural errors instead of designing workflows.
@@ -44,6 +48,6 @@ None.
 ## What Changes
 
 - Skill authors create new FSM skills through a guided workflow that handles structure, dependencies, and descriptions
-- Two input-based intake paths provide dedicated guidance for each source type, with brainstorming as a gap-filling step that builds on prior intake material
+- Skill authors receive guidance tailored to their starting point — existing skill analysis, written step descriptions, or both — with brainstorming to fill remaining gaps
 - The skill validates work at each phase and runs a comprehensive final check before deployment
 - Each task description is self-contained and serves as the sole instruction source — the author does not need to manage what context survives after compaction

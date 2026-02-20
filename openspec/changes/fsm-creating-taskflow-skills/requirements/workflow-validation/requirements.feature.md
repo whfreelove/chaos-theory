@@ -13,28 +13,42 @@
 - Then validation passes if the step list contains at least one labeled step
 
 `@workflow-validation:1.2`
-#### Scenario: Dependency phase validation passes when graph is valid
+#### Scenario: Dependency phase validation passes when graph is acyclic
 
 - Given dependency mapping has produced a dependency graph
 - When dependency validation runs
-- Then validation passes if the graph is acyclic and all task references resolve to existing tasks
+- Then validation passes if the graph contains no cycles
 
 `@workflow-validation:1.3`
-#### Scenario: Description phase validation passes when all tasks are described
+#### Scenario: Dependency phase validation passes when all task references resolve
+
+- Given dependency mapping has produced a dependency graph
+- When dependency validation runs
+- Then validation passes if all blockedBy references point to existing tasks
+
+`@workflow-validation:1.4`
+#### Scenario: Description phase validation passes when all tasks have descriptions
 
 - Given description writing has produced task descriptions
 - When description validation runs
-- Then validation passes if all tasks have descriptions and no descriptions contain placeholder text
+- Then validation passes if every task has a non-empty description
 
-`@workflow-validation:1.4`
+`@workflow-validation:1.5`
+#### Scenario: Description phase validation passes when no descriptions contain placeholder text
+
+- Given description writing has produced task descriptions
+- When description validation runs
+- Then validation passes if no description contains placeholder text
+
+`@workflow-validation:1.6`
 #### Scenario: Validation failure blocks phase progression
 
 - Given validation has run at the end of a phase
 - When validation detects an issue
 - Then the skill reports the issue and does not advance to the next phase
 
-`@workflow-validation:1.5`
-#### Scenario: Author corrects validation error — re-validation unblocks progression
+`@workflow-validation:1.7`
+#### Scenario: Corrected validation error unblocks phase progression
 
 - Given a validation failure has blocked phase progression
 - When the author corrects the reported issue
@@ -46,11 +60,11 @@
 ### Rule: A comprehensive final validation runs before deployment
 
 `@workflow-validation:2.1`
-#### Scenario: Structural completeness check passes
+#### Scenario: Structural integrity check passes
 
-- Given the workflow tasks have been finalized
-- When final validation runs the structural completeness check
-- Then validation passes if each task has a goal, at least one action, and acceptance criteria
+- Given the fsm.json artifact has been finalized
+- When final validation runs the structural integrity check
+- Then validation passes if each entry contains `id`, `subject`, `description`, `activeForm`, and `blockedBy` fields with correct types, all IDs are unique, and all blockedBy references resolve to existing IDs
 
 `@workflow-validation:2.2`
 #### Scenario: Final cycle detection catches dependency issues

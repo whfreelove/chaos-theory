@@ -113,6 +113,18 @@
 - When brainstorming also produces nothing
 - Then the skill informs the author that no workflow material is available and terminates the session
 
+---
+
+`@workflow-intake:5`
+### Rule: Both intake sources can be used together
+
+`@workflow-intake:5.1`
+#### Scenario: Multi-source intake produces a unified step list incorporating both sources
+
+- Given the author provides both an existing skill and written step descriptions as intake sources
+- When the skill processes the combined intake
+- Then the skill produces a unified normalized step list that incorporates content from both the existing-skill analysis and the written step descriptions
+
 ## MODIFIED Requirements
 
 ## REMOVED Requirements

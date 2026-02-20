@@ -26,13 +26,6 @@
 - When the skill evaluates the description
 - Then the skill flags the external reference and requires the author to inline the referenced content
 
-`@self-contained-descriptions:1.4`
-#### Scenario: Tasks presented to author in dependency order
-
-- Given the workflow has been mapped with dependencies
-- When the description writing phase begins
-- Then the skill presents tasks to the author in dependency order, with prerequisites before dependents
-
 ---
 
 `@self-contained-descriptions:2`
@@ -78,6 +71,42 @@
 - When the skill evaluates the description
 - Then the description is accepted without guidance
 
+`@self-contained-descriptions:3.4`
+#### Scenario: Author confirms a split suggestion
+
+- Given the skill has suggested splitting a task that spans multiple distinct actions
+- When the author confirms the split
+- Then the workflow contains the original task split into its component parts
+- And each part preserves the predecessor and successor relationships of the original task
+- And the dependency graph passes validation
+- And the description-writing phase continues with the post-split tasks
+
+`@self-contained-descriptions:3.5`
+#### Scenario: Author confirms a merge suggestion
+
+- Given the skill has suggested merging a trivial task with an adjacent task
+- When the author confirms the merge
+- Then the workflow consolidates the two tasks into one
+- And the consolidated task preserves the combined predecessor and successor relationships of both original tasks
+- And the dependency graph passes validation
+- And the description-writing phase continues with the merged task
+
+`@self-contained-descriptions:3.6`
+#### Scenario Outline: Re-validation failure after confirmed <operation> blocks phase continuation
+
+- Given the author has confirmed a <operation> suggestion
+- And the updated dependency graph contains a cycle
+- When the dependency graph is re-validated
+- Then the description-writing phase does not continue
+- And the author is prompted to resolve the cycle before proceeding
+
+##### Examples
+
+| operation |
+|-----------|
+| split     |
+| merge     |
+
 ---
 
 `@self-contained-descriptions:4`
@@ -95,7 +124,19 @@
 
 - Given the skill has generated an activeForm
 - When the author provides their own activeForm text instead
-- Then the author's override is recorded without format validation
+- Then the author's override is accepted regardless of format
+
+---
+
+`@self-contained-descriptions:5`
+### Rule: Task descriptions are presented in dependency order
+
+`@self-contained-descriptions:5.1`
+#### Scenario: Tasks presented to author in dependency order
+
+- Given the workflow has been mapped with dependencies
+- When the description writing phase begins
+- Then the skill presents tasks to the author in dependency order, with prerequisites before dependents
 
 ## MODIFIED Requirements
 

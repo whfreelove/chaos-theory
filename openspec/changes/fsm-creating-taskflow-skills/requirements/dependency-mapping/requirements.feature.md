@@ -16,8 +16,9 @@
 #### Scenario: Author confirms explicit ordering
 
 - Given the author specifies that two tasks must run in a particular sequence
-- When the dependency is presented for confirmation
-- Then the author confirms and the ordering is recorded
+- And the dependency is presented for confirmation
+- When the author confirms the order
+- Then the ordering is recorded in the dependency table
 
 ---
 
@@ -29,14 +30,15 @@
 
 - Given the author identifies tasks that can execute concurrently
 - When dependency mapping runs
-- Then those tasks have no blockedBy entries and can run simultaneously
+- Then those tasks have no blockedBy entries
 
 `@dependency-mapping:2.2`
 #### Scenario: Author confirms parallel grouping
 
 - Given the skill identifies tasks that appear to be independent
-- When the parallel grouping is presented for author confirmation
-- Then the author confirms and the tasks remain ungrouped with no blocking relationships
+- And the parallel grouping is presented for author confirmation
+- When the author confirms the tasks are independent
+- Then the tasks are recorded with no blocking relationships
 
 ---
 
@@ -69,7 +71,9 @@
 
 - Given the author specifies dependencies that form a cycle
 - When dependency mapping validates the graph
-- Then the skill rejects the cycle, identifies the tasks involved, and prompts the author to resolve it
+- Then the cycle is rejected
+- And the involved tasks are identified
+- And the author is prompted to resolve the cycle
 
 ---
 
@@ -103,7 +107,7 @@
 ### Rule: Task list modifications during dependency mapping update the dependency graph
 
 `@dependency-mapping:5.1`
-#### Scenario: Author removes a task — dependencies garbage-collected
+#### Scenario: Removed task dependencies garbage-collected
 
 - Given the dependency graph has been presented
 - When the author removes a task from the step list
@@ -122,6 +126,13 @@
 - Given the dependency graph has been presented
 - When the author renames a task
 - Then all blockedBy references to the renamed task are updated to the new name
+
+`@dependency-mapping:5.4`
+#### Scenario: Removed task's dependents inherit its predecessors
+
+- Given the dependency graph contains a task with both predecessors and dependents
+- When the author removes that task
+- Then each dependent of the removed task adds the removed task's blockedBy entries to its own blockedBy list
 
 ---
 
