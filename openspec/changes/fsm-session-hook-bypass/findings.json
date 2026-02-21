@@ -81,5 +81,92 @@
         "match_reason": "GAP-3, GAP-16, GAP-34 all addressed TSK-verify-bypass content but none added structural JSON field verification. Infra requires stdout contains JSON with decision, systemMessage, and permissionDecisionReason fields."
       }
     ]
+  },
+  {
+    "round": 2,
+    "timestamp": "2026-02-21T17:44:07Z",
+    "findings": [
+      {
+        "critic": "technical-critic",
+        "finding": "technical-1: DEC-null-component-interactions cites an external mitigation with no cross-reference",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-20 resolved by adding DEC-null-component-interactions with a Y-statement, but no gap addresses the concern that the decision's stated mitigant (an integration section comment) is not located or cross-referenced within the decision itself."
+      },
+      {
+        "critic": "technical-critic",
+        "finding": "technical-2: Context cites a spec artifact introduced by this change as pre-existing evidence",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-28 resolved by extending technical context, and its Decision text contains the exact sentence the finding critiques. No gap covers the conflation of newly introduced artifacts with pre-existing context."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "REQUIREMENTS-1: SCN-bypass-not-set Given overlaps with SCN-bypass-empty-string",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-13 added SCN-bypass-empty-string but never narrowed SCN-bypass-not-set Given which still reads FSM_BYPASS is not set or is empty. No gap records narrowing the Given."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "REQUIREMENTS-2: REQ-updated-denial-message rule lacks a normative negative constraint",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-18/25/29/42 updated language but none add a MUST NOT clause to the rule body. SCN-denial-removes-plugin-advice asserts behavior not mandated by any rule."
+      },
+      {
+        "critic": "scenario-critic",
+        "finding": "SCENARIO-1: No Read bypass scenario for fsm.json file pattern",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-11 added hooks.json bypass. GAP-10 added Glob/Grep bypass. No gap covers a Read bypass scenario for fsm.json specifically."
+      },
+      {
+        "critic": "testability-critic",
+        "finding": "testability-1: SCN-bypass-not-set Given overlaps with SCN-bypass-empty-string precondition",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "Identical concern to REQUIREMENTS-1. GAP-13 never updated SCN-bypass-not-set Given to remove or is empty."
+      },
+      {
+        "critic": "infra-critic",
+        "finding": "infra-1: Script path missing from manual test procedure",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-2/14/22/32/33/40 refined payloads but none address specifying the repository path to block-skill-internals.sh."
+      },
+      {
+        "critic": "infra-critic",
+        "finding": "infra-2: No tooling specified for JSON structural verification",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-2 added stdout criteria. GAP-44 added presence preamble. Neither names a tool for structural JSON verification in the infra spec."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "tasks-critic-1: decision field value not verified in denial scenarios",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-44 added presence-only preamble. GAP-15 established decision as Always deny. No gap requires asserting decision == deny as a value check."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "tasks-critic-1 (test-tasks): Preamble structural-check scope excludes denial message content scenarios",
+        "status": "PARTIAL",
+        "matched_gaps": [
+          "GAP-44"
+        ],
+        "match_reason": "GAP-44 introduced both the preamble and the distinct category label. The finding identifies scope ambiguity GAP-44 left unresolved."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "TASK-INFRA-1: Structural denial verification preamble does not clearly cover denial message content scenarios",
+        "status": "PARTIAL",
+        "matched_gaps": [
+          "GAP-44"
+        ],
+        "match_reason": "Same concern as test-tasks finding. GAP-44 preamble label matches group 5-7 only, not 8-9."
+      }
+    ]
   }
 ]
