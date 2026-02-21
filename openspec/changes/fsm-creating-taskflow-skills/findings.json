@@ -235,5 +235,189 @@
         "match_reason": "gaps.md and resolved.md are empty. Semantically identical to Validation-2: integration.feature.md justification cites phantom scenario IDs from the change's own requirements files."
       }
     ]
+  },
+  {
+    "round": 2,
+    "timestamp": "2026-02-21T18:00:13Z",
+    "findings": [
+      {
+        "critic": "functional-critic",
+        "finding": "Functional:IMPL-LEAKAGE-1 \u2014 dependency-mapping capability leaks mechanism language",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "Finding targets the dependency-mapping capability description in functional.md line 14. GAP-2 covered mechanism language only in the What Changes section. No gap addresses the Capabilities section wording."
+      },
+      {
+        "critic": "design-critic",
+        "finding": "Design:consistency-1 \u2014 Y-statement #3 contradicts CMP-final-validation name-consistency check",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "Y-statement #3 accepting clause asserts SKILL.md is out of scope for final validation while CMP-final-validation responsibilities include name consistency check. No gap addresses this internal contradiction."
+      },
+      {
+        "critic": "technical-critic",
+        "finding": "Technical:TECHNICAL-FEASIBILITY-1 \u2014 Agent-native topological renumbering unjustified",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-6 established cycle detection script Y-statement but no gap addresses why the same rationale does not apply to equally correctness-critical topological renumbering in CMP-fsm-json-finalize."
+      },
+      {
+        "critic": "dependency-critic",
+        "finding": "Dependency:DEPENDENCY-1 \u2014 pytest introduced as test dependency without Y-statement",
+        "status": "COVERED",
+        "matched_gaps": [],
+        "match_reason": "pytest is a project-level documented decision in the project technical.md Decisions section. The change inherits this project-level decision."
+      },
+      {
+        "critic": "implementation-critic",
+        "finding": "Implementation:design-1 \u2014 Intermediate partial fsm.json path is unspecified",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-4 documented progressive construction pattern but did not specify the file PATH for the intermediate artifact. The bootstrapping problem when CMP-skill-md runs concurrently is not addressed."
+      },
+      {
+        "critic": "implementation-critic",
+        "finding": "Implementation:design-2 \u2014 Skill name flow from CMP-skill-md to CMP-fsm-json-finalize is undocumented",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-29 resolved normalization but CMP-fsm-json-finalize has no documented dependency on CMP-skill-md. No gap documents how CMP-fsm-json-finalize acquires the confirmed skill name."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "Requirements:NORMATIVE-1 \u2014 Conditional if in Then steps across seven scenarios",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-15 resolved multi-condition bundled Then steps. GAP-12 resolved compound Then. Neither addresses the if conditional pattern encoding success conditions inside Then steps."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "Requirements:ATOMICITY-2 \u2014 Compound Then step in skill-file-generation:3.5",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-15 addressed workflow-validation bundled Then steps. GAP-12 addressed dependency-mapping:3.4. Neither addresses skill-file-generation:3.5 compound Then."
+      },
+      {
+        "critic": "requirements-critic",
+        "finding": "Requirements:NORMATIVE-3 \u2014 Em-dash title in dependency-mapping:5.3 not addressed by GAP-16",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-16 addressed 5.1 and 1.7 only. dependency-mapping:5.3 retains the em-dash pattern."
+      },
+      {
+        "critic": "requirements-coverage-critic",
+        "finding": "Requirements Coverage:REQUIREMENTS-COVERAGE-1 \u2014 Author declining split or merge has no specified behavior",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-19 added confirmed-acceptance scenarios only. No gap covers the decline path."
+      },
+      {
+        "critic": "validation-critic",
+        "finding": "Validation:Requirements-Coverage-1 \u2014 Author declining split or merge has no defined outcome",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "Duplicate of finding 10. GAP-19 covered confirmed acceptance only."
+      },
+      {
+        "critic": "verification-critic",
+        "finding": "Verification:testability-1 \u2014 self-contained-descriptions:3.6 split/merge examples describe impossible runtime states",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-27 added 3.6 but no gap addresses the testability or logical reachability of the examples."
+      },
+      {
+        "critic": "verification-critic",
+        "finding": "Verification:testability-2 \u2014 workflow-intake:1.2 and 5.1 produce identical observable outcomes",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-21 added Rule 5. GAP-30 rewrote its Then step. No gap addresses overlap between 1.2 and 5.1."
+      },
+      {
+        "critic": "design-for-test-critic",
+        "finding": "Design for Test:INFRA-1 \u2014 Context section contradicts Testing Strategy on code scope",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-24 added pytest command but did not resolve the Context vs Testing Strategy contradiction about code changes."
+      },
+      {
+        "critic": "design-for-test-critic",
+        "finding": "Design for Test:INFRA-2 \u2014 No environment specification for structural pytest tests",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-24 added a pytest command but no gap adds environment specification for structural tests."
+      },
+      {
+        "critic": "design-for-test-critic",
+        "finding": "Design for Test:INFRA-3 \u2014 Scenario-specific setup omits cyclic-dependency precondition for 3.6",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-27 added 3.6 but its propagation did not update infra.md scenario-specific setup."
+      },
+      {
+        "critic": "logic-critic",
+        "finding": "Logic:TECHNICAL-1 \u2014 workflow-validation:3.1 conflicts with technical design file-write order",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-3 updated the objective but did not update scenario 3.1 ready to be written to disk language."
+      },
+      {
+        "critic": "logic-critic",
+        "finding": "Logic:TECHNICAL-2 \u2014 No component responsibility for eliciting plugin directory from author",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "No component documents collecting the plugin directory from the author."
+      },
+      {
+        "critic": "logic-critic",
+        "finding": "Logic:TECHNICAL-3 \u2014 Cycle correction path undefined in CMP-descriptions post-split/merge",
+        "status": "PARTIAL",
+        "matched_gaps": [
+          "GAP-25",
+          "GAP-27"
+        ],
+        "match_reason": "GAP-25 added correction paths to CMP-final-validation. GAP-27 added scenario 3.6 and pipeline gate. But CMP-descriptions component spec does not document correction guidance for mid-pipeline cycle detection."
+      },
+      {
+        "critic": "logic-critic",
+        "finding": "Logic:TECHNICAL-4 \u2014 dependency-mapping:6.1 no-dependencies note not in CMP-dependency-map",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "No gap addresses the missing no-dependencies note responsibility in CMP-dependency-map."
+      },
+      {
+        "critic": "integration-critic",
+        "finding": "Integration:CITATION-1 \u2014 Pipeline gate justification omits scenario 3.6",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-27 propagation referenced only 3.4-3.5. Scenario 3.6 was not added to integration.feature.md citation."
+      },
+      {
+        "critic": "integration-critic",
+        "finding": "Integration:CITATION-2 \u2014 dependency-mapping citation excludes scenario 5.4",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-18 propagated to technical.md and infra.md but not to integration.feature.md citation range."
+      },
+      {
+        "critic": "integration-coverage-critic",
+        "finding": "Integration Coverage:INTEGRATION-COVERAGE-1 \u2014 Final validation cycle correction contradicts forward-only pipeline",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-25 added backward traversal correction path. integration.feature.md asserts downstream corrections cannot cascade backward. No integration scenario covers this cascade."
+      },
+      {
+        "critic": "functional-consistency-critic",
+        "finding": "Functional Consistency:FUNCTIONAL-1 \u2014 Session restart risk omits active-work-protection constraint",
+        "status": "COVERED",
+        "matched_gaps": [],
+        "match_reason": "The project functional.md Known Risks section explicitly documents the active-work-protection interaction with re-invocation."
+      },
+      {
+        "critic": "technical-consistency-critic",
+        "finding": "Technical Consistency:ARCHITECTURE-1 \u2014 PreToolUse guard may block reads required by progressive fsm.json construction",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "The change acknowledges the guard exists but no component specification, decision, or gap addresses how the authoring skill reads its progressively-built fsm.json through the guard."
+      }
+    ]
   }
 ]
