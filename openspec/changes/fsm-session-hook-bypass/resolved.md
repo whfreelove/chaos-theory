@@ -218,6 +218,60 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Added tool_name field (Read, Glob, or Grep as appropriate) to all 9 per-scenario payloads. Added a note explaining that the hook script routes via tool_input key presence, not via tool_name, so tool_name serves as documentation fidelity. [diff: +13/-9 spec.yaml]
 
+### GAP-47: SCN-bypass-not-set Given clause is a compound precondition that includes the empty-string case
+- **Source**: requirements-critic
+- **Severity**: medium
+- **Description**: The Given clause of the denial-when-unset scenario in the env-var-bypass requirement uses a compound precondition covering both the unset case and the empty-string case. The empty-string case was subsequently extracted into its own dedicated scenario. The compound Given was never narrowed after that extraction, leaving the two scenarios with overlapping preconditions rather than distinct ones.
+- **Triage**: delegate
+- **Decision**: Narrow SCN-bypass-not-set Given clause from 'FSM_BYPASS is not set or is empty' to 'FSM_BYPASS is not present in the shell environment'. This eliminates precondition overlap with SCN-bypass-empty-string, giving each denial scenario a distinct environmental state. Update the manual test procedure and verification task to use 'unset FSM_BYPASS' for this scenario rather than the compound instruction.
+- **Status**: resolved
+- **Outcome**: Narrowed SCN-bypass-not-set Given clause. Updated manual-test-procedure to distinguish 'unset FSM_BYPASS' from 'export FSM_BYPASS=""'. Updated TSK-verify-bypass to specify 'unset FSM_BYPASS' per denial scenario. [diff: +37/-23 spec.yaml]
+
+### GAP-48: REQ-updated-denial-message lacks a normative negative constraint
+- **Source**: requirements-critic
+- **Severity**: medium
+- **Description**: The rule body for the updated denial message requirement contains only a positive behavioral constraint. The scenario that asserts the denial message does not contain plugin-disablement advice has no normative anchor in the rule. A MUST NOT clause is absent, leaving the negative behavioral claim unsupported by a rule-level contract.
+- **Triage**: delegate
+- **Decision**: Add a MUST NOT clause to REQ-updated-denial-message rule text. Replace the single-sentence rule with two normative statements: 'The denial message MUST tell the user to export FSM_BYPASS=1 to allow skill file access for the session. The denial message MUST NOT contain advice to disable the plugin.' This provides the normative anchor for SCN-denial-removes-plugin-advice and aligns the rule with the existing INT-deny-response interface contract.
+- **Status**: resolved
+- **Outcome**: Replaced REQ-updated-denial-message rule with two normative statements: MUST tell user to export FSM_BYPASS=1; MUST NOT contain advice to disable the plugin. [diff: +37/-23 spec.yaml]
+
+### GAP-49: No Read bypass scenario for the fsm.json file pattern
+- **Source**: validation-critic
+- **Severity**: medium
+- **Description**: Bypass coverage for the env-var-bypass requirement includes scenarios for SKILL.md reads and hooks.json reads, and bypass scenarios for Glob and Grep tool types. No scenario covers a Read tool invocation targeting an fsm.json path. The fsm.json file pattern is one of the blocked patterns in the PreToolUse guard, and its bypass behavior under the env-var-bypass capability has no dedicated scenario.
+- **Triage**: delegate
+- **Decision**: Add SCN-bypass-active-fsm-json under REQ-env-var-bypass with Given 'FSM_BYPASS is exported and non-empty in the shell environment', When 'The agent attempts to Read a skill-internal file (fsm.json)', Then 'The hook exits 0 with no JSON output'. Add corresponding entries in the infra coverage-mapping, manual-test-procedure payload list, and TSK-verify-bypass verification steps.
+- **Status**: resolved
+- **Outcome**: Added SCN-bypass-active-fsm-json scenario (Read fsm.json with bypass active). Added to coverage-mapping, manual-test-procedure payload, and TSK-verify-bypass step 5. [diff: +37/-23 spec.yaml]
+
+### GAP-50: Manual test procedure omits repository path for the hook script
+- **Source**: design-for-test-critic
+- **Severity**: medium
+- **Description**: The manual test procedure in the infra testing-strategy instructs testers to invoke the PreToolUse guard script but does not specify its location in the repository. A tester following the procedure cannot locate the script without separately searching the repository.
+- **Triage**: delegate
+- **Decision**: Add the repository-relative path (plugins/finite-skill-machine/hooks/block-skill-internals.sh) inline in the manual-test-procedure opening instruction so testers can locate the script without separate repository searching.
+- **Status**: resolved
+- **Outcome**: Added repository-relative path (plugins/finite-skill-machine/hooks/block-skill-internals.sh) inline in manual-test-procedure opening instruction. [diff: +37/-23 spec.yaml]
+
+### GAP-52: Denial scenario assertions do not verify the `decision` field value
+- **Source**: code-tasks-critic
+- **Severity**: medium
+- **Description**: The verification task preamble checks that the denial response JSON contains the `decision`, `systemMessage`, and `permissionDecisionReason` fields, confirming field presence. The interface contract in the technical section defines the `decision` field value as always "deny". No assertion in the verification task or in any requirement scenario checks that the field value conforms to this contract.
+- **Triage**: delegate
+- **Decision**: Extend the TSK-verify-bypass preamble to assert the decision field value equals "deny" alongside the existing field presence checks, closing the gap between the INT-deny-response contract and the verification assertions.
+- **Status**: resolved
+- **Outcome**: Extended TSK-verify-bypass preamble to assert decision field value equals "deny" alongside field presence checks. [diff: +37/-23 spec.yaml]
+
+### GAP-53: Verification preamble scope does not clearly cover denial message content scenarios
+- **Source**: test-infra-critic
+- **Severity**: medium
+- **Description**: The verification task preamble states it applies to denial scenarios, but the task's scenario list contains a distinct category of denial message content scenarios that are labeled separately. It is ambiguous whether the structural verification requirements in the preamble are understood to extend to those separately-labeled scenarios. A similar concern arises from the infra perspective: the testing-strategy preamble's scope boundary does not explicitly include the denial message content scenario category. This gap is related to GAP-44, which addressed underspecified assertions in denial scenarios; the present concern is specifically about preamble scope clarity across scenario categories.
+- **Triage**: delegate
+- **Decision**: Reword the TSK-verify-bypass preamble scope from 'For all denial scenarios' to 'For all scenarios that emit deny JSON' so the structural field verification unambiguously covers both the denial scenarios and the denial message content scenarios.
+- **Status**: resolved
+- **Outcome**: Reworded TSK-verify-bypass preamble scope from 'For all denial scenarios' to 'For all scenarios that emit deny JSON'. [diff: +37/-23 spec.yaml]
+
 ## Low
 
 ### GAP-17: Capabilities reference internal component names
@@ -418,3 +472,39 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Decision**: Add a general verification preamble to TSK-verify-bypass before the scenario list: "For all denial scenarios, verify: hook exits 0, stdout is a JSON object containing decision, systemMessage, and permissionDecisionReason fields." Avoids per-scenario repetition while making structural requirements explicit. Also add the new SCN-denial-grep scenario to the verification checklist.
 - **Status**: resolved
 - **Outcome**: Added preamble: 'For all denial scenarios, verify: hook exits 0, stdout is a JSON object containing decision, systemMessage, and permissionDecisionReason fields.' Added SCN-denial-grep as item 7 in denial scenarios. Simplified denial scenario assertions for SCN-bypass-not-set and SCN-bypass-empty-string to 'deny JSON emitted' (structural checks now covered by preamble). Renumbered denial message content scenarios to 8-9. [diff: +11/-8 spec.yaml]
+
+### GAP-45: DEC-null-component-interactions cites an external mitigant without a cross-reference
+- **Source**: design-critic
+- **Severity**: low
+- **Description**: The decision documenting the deliberate choice to leave component-interactions null accepts the ambiguity by treating a comment in the integration section as the mitigant, but provides no pointer to where that comment lives. A reader must separately locate the integration section to confirm the mitigant exists.
+- **Triage**: delegate
+- **Decision**: Revise DEC-null-component-interactions accepting clause to include an explicit cross-reference: 'accepting that the null value may appear ambiguous to future readers without the YAML comment above the integration key explaining why cross-capability scenarios are unnecessary.'
+- **Status**: resolved
+- **Outcome**: Revised DEC-null-component-interactions accepting clause with explicit cross-reference to YAML comment above integration key. [diff: +37/-23 spec.yaml]
+
+### GAP-46: Technical context frames a spec artifact introduced by this change as pre-existing evidence
+- **Source**: design-critic
+- **Severity**: low
+- **Description**: The final sentence of the technical context section presents the infra manual test procedure as existing baseline context. The manual test procedure was introduced as part of this same spec change. Context should describe what exists independent of this change, not artifacts this change introduces.
+- **Triage**: delegate
+- **Decision**: Remove the final sentence from technical context ('The manual test procedure provides empirical validation...') because it references an artifact introduced by this change rather than pre-existing state. The infra testing-strategy section already documents the manual test procedure.
+- **Status**: resolved
+- **Outcome**: Removed self-referencing sentence from technical context about manual test procedure. [diff: +37/-23 spec.yaml]
+
+### GAP-51: No tooling specified for JSON structural verification in the testing strategy
+- **Source**: design-for-test-critic
+- **Severity**: low
+- **Description**: The testing strategy requires structural JSON field verification in denial scenarios but names no tool for performing that verification. A tester following the procedure has no guidance on how to inspect JSON field presence from stdout.
+- **Triage**: delegate
+- **Decision**: Name jq as the JSON inspection tool in the manual-test-procedure verification instructions. jq is already a documented project dependency and the standard JSON tool across the codebase's hook scripts.
+- **Status**: resolved
+- **Outcome**: Named jq as the JSON inspection tool in manual-test-procedure verification instructions. [diff: +37/-23 spec.yaml]
+
+### GAP-54: Integration comment cites stale evidence for why cross-capability scenarios are unnecessary
+- **Source**: stale-detection
+- **Severity**: low
+- **Description**: The integration YAML comment claims SCN-bypass-not-set spans both capabilities (bypass check and denial message) as justification for empty integration. GAP-41 removed the denial message assertion from SCN-bypass-not-set — it now asserts only 'The hook emits a deny decision' under CAP-session-bypass. The cited evidence for why integration scenarios are unnecessary is stale. The broader justification (non-conflicting modifications, no emergent behavior) still holds, but the specific scenario reference is inaccurate.
+- **Triage**: delegate
+- **Decision**: Update the integration YAML comment to replace the stale SCN-bypass-not-set cross-capability claim with accurate justification: the dedicated denial message content scenarios (SCN-denial-contains-bypass-instructions, SCN-denial-removes-plugin-advice) exercise the full deny path independently, and the two capabilities modify the same script in non-conflicting ways with no emergent behavior.
+- **Status**: resolved
+- **Outcome**: Replaced stale integration comment reference from 'SCN-bypass-not-set spans both capabilities (bypass check + denial message)' to 'Dedicated denial message content scenarios (SCN-denial-contains-bypass-instructions, SCN-denial-removes-plugin-advice) exercise the full deny path independently.' [diff: +3/-2 spec.yaml]

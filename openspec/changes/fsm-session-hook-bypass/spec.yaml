@@ -58,7 +58,7 @@ requirements:
               - The hook exits 0 with no JSON output
           SCN-bypass-not-set:
             given:
-              - FSM_BYPASS is not set or is empty
+              - FSM_BYPASS is not present in the shell environment
             when:
               - The agent attempts to Read a skill-internal file (SKILL.md)
             then:
@@ -84,6 +84,13 @@ requirements:
               - The agent attempts to Read a skill-internal file (hooks.json)
             then:
               - The hook exits 0 with no JSON output
+          SCN-bypass-active-fsm-json:
+            given:
+              - FSM_BYPASS is exported and non-empty in the shell environment
+            when:
+              - The agent attempts to Read a skill-internal file (fsm.json)
+            then:
+              - The hook exits 0 with no JSON output
           SCN-bypass-empty-string:
             given:
               - FSM_BYPASS is exported as an empty string
@@ -103,8 +110,8 @@ requirements:
       REQ-updated-denial-message:
         rule: >-
           The denial message MUST tell the user to export FSM_BYPASS=1
-          to allow skill file access for the session, replacing the current
-          advice to disable the plugin.
+          to allow skill file access for the session. The denial message
+          MUST NOT contain advice to disable the plugin.
         scenarios:
           SCN-denial-contains-bypass-instructions:
             given:
@@ -132,8 +139,7 @@ technical:
     outputs a deny JSON object to block access. Claude Code hooks execute as child
     processes following the standard Unix subprocess model, where environment
     variables are inherited by default. The hook's stdin/stdout communication
-    confirms standard subprocess behavior. The manual test procedure provides
-    empirical validation by testing with FSM_BYPASS exported in the shell.
+    confirms standard subprocess behavior.
   objectives:
     OBJ-session-bypass: >-
       Developer can allow skill file access for a shell session using only an
@@ -189,7 +195,8 @@ technical:
       decided to leave component-interactions null rather than removing the
       key, to preserve schema compliance while signaling deliberate omission,
       accepting that the null value may appear ambiguous to future readers
-      without the accompanying integration section comment.
+      without the YAML comment above the integration key explaining why
+      cross-capability scenarios are unnecessary.
   risks:
     RSK-forgotten-bypass:
       risk: >-
@@ -219,14 +226,17 @@ infra:
       SCN-bypass-active-glob: manual
       SCN-bypass-active-grep: manual
       SCN-bypass-active-hooks-json: manual
+      SCN-bypass-active-fsm-json: manual
       SCN-bypass-empty-string: manual
       SCN-denial-grep: manual
       SCN-denial-contains-bypass-instructions: manual
       SCN-denial-removes-plugin-advice: manual
     manual-test-procedure: |
-      Invoke block-skill-internals.sh directly with fabricated JSON payloads
-      via stdin. For bypass scenarios, export FSM_BYPASS=1 before invocation.
-      For denial scenarios, unset FSM_BYPASS or export FSM_BYPASS="" before
+      Invoke plugins/finite-skill-machine/hooks/block-skill-internals.sh
+      directly with fabricated JSON payloads via stdin. For bypass scenarios,
+      export FSM_BYPASS=1 before invocation. For denial scenarios, use
+      unset FSM_BYPASS (when FSM_BYPASS must not be present) or
+      export FSM_BYPASS="" (when testing empty-string behavior) before
       invocation.
 
       Note: The hook script routes via tool_input key presence (file_path,
@@ -244,6 +254,8 @@ infra:
           {"tool_name": "Grep", "tool_input": {"pattern": "some_regex", "path": "/path/to/skills/SKILL.md"}}
         SCN-bypass-active-hooks-json (Read hooks.json):
           {"tool_name": "Read", "tool_input": {"file_path": "/path/to/skills/hooks.json"}}
+        SCN-bypass-active-fsm-json (Read fsm.json):
+          {"tool_name": "Read", "tool_input": {"file_path": "/path/to/skills/fsm.json"}}
         SCN-bypass-empty-string (Read SKILL.md):
           {"tool_name": "Read", "tool_input": {"file_path": "/path/to/skills/SKILL.md"}}
         SCN-denial-grep (Grep skill-internal):
@@ -255,9 +267,9 @@ infra:
 
       Verify bypass: hook exits 0 with empty stdout. Verify denial: hook
       exits 0 and stdout contains a JSON object with "decision",
-      "systemMessage", and "permissionDecisionReason" fields. Inspect the
-      denial message for expected content (contains "export FSM_BYPASS=1",
-      does not contain "Disable finite-skill-machine").
+      "systemMessage", and "permissionDecisionReason" fields. Use jq to
+      inspect the denial JSON for expected content (contains
+      "export FSM_BYPASS=1", does not contain "Disable finite-skill-machine").
   observability:
     logging: {}
     metrics: {}
@@ -266,10 +278,11 @@ infra:
 
 # ── INTEGRATION ─────────────────────────────────────────────
 # Intentionally empty: cross-capability interaction is already covered by
-# single-capability scenarios. SCN-bypass-not-set spans both capabilities
-# (bypass check + denial message). The two capabilities modify the same
-# script in non-conflicting ways (early-exit guard + message text) with no
-# emergent behavior from their combination.
+# single-capability scenarios. Dedicated denial message content scenarios
+# (SCN-denial-contains-bypass-instructions, SCN-denial-removes-plugin-advice)
+# exercise the full deny path independently. The two capabilities modify the
+# same script in non-conflicting ways (early-exit guard + message text) with
+# no emergent behavior from their combination.
 integration: {}
 
 # ── TASKS ───────────────────────────────────────────────────
@@ -292,25 +305,27 @@ tasks:
         Verify all requirement scenarios using fabricated JSON payloads via
         stdin per the manual test procedure in infra testing-strategy.
 
-        For all denial scenarios, verify: hook exits 0, stdout is a JSON
-        object containing decision, systemMessage, and
-        permissionDecisionReason fields.
+        For all scenarios that emit deny JSON, verify: hook exits 0, stdout
+        is a JSON object containing decision, systemMessage, and
+        permissionDecisionReason fields, and the decision field value
+        equals "deny".
 
         Bypass scenarios (export FSM_BYPASS=1 before each):
           1. SCN-bypass-active: Read SKILL.md — exits 0, empty stdout
           2. SCN-bypass-active-glob: Glob **/SKILL.md — exits 0, empty stdout
           3. SCN-bypass-active-grep: Grep with path to SKILL.md — exits 0, empty stdout
           4. SCN-bypass-active-hooks-json: Read hooks.json — exits 0, empty stdout
+          5. SCN-bypass-active-fsm-json: Read fsm.json — exits 0, empty stdout
 
-        Denial scenarios (unset FSM_BYPASS or export FSM_BYPASS="" before each):
-          5. SCN-bypass-not-set: Read SKILL.md — deny JSON emitted
-          6. SCN-bypass-empty-string: Export FSM_BYPASS="" then Read SKILL.md —
+        Denial scenarios:
+          6. SCN-bypass-not-set: unset FSM_BYPASS, then Read SKILL.md — deny JSON emitted
+          7. SCN-bypass-empty-string: export FSM_BYPASS="", then Read SKILL.md —
              deny JSON emitted
-          7. SCN-denial-grep: Grep with path to SKILL.md — deny JSON emitted
+          8. SCN-denial-grep: unset FSM_BYPASS, then Grep with path to SKILL.md — deny JSON emitted
 
         Denial message content scenarios (unset FSM_BYPASS before each):
-          8. SCN-denial-contains-bypass-instructions: Glob **/fsm.json — deny
+          9. SCN-denial-contains-bypass-instructions: Glob **/fsm.json — deny
              JSON emitted, denial message contains "export FSM_BYPASS=1"
-          9. SCN-denial-removes-plugin-advice: Glob **/fsm.json — deny JSON
-             emitted, denial message does not contain "Disable
-             finite-skill-machine"
+          10. SCN-denial-removes-plugin-advice: Glob **/fsm.json — deny JSON
+              emitted, denial message does not contain "Disable
+              finite-skill-machine"
