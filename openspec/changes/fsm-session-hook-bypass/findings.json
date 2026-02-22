@@ -168,5 +168,76 @@
         "match_reason": "Same concern as test-tasks finding. GAP-44 preamble label matches group 5-7 only, not 8-9."
       }
     ]
+  },
+  {
+    "round": 3,
+    "timestamp": "2026-02-22T05:36:18Z",
+    "findings": [
+      {
+        "critic": "unknown-critic",
+        "finding": "INT-deny-response field names conflict with verification preamble field references",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-44 outcome describes flat-field preamble but INT-deny-response uses hookSpecificOutput nesting. No existing gap addresses this inconsistency."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "INT-deny-response lacks a JSON shape, leaving nesting structure implicit",
+        "status": "PARTIAL",
+        "matched_gaps": [
+          "GAP-15"
+        ],
+        "match_reason": "GAP-15 created the interface with field descriptions but no concrete JSON envelope example."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "Component responsibility omits the tool-type routing mechanism",
+        "status": "PARTIAL",
+        "matched_gaps": [
+          "GAP-37",
+          "GAP-40"
+        ],
+        "match_reason": "GAP-37 covers field extraction. GAP-40 added routing note in infra only. Finding concerns placement in technical section."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "INT-deny-response lacks a concrete JSON structure example",
+        "status": "PARTIAL",
+        "matched_gaps": [
+          "GAP-15"
+        ],
+        "match_reason": "Semantically identical to Finding 2. GAP-15 resolved at field-enumeration level, not JSON envelope level."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "SCN-denial-grep Given uses imprecise not set instead of established taxonomy language",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "GAP-47 narrowed SCN-bypass-not-set but SCN-denial-grep added by GAP-38 uses imprecise language."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "Deny JSON wire format in infra conflicts with INT-deny-response interface contract",
+        "status": "COVERED",
+        "matched_gaps": [
+          "GAP-52"
+        ],
+        "match_reason": "Current infra and INT-deny-response are structurally consistent. Flat-form language appears only in resolved.md outcome text."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "hookEventName value not verified despite INT-deny-response specifying Always PreToolUse",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "No existing gap covers the missing hookEventName value assertion."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "TSK-verify-bypass checks hookEventName presence but not its value",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "Semantically identical to Finding 7. No existing gap covers hookEventName value check omission."
+      }
+    ]
   }
 ]
