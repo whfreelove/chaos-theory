@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "chaos-theory"
 version = "0.2.0"
 requires-python = ">= 3.11"
+dependencies = ["ruamel.yaml>=0.18", "rich>=13.0", "questionary>=2.0"]
 
 [tool.setuptools]
 packages = []
@@ -16,7 +17,6 @@ research = [
     "jupyterlab>=4.0",
     "matplotlib>=3.8",
     "pandas>=2.1",
-    "rich>=13.0",
     "networkx>=3.2",
     "mermaid-py>=0.8",
     "nbstripout>=0.7",
