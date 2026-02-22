@@ -163,7 +163,7 @@ technical:
       responsibilities:
         - Check FSM_BYPASS env var non-empty early-exit
         - Extract target path from tool-specific input fields (file_path for Read, pattern for Glob, path for Grep) and pattern-match against protected file names
-        - Emit deny JSON with actionable bypass instructions
+        - Emit deny JSON with hookSpecificOutput wrapper and actionable bypass instructions in systemMessage
       dependencies: []
   interfaces:
     INT-deny-response:
@@ -171,13 +171,15 @@ technical:
         JSON object emitted to stdout when the hook denies access to a
         skill-internal file.
       fields:
-        decision: >-
-          Always "deny". Signals to Claude Code that the tool use is blocked.
         systemMessage: >-
           Developer-visible text explaining the denial and how to set
           FSM_BYPASS=1 to allow access for the session. MUST contain
           "export FSM_BYPASS=1". MUST NOT contain "Disable finite-skill-machine".
-        permissionDecisionReason: >-
+        hookSpecificOutput.hookEventName: >-
+          Always "PreToolUse". Identifies the hook event type.
+        hookSpecificOutput.permissionDecision: >-
+          Always "deny". Signals to Claude Code that the tool use is blocked.
+        hookSpecificOutput.permissionDecisionReason: >-
           Brief denial reason referencing the bypass mechanism rather than
           plugin disablement.
   decisions:
@@ -266,10 +268,12 @@ infra:
           {"tool_name": "Glob", "tool_input": {"pattern": "**/fsm.json"}}
 
       Verify bypass: hook exits 0 with empty stdout. Verify denial: hook
-      exits 0 and stdout contains a JSON object with "decision",
-      "systemMessage", and "permissionDecisionReason" fields. Use jq to
-      inspect the denial JSON for expected content (contains
-      "export FSM_BYPASS=1", does not contain "Disable finite-skill-machine").
+      exits 0 and stdout contains a JSON object with "systemMessage" and
+      "hookSpecificOutput" fields; hookSpecificOutput contains
+      "hookEventName" (value "PreToolUse"), "permissionDecision"
+      (value "deny"), and "permissionDecisionReason"; use
+      jq '.hookSpecificOutput.permissionDecision' and '.systemMessage'
+      for inspection.
   observability:
     logging: {}
     metrics: {}
@@ -306,8 +310,9 @@ tasks:
         stdin per the manual test procedure in infra testing-strategy.
 
         For all scenarios that emit deny JSON, verify: hook exits 0, stdout
-        is a JSON object containing decision, systemMessage, and
-        permissionDecisionReason fields, and the decision field value
+        is a JSON object containing systemMessage and hookSpecificOutput
+        fields; hookSpecificOutput contains hookEventName, permissionDecision,
+        and permissionDecisionReason; hookSpecificOutput.permissionDecision
         equals "deny".
 
         Bypass scenarios (export FSM_BYPASS=1 before each):
