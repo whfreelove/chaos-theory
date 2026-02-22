@@ -54,6 +54,15 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Enhanced YAML comment above `integration: {}` to explain that cross-capability interaction is already covered by single-capability scenarios, SCN-bypass-not-set spans both capabilities, and the two capabilities modify the same script in non-conflicting ways with no emergent behavior.
 
+### GAP-55: INT-deny-response field paths conflict with verification preamble field references
+- **Source**: design-technical-consistency-critic
+- **Severity**: high
+- **Description**: `INT-deny-response` documents the routing fields using a nested structure under a `hookSpecificOutput` wrapper (e.g., `hookSpecificOutput.permissionDecision`, `hookSpecificOutput.permissionDecisionReason`), alongside a flat `systemMessage` field. The verification preamble in `TSK-verify-bypass` checks that stdout contains `decision`, `systemMessage`, and `permissionDecisionReason` fields — referencing top-level field names without the `hookSpecificOutput.` prefix. An implementer following the interface contract would emit nested fields under `hookSpecificOutput`; the verification preamble checking for top-level `decision` would not find them. The two artifacts describe mutually incompatible field locations.
+- **Triage**: delegate
+- **Decision**: Add a concrete JSON example to INT-deny-response showing the full envelope structure with systemMessage at top level and hookSpecificOutput as a nested object containing hookEventName, permissionDecision, and permissionDecisionReason. Follows the established interface documentation pattern from INT-hook-stdin, INT-fsm-json, and INT-task-file. The example is the authoritative structural reference; the existing field descriptions document content contracts. Co-resolves GAP-56.
+- **Status**: resolved
+- **Outcome**: Added example field to INT-deny-response interface with a complete JSON object showing systemMessage at root level and hookSpecificOutput as a nested object. Resolves the field path conflict by making the nesting structure unambiguous. [diff: +9/-0 spec.yaml]
+
 ### GAP-34: TSK-verify-bypass omits code paths added by later gap resolutions
 - **Source**: code-tasks-critic
 - **Severity**: high
@@ -500,6 +509,33 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Named jq as the JSON inspection tool in manual-test-procedure verification instructions. [diff: +37/-23 spec.yaml]
 
+### GAP-56: INT-deny-response provides no concrete JSON shape example
+- **Source**: design-technical-consistency-critic
+- **Severity**: medium
+- **Description**: `INT-deny-response` documents its fields using dot-notation (e.g., `hookSpecificOutput.hookEventName`, `hookSpecificOutput.permissionDecision`, `hookSpecificOutput.permissionDecisionReason`) alongside a flat `systemMessage` field, but provides no concrete JSON object showing the full nesting structure. A reader must infer that `systemMessage` is a root-level sibling of a `hookSpecificOutput` object. This is related to the concern raised in resolved GAP-15, which added field descriptions to the interface but did not introduce an example JSON envelope.
+- **Triage**: delegate
+- **Decision**: Add a concrete JSON example to INT-deny-response showing the full envelope structure: systemMessage at root level alongside a hookSpecificOutput object containing hookEventName, permissionDecision, and permissionDecisionReason. Follows the established interface documentation pattern from INT-hook-stdin, INT-fsm-json, and INT-task-file. Completes the structural documentation that GAP-15 deferred when it added field descriptions without an example. Co-resolves with GAP-55.
+- **Status**: resolved
+- **Outcome**: Co-resolved with GAP-55. The same JSON example added to INT-deny-response satisfies both gaps — it provides the concrete shape (GAP-56) and disambiguates field paths (GAP-55). [diff: +0/-0 spec.yaml]
+
+### GAP-57: Tool-type routing mechanism is documented only in infra, not in the technical section
+- **Source**: technical-critic
+- **Severity**: medium
+- **Description**: `CMP-block-skill-internals` specifies per-tool path field extraction (file_path for Read, pattern for Glob, path for Grep), but does not describe how the script determines which tool is invoking it. Resolved GAP-40 added a note in the infra manual-test-procedure stating the script routes via `tool_input` key presence rather than `tool_name`. That note lives exclusively in the infra section. A competent engineer reading only the technical section would have no guidance on the routing mechanism and might implement `tool_name`-based routing. The routing behavior belongs at the component responsibility level in the technical section, alongside the per-tool extraction already described there (resolved GAP-37).
+- **Triage**: delegate
+- **Decision**: Expand the CMP-block-skill-internals extraction responsibility to integrate the routing mechanism: 'Determine tool type via tool_input key presence (not tool_name) and extract the target path from the matched field (file_path for Read, pattern for Glob, path for Grep); pattern-match against protected file names.' This co-locates routing with extraction at the component responsibility level, where an implementer would look for behavioral guidance. The infra manual-test-procedure note is retained as testing-specific context explaining why tool_name appears in payloads despite not being a routing key.
+- **Status**: resolved
+- **Outcome**: Replaced the extraction-only responsibility with a combined routing+extraction responsibility that specifies tool_input key presence as the routing mechanism (not tool_name). The infra manual-test-procedure note is retained as testing-specific context explaining why tool_name appears in payloads despite not being a routing key. [diff: +1/-1 spec.yaml]
+
+### GAP-58: SCN-denial-grep Given clause uses imprecise language instead of established taxonomy
+- **Source**: requirements-critic
+- **Severity**: medium
+- **Description**: The Given clause of `SCN-denial-grep` uses the phrase "FSM_BYPASS is not set" to describe the precondition. Resolved GAP-47 established a precise two-term taxonomy for FSM_BYPASS absence: "not present in the shell environment" and "exported as an empty string". The phrase "not set" does not map to either established term and is ambiguous as to whether it covers the empty-string case. The Given clause should use one of the two taxonomy terms to unambiguously identify which precondition the scenario covers.
+- **Triage**: delegate
+- **Decision**: Replace 'FSM_BYPASS is not set' with 'FSM_BYPASS is not present in the shell environment' in three scenario Given clauses: SCN-denial-grep, SCN-denial-contains-bypass-instructions, and SCN-denial-removes-plugin-advice. All three use the same imprecise phrase and map to the 'unset' precondition per the taxonomy established by GAP-47. This achieves full taxonomy consistency across the requirements section, aligning all Given clauses with the infra and task sections which already use precise language.
+- **Status**: resolved
+- **Outcome**: Updated all three Given clauses (SCN-denial-grep, SCN-denial-contains-bypass-instructions, SCN-denial-removes-plugin-advice) to use the precise taxonomy term 'FSM_BYPASS is not present in the shell environment' instead of the ambiguous 'FSM_BYPASS is not set'. [diff: +3/-3 spec.yaml]
+
 ### GAP-54: Integration comment cites stale evidence for why cross-capability scenarios are unnecessary
 - **Source**: stale-detection
 - **Severity**: low
@@ -508,3 +544,12 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Decision**: Update the integration YAML comment to replace the stale SCN-bypass-not-set cross-capability claim with accurate justification: the dedicated denial message content scenarios (SCN-denial-contains-bypass-instructions, SCN-denial-removes-plugin-advice) exercise the full deny path independently, and the two capabilities modify the same script in non-conflicting ways with no emergent behavior.
 - **Status**: resolved
 - **Outcome**: Replaced stale integration comment reference from 'SCN-bypass-not-set spans both capabilities (bypass check + denial message)' to 'Dedicated denial message content scenarios (SCN-denial-contains-bypass-instructions, SCN-denial-removes-plugin-advice) exercise the full deny path independently.' [diff: +3/-2 spec.yaml]
+
+### GAP-59: TSK-verify-bypass does not assert the hookEventName field value
+- **Source**: code-tasks-critic
+- **Severity**: low
+- **Description**: `INT-deny-response` specifies `hookSpecificOutput.hookEventName` as always "PreToolUse". `TSK-verify-bypass` checks `hookSpecificOutput.permissionDecision equals "deny"` but does not assert that `hookSpecificOutput.hookEventName` equals "PreToolUse". The field value is part of the interface contract and is unverified by any task assertion.
+- **Triage**: delegate
+- **Decision**: Extend the TSK-verify-bypass preamble to assert hookSpecificOutput.hookEventName equals "PreToolUse" alongside the existing permissionDecision value assertion, following the pattern established by GAP-52. The preamble clause changes from presence-only ('hookSpecificOutput contains hookEventName, permissionDecision, and permissionDecisionReason') to include the value assertion ('hookSpecificOutput.hookEventName equals "PreToolUse"') after the field list and before the permissionDecision value assertion.
+- **Status**: resolved
+- **Outcome**: Extended the deny verification preamble in TSK-verify-bypass to assert hookSpecificOutput.hookEventName equals "PreToolUse" after the field list and before the permissionDecision value assertion. The preamble now asserts both field values, not just permissionDecision. [diff: +2/-2 spec.yaml]

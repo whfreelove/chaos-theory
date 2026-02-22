@@ -98,7 +98,7 @@ requirements:
               - The hook emits a deny decision
           SCN-denial-grep:
             given:
-              - FSM_BYPASS is not set
+              - FSM_BYPASS is not present in the shell environment
             when:
               - The agent attempts to Grep with a path targeting a skill-internal file
             then:
@@ -113,7 +113,7 @@ requirements:
         scenarios:
           SCN-denial-contains-bypass-instructions:
             given:
-              - FSM_BYPASS is not set
+              - FSM_BYPASS is not present in the shell environment
             when:
               - The agent attempts to Glob a skill-internal file (fsm.json)
             then:
@@ -121,7 +121,7 @@ requirements:
               - The denial message contains "export FSM_BYPASS=1"
           SCN-denial-removes-plugin-advice:
             given:
-              - FSM_BYPASS is not set
+              - FSM_BYPASS is not present in the shell environment
             when:
               - The agent attempts to Glob a skill-internal file (fsm.json)
             then:
@@ -160,7 +160,7 @@ technical:
         Shell script hook that gates agent access to skill internals.
       responsibilities:
         - Check FSM_BYPASS env var non-empty early-exit
-        - Extract target path from tool-specific input fields (file_path for Read, pattern for Glob, path for Grep) and pattern-match against protected file names
+        - Determine tool type via tool_input key presence (not tool_name) and extract the target path from the matched field (file_path for Read, pattern for Glob, path for Grep); pattern-match against protected file names
         - Emit deny JSON with hookSpecificOutput wrapper and actionable bypass instructions in systemMessage
       dependencies: []
   interfaces:
@@ -180,6 +180,15 @@ technical:
         hookSpecificOutput.permissionDecisionReason: >-
           Brief denial reason referencing the bypass mechanism rather than
           plugin disablement.
+      example: |
+        {
+          "systemMessage": "Access to skill internals is blocked. To allow access for this session, run: export FSM_BYPASS=1",
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": "Skill-internal file is protected. Set FSM_BYPASS=1 to bypass."
+          }
+        }
   decisions:
     DEC-env-var-over-file-flag: >-
       In the context of the skill-internals access gate, facing the need for a
@@ -310,8 +319,8 @@ tasks:
         For all scenarios that emit deny JSON, verify: hook exits 0, stdout
         is a JSON object containing systemMessage and hookSpecificOutput
         fields; hookSpecificOutput contains hookEventName, permissionDecision,
-        and permissionDecisionReason; hookSpecificOutput.permissionDecision
-        equals "deny".
+        and permissionDecisionReason; hookSpecificOutput.hookEventName equals
+        "PreToolUse"; hookSpecificOutput.permissionDecision equals "deny".
 
         Bypass scenarios (export FSM_BYPASS=1 before each):
           1. SCN-bypass-active: Read SKILL.md — exits 0, empty stdout
