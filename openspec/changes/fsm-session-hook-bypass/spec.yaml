@@ -20,9 +20,7 @@ functional:
       hit the deny wall during plugin or skill development.
     out-of-scope: >-
       Persistent bypass configuration changes. Plugin-level enable/disable.
-      Changes to which file patterns are blocked. Individual denial message
-      field coverage beyond the primary developer-visible text — deferred
-      to a future iteration.
+      Changes to which file patterns are blocked.
     known-risks: >-
       A developer who sets the bypass env var and forgets may have reduced
       protection for the rest of the session. This is acceptable because
@@ -234,7 +232,7 @@ infra:
       SCN-denial-contains-bypass-instructions: manual
       SCN-denial-removes-plugin-advice: manual
     manual-test-procedure: |
-      Invoke plugins/finite-skill-machine/hooks/block-skill-internals.sh
+      Invoke plugins/finite-skill-machine/scripts/block-skill-internals.sh
       directly with fabricated JSON payloads via stdin. For bypass scenarios,
       export FSM_BYPASS=1 before invocation. For denial scenarios, use
       unset FSM_BYPASS (when FSM_BYPASS must not be present) or
