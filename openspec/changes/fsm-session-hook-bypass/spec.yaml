@@ -20,7 +20,9 @@ functional:
       hit the deny wall during plugin or skill development.
     out-of-scope: >-
       Persistent bypass configuration changes. Plugin-level enable/disable.
-      Changes to which file patterns are blocked.
+      Changes to which file patterns are blocked. Individual denial message
+      field coverage beyond the primary developer-visible text — deferred to
+      a future iteration.
     known-risks: >-
       A developer who sets the bypass env var and forgets may have reduced
       protection for the rest of the session. This is acceptable because

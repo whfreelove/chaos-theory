@@ -281,6 +281,18 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Reworded TSK-verify-bypass preamble scope from 'For all denial scenarios' to 'For all scenarios that emit deny JSON'. [diff: +37/-23 spec.yaml]
 
+
+### GAP-60: Untitled finding
+- **Source**: Defer-Release Coverage Detection-detection
+- **Severity**: medium
+- **Description**: GAP-19 defer-release deferral text missing from functional out-of-scope. GAP-19 and GAP-23 outcomes both reference an out-of-scope entry acknowledging that individual denial message field coverage beyond the primary developer-visible text is deferred to a future iteration, but the current functional out-of-scope contains only three items (persistent bypass configuration, plugin enable/disable, file pattern changes) with no mention of the deferral.
+- **Triage**: delegate
+- **Decision**: Append 'Individual denial message field coverage beyond the primary developer-visible text — deferred to a future iteration.' to functional user-impact out-of-scope in spec.yaml. This materializes the artifact change documented in GAP-19 and GAP-23 outcomes that was never applied to the spec files.
+- **Primary-file**: spec.yaml
+- **Status**: resolved
+- **Outcome**: Appended the denial message field coverage deferral sentence to the existing out-of-scope list in functional > user-impact, materializing the artifact change documented in GAP-19 and GAP-23 outcomes. [diff: +2/-0 spec.yaml]
+
+
 ## Low
 
 ### GAP-17: Capabilities reference internal component names
