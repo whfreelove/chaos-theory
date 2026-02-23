@@ -22,6 +22,7 @@ import re
 import shutil
 import subprocess
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -29,6 +30,7 @@ import questionary
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
 
 from spec_utils import (
@@ -52,6 +54,14 @@ console = Console()
 
 SECTION_ORDER = ['D', 'E', 'F', 'G', 'H']
 
+SECTION_LABELS = {
+    'D': 'Triage',
+    'E': 'Solve',
+    'F': 'Resolve',
+    'G': 'Cleanup',
+    'H': 'Report',
+}
+
 
 # ---------------------------------------------------------------------------
 # Resolution log — accumulates metadata across sections D→H
@@ -65,6 +75,72 @@ class ResolutionLog:
     resolved: list[tuple[str, str]] = field(default_factory=list)
     implicit_recorded: list[tuple[str, str]] = field(default_factory=list)
     implicit_resolved: list[tuple[str, str]] = field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Workflow progress tracker
+# ---------------------------------------------------------------------------
+
+@dataclass
+class WorkflowTracker:
+    """Tracks workflow progress across sections D→H."""
+    start_section: str = 'D'
+    completed: set[str] = field(default_factory=set)
+    current: str | None = None
+    current_step: int = 0
+    current_total: int = 0
+
+    def enter_section(self, section: str, total_steps: int) -> None:
+        """Mark a section as active and display the progress header."""
+        if self.current:
+            self.completed.add(self.current)
+        self.current = section
+        self.current_step = 0
+        self.current_total = total_steps
+        self._render_header()
+
+    def step(self, description: str) -> None:
+        """Advance the step counter and display step info."""
+        self.current_step += 1
+        console.print(
+            f"  [dim]Step {self.current_step}/{self.current_total}[/dim] · {description}"
+        )
+
+    def complete_section(self) -> None:
+        """Mark the current section as completed."""
+        if self.current:
+            self.completed.add(self.current)
+
+    @contextmanager
+    def spinner(self, description: str):
+        """Context manager that shows a spinner with elapsed time."""
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            TimeElapsedColumn(),
+            console=console,
+            transient=True,
+        ) as progress:
+            progress.add_task(description, total=None)
+            yield
+
+    def _render_header(self) -> None:
+        """Render the workflow progress bar and section header."""
+        start_idx = SECTION_ORDER.index(self.start_section)
+        parts = []
+        for s in SECTION_ORDER:
+            label = SECTION_LABELS[s]
+            idx = SECTION_ORDER.index(s)
+            if idx < start_idx:
+                parts.append(f"[dim]– {s}[/dim]")
+            elif s in self.completed:
+                parts.append(f"[green]✓ {s}:{label}[/green]")
+            elif s == self.current:
+                parts.append(f"[bold cyan]● {s}:{label}[/bold cyan]")
+            else:
+                parts.append(f"[dim]○ {s}:{label}[/dim]")
+        console.print()
+        console.rule("  ".join(parts))
 
 
 # ---------------------------------------------------------------------------
@@ -84,8 +160,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                         help='Print prompts/commands without executing claude -p')
     parser.add_argument('--max-concurrent', type=int, default=6,
                         help='Maximum parallel claude -p processes (default: 6)')
-    parser.add_argument('--timeout', type=int, default=600,
-                        help='Timeout per subprocess in seconds (default: 600)')
+    parser.add_argument('--timeout', type=int, default=900,
+                        help='Timeout per subprocess in seconds (default: 900)')
     parser.add_argument('--budget', type=float, default=None,
                         help='Max budget per subprocess in USD')
     return parser.parse_args(argv)
@@ -654,21 +730,91 @@ def _process_delegate_proposals(
     return rework_feedback
 
 
+def _build_dependency_graph(proposals: list[tuple[dict, dict]]) -> dict[str, set[str]]:
+    """Build bidirectional dependency graph from solver proposal metadata.
+
+    Returns gap_id → set of dependent gap_ids.
+    """
+    dep_graph: dict[str, set[str]] = {}
+    for _gap, proposal in proposals:
+        gap_id = proposal.get('gap_id', '')
+        for dep in proposal.get('dependencies', []):
+            dep_id = dep.get('gap_id', '')
+            if not dep_id or dep_id == gap_id:
+                continue
+            dep_graph.setdefault(gap_id, set()).add(dep_id)
+            # Bidirectional for joint-decision
+            if dep.get('relationship') == 'joint-decision':
+                dep_graph.setdefault(dep_id, set()).add(gap_id)
+    return dep_graph
+
+
+def _reorder_for_dependencies(
+    remaining: list[tuple[dict, dict]],
+    decided_gaps: set[str],
+    dep_graph: dict[str, set[str]],
+    just_decided: str,
+) -> list[tuple[dict, dict]]:
+    """Re-order remaining proposals so that gaps affected by the latest
+    decision are presented next.
+    """
+    affected = dep_graph.get(just_decided, set()) - decided_gaps
+    if not affected:
+        return remaining
+
+    # Partition into affected (front) and unaffected (back)
+    front = [p for p in remaining if p[1].get('gap_id', p[0]['id']) in affected]
+    back = [p for p in remaining if p[1].get('gap_id', p[0]['id']) not in affected]
+    return front + back
+
+
 def _process_user_proposals(
     change_dir: Path,
     proposals: list[tuple[dict, dict]],
     log: ResolutionLog,
     triage_type: str,
 ) -> dict[str, dict]:
-    """Present proposals to user via rich/questionary. Returns rework feedback."""
-    rework_feedback: dict[str, dict] = {}
+    """Present proposals to user via rich/questionary. Returns rework feedback.
 
-    for gap, proposal in proposals:
+    When solver proposals include dependency metadata, dependent gaps are
+    presented together and the user is notified of cross-gap decision impacts.
+    """
+    rework_feedback: dict[str, dict] = {}
+    dep_graph = _build_dependency_graph(proposals)
+    decided_gaps: set[str] = set()
+    remaining = list(proposals)
+
+    # Show dependency clusters if any exist
+    if dep_graph:
+        clusters_shown: set[str] = set()
+        for gap_id, deps in dep_graph.items():
+            cluster = {gap_id} | deps
+            cluster_key = ','.join(sorted(cluster))
+            if cluster_key not in clusters_shown:
+                clusters_shown.add(cluster_key)
+                console.print(
+                    f"[yellow]Dependency cluster: {', '.join(sorted(cluster))} "
+                    f"— these gaps have decision dependencies[/yellow]"
+                )
+
+    while remaining:
+        gap, proposal = remaining.pop(0)
+        gap_id = proposal.get('gap_id', gap['id'])
+
+        # Notify about dependencies with already-decided gaps
+        related_decided = dep_graph.get(gap_id, set()) & decided_gaps
+        if related_decided:
+            console.print(
+                f"[yellow]Note: {gap_id} has dependencies with already-decided "
+                f"gaps: {', '.join(sorted(related_decided))}[/yellow]"
+            )
+
         _display_proposal_panel(gap, proposal, triage_type)
 
         solutions = proposal.get('solutions', [])
         if not solutions:
-            console.print(f"  [yellow]No solutions for {gap['id']}[/yellow]")
+            console.print(f"  [yellow]No solutions for {gap_id}[/yellow]")
+            decided_gaps.add(gap_id)
             continue
 
         # Build choices
@@ -687,7 +833,7 @@ def _process_user_proposals(
         choices.append(questionary.Choice(title="[Other — provide custom direction]", value='OTHER'))
 
         selected = questionary.select(
-            f"Decision for {gap['id']}:",
+            f"Decision for {gap_id}:",
             choices=choices,
         ).ask()
 
@@ -697,22 +843,36 @@ def _process_user_proposals(
 
         if selected == 'OTHER':
             custom = questionary.text(
-                f"Custom direction for {gap['id']}:"
+                f"Custom direction for {gap_id}:"
             ).ask()
             if custom is None:
                 sys.exit(1)
-            rework_feedback[gap['id']] = {
+            rework_feedback[gap_id] = {
                 'source': 'user',
                 'feedback': custom,
             }
         else:
             decision = selected.get('decision_text', '')
             primary_file = selected.get('primary_file', 'gap-lifecycle')
-            write_gap_fields(change_dir, gap['id'], {
+            write_gap_fields(change_dir, gap_id, {
                 'Decision': decision,
                 'Primary-file': primary_file,
             })
-            log.decided.append((gap['id'], _truncate(decision, 60)))
+            log.decided.append((gap_id, _truncate(decision, 60)))
+
+        decided_gaps.add(gap_id)
+
+        # Re-order remaining to present affected gaps next
+        if dep_graph.get(gap_id):
+            affected = dep_graph[gap_id] - decided_gaps
+            if affected:
+                console.print(
+                    f"[yellow]Decision on {gap_id} may affect: "
+                    f"{', '.join(sorted(affected))}[/yellow]"
+                )
+                remaining = _reorder_for_dependencies(
+                    remaining, decided_gaps, dep_graph, gap_id,
+                )
 
     return rework_feedback
 
