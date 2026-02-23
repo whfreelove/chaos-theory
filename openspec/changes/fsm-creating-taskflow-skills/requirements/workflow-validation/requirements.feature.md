@@ -9,36 +9,41 @@
 #### Scenario: Intake phase validation passes when step list is complete
 
 - Given the author has completed workflow intake
+- And the step list contains at least one labeled step
 - When intake validation runs
-- Then validation passes if the step list contains at least one labeled step
+- Then validation passes
 
 `@workflow-validation:1.2`
 #### Scenario: Dependency phase validation passes when graph is acyclic
 
 - Given dependency mapping has produced a dependency graph
+- And the graph contains no cycles
 - When dependency validation runs
-- Then validation passes if the graph contains no cycles
+- Then validation passes
 
 `@workflow-validation:1.3`
 #### Scenario: Dependency phase validation passes when all task references resolve
 
 - Given dependency mapping has produced a dependency graph
+- And all blockedBy references point to existing tasks
 - When dependency validation runs
-- Then validation passes if all blockedBy references point to existing tasks
+- Then validation passes
 
 `@workflow-validation:1.4`
 #### Scenario: Description phase validation passes when all tasks have descriptions
 
 - Given description writing has produced task descriptions
+- And every task has a non-empty description
 - When description validation runs
-- Then validation passes if every task has a non-empty description
+- Then validation passes
 
 `@workflow-validation:1.5`
 #### Scenario: Description phase validation passes when no descriptions contain placeholder text
 
 - Given description writing has produced task descriptions
+- And no description contains placeholder text
 - When description validation runs
-- Then validation passes if no description contains placeholder text
+- Then validation passes
 
 `@workflow-validation:1.6`
 #### Scenario: Validation failure blocks phase progression
@@ -52,7 +57,7 @@
 
 - Given a validation failure has blocked phase progression
 - When the author corrects the reported issue
-- Then the skill re-runs validation and advances to the next phase if validation passes
+- Then the workflow advances to the next phase
 
 ---
 
@@ -64,7 +69,10 @@
 
 - Given the fsm.json artifact has been finalized
 - When final validation runs the structural integrity check
-- Then validation passes if each entry contains `id`, `subject`, `description`, `activeForm`, and `blockedBy` fields with correct types, all IDs are unique, and all blockedBy references resolve to existing IDs
+- Then each entry contains `id`, `subject`, `description`, `activeForm`, and `blockedBy` fields
+- And each field has the correct type
+- And all IDs are unique
+- And all `blockedBy` references resolve to existing IDs
 
 `@workflow-validation:2.2`
 #### Scenario: Final cycle detection catches dependency issues
@@ -93,11 +101,12 @@
 ### Rule: Validation results are presented clearly to the author
 
 `@workflow-validation:3.1`
-#### Scenario: Passing validation confirms readiness for deployment
+#### Scenario: Passing validation confirms workflow completion
 
 - Given all validation checks have passed
 - When the final validation result is presented
-- Then the skill confirms the workflow is valid and ready to be written to disk
+- Then the workflow is complete
+- And the generated skill is ready for use
 
 `@workflow-validation:3.2`
 #### Scenario: Failing validation lists specific issues with guidance

@@ -11,7 +11,7 @@ Creating FSM-enabled skills requires encoding dependency relationships, ensuring
 ### New Capabilities
 
 - `workflow-intake`: Skill authors can define a workflow from one or both input sources (an existing skill, written step descriptions), with brainstorming as a gap-filling step
-- `dependency-mapping`: Skill authors can encode serial, parallel, fan-in, and fan-out execution patterns as task dependencies, and can add, remove, or rename tasks with automatic dependency graph updates and re-validation
+- `dependency-mapping`: Skill authors can encode serial, parallel, fan-in, and fan-out execution patterns as task dependencies, and can add, remove, or rename tasks, receiving an updated and validated dependency graph after each change
 - `self-contained-descriptions`: Skill authors can write task descriptions that are fully self-contained — each task is executable without prior conversation context
 - `skill-file-generation`: Skill authors can produce a deployable skill consisting of SKILL.md author documentation and an fsm.json task definition file
 - `workflow-validation`: Skill authors can verify their workflow incrementally at each phase and through a comprehensive final check before deployment
@@ -44,6 +44,7 @@ None.
 - Task granularity matters: overly broad tasks may lose important details during execution; tasks that are too small create unnecessary overhead — the skill must guide authors toward appropriately-sized tasks
 - Intake sources may yield no usable material — brainstorming runs last to fill gaps or generate ideas from scratch; if brainstorming also yields nothing, the workflow terminates gracefully
 - Session interruption requires restarting the workflow from the beginning — no resume capability exists
+- Two workflow-intake verification scenarios (normalization under Rule 1, combined-intake under Rule 5) share identical observable outcomes, limiting independent falsification — specification refinement to differentiate their Then steps is deferred to a future critique round
 
 ## What Changes
 

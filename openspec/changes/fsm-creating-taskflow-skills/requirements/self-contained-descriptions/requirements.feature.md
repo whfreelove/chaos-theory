@@ -92,20 +92,19 @@
 - And the description-writing phase continues with the merged task
 
 `@self-contained-descriptions:3.6`
-#### Scenario Outline: Re-validation failure after confirmed <operation> blocks phase continuation
+#### Scenario Outline: Author declines a <suggestion_type> suggestion
 
-- Given the author has confirmed a <operation> suggestion
-- And the updated dependency graph contains a cycle
-- When the dependency graph is re-validated
-- Then the description-writing phase does not continue
-- And the author is prompted to resolve the cycle before proceeding
+- Given the skill has suggested a <suggestion_type> for a task
+- When the author declines the <suggestion_type> suggestion
+- Then the description is accepted as-is
+- And the description-writing phase continues to the next task
 
 ##### Examples
 
-| operation |
-|-----------|
-| split     |
-| merge     |
+| suggestion_type |
+|-----------------|
+| split           |
+| merge           |
 
 ---
 

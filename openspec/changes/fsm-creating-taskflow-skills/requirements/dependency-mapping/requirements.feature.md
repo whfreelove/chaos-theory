@@ -121,7 +121,7 @@
 - Then the skill prompts the author to specify the new task's dependencies before re-presenting the graph
 
 `@dependency-mapping:5.3`
-#### Scenario: Author renames a task — dependencies preserved
+#### Scenario: Renamed task dependencies preserved
 
 - Given the dependency graph has been presented
 - When the author renames a task
@@ -132,7 +132,7 @@
 
 - Given the dependency graph contains a task with both predecessors and dependents
 - When the author removes that task
-- Then each dependent of the removed task adds the removed task's blockedBy entries to its own blockedBy list
+- Then the blockedBy list of each task that depended on the removed task contains the removed task's blockedBy entries
 
 ---
 

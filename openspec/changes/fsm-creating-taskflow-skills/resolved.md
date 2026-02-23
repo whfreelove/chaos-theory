@@ -294,3 +294,123 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Decision**: CMP-descriptions is responsible for re-validating the dependency graph immediately after any confirmed split or merge using the cycle detection script. Pipeline continues to the next description only after re-validation passes. Document this responsibility in technical.md (CMP-descriptions) and update integration.feature.md to acknowledge this cross-capability dependency.
 - **Status**: resolved
 - **Outcome**: Added explicit pipeline gate responsibility to CMP-descriptions: after any confirmed split or merge, the pipeline does not continue to the next description until dependency graph re-validation passes. Updated the validation scope table to cover both splits and merges with the pipeline gate noted. [diff: +2/-1 technical.md] Propagated to requirements/self-contained-descriptions/requirements.feature.md: added Scenario Outline @self-contained-descriptions:3.6 covering the pipeline gate behavior — when re-validation detects a cycle after a confirmed split or merge, the description-writing phase does not continue and the author is prompted to resolve the cycle. Propagated to integration.feature.md: reframed forward-only pipeline justification paragraph as 'with one designed exception', added description of the split/merge callback and reference to self-contained-descriptions:3.4–3.5.
+
+## Medium
+
+### GAP-36: Intermediate partial fsm.json has no specified file path
+- **Source**: implementation-critic
+- **Severity**: medium
+- **Description**: The technical design documents a progressive fsm.json construction pattern: CMP-dependency-map writes a partial fsm.json, CMP-descriptions reads and updates it in-place, and CMP-fsm-json-finalize reads and finalizes it. No file path for the intermediate partial fsm.json is documented. CMP-fsm-json-finalize's final output path requires the confirmed skill name (produced by CMP-skill-md, which runs concurrently), but the intermediate file path must be deterministic so CMP-descriptions can locate it before the skill name is confirmed. Without a specified path, implementors must infer or invent the location.
+- **Triage**: check-in
+- **Decision**: The intermediate fsm.json path is the final path: `<output-directory>/<skill-name>/fsm.json`. The skill name (confirmed at CMP-normalize per GAP-37) and output directory (collected at CMP-normalize per GAP-48) determine the path before any task writes the file. CMP-dependency-map creates the directory and writes the initial partial fsm.json. CMP-descriptions updates it in place. CMP-fsm-json-finalize validates and overwrites at the same location. No temporary paths or file moves. Update: technical.md § CMP-dependency-map, § CMP-descriptions, § CMP-fsm-json-finalize (document shared artifact path), § Data flow table.
+- **Primary-file**: technical.md
+- **Status**: resolved
+- **Outcome**: Documented the shared intermediate artifact path `<output-directory>/<skill-name>/fsm.json` in CMP-dependency-map (creates directory and writes initial file), CMP-descriptions (reads and updates in-place at same path), CMP-fsm-json-finalize (overwrites at same path). Updated data flow table rows for dependency mapping, description writing, SKILL.md generation, and fsm.json finalization to include explicit file paths. Updated CMP-fsm-json-finalize dependencies to reference the explicit path. [diff: +10/-8 technical.md]
+
+
+### GAP-37: CMP-fsm-json-finalize has no documented dependency on CMP-skill-md and no mechanism for acquiring the confirmed skill name
+- **Source**: implementation-critic
+- **Severity**: medium
+- **Description**: CMP-fsm-json-finalize requires the confirmed skill name to populate the metadata.fsm field in each fsm.json entry, but its documented dependencies list only the partial fsm.json produced by CMP-dependency-map and updated by CMP-descriptions. CMP-skill-md — which determines and confirms the normalized skill name — runs concurrently with the dependency/description chain and writes only SKILL.md to disk. No mechanism is documented for CMP-fsm-json-finalize to acquire the confirmed skill name, and no task dependency or data-read dependency between CMP-skill-md and CMP-fsm-json-finalize is specified.
+- **Triage**: check-in
+- **Decision**: Move skill name normalization (kebab-case conversion and author confirmation) from CMP-skill-md to CMP-normalize. CMP-normalize is the branch point for both CMP-skill-md and the dependency-map chain, so the confirmed name is naturally available to all downstream tasks. CMP-skill-md receives the confirmed name (no longer normalizes). CMP-fsm-json-finalize receives the name through the linear chain from CMP-normalize. No new dependency edges or data-read mechanisms needed. Update: technical.md § Components (CMP-normalize, CMP-skill-md, CMP-fsm-json-finalize), § Decisions, § Data flow table.
+- **Primary-file**: technical.md
+- **Status**: resolved
+- **Outcome**: Added skill name normalization to CMP-normalize (description and responsibilities). Replaced CMP-skill-md's normalization responsibility with receiving the confirmed name from CMP-normalize. Updated CMP-skill-md description to reference confirmed skill name. Updated CMP-fsm-json-finalize dependencies to list confirmed skill name propagated from CMP-normalize. Updated architecture annotation for CMP-normalize and CMP-skill-md. Updated data flow table normalization row. Updated CMP-dependency-map and CMP-skill-md dependencies to include confirmed skill name. Added Y-statement for the normalization move. Fixed stale reference in name-consistency decision (CMP-skill-md -> CMP-normalize). [diff: +18/-10 technical.md]
+
+
+
+### GAP-48: No component is responsible for eliciting the plugin directory from the author
+- **Source**: logic-critic
+- **Severity**: medium
+- **Description**: The skill-file-generation capability requires the skill to place files under a path of the form `plugins/<plugin>/skills/<skill>/`. CMP-skill-md and CMP-fsm-json-finalize both reference this path and guide the author on file placement. However, no component documents the responsibility for collecting the plugin directory (`<plugin>`) from the author. The skill name is handled by CMP-skill-md's normalization step, but the plugin directory is a separate authoring input that has no specified collection point.
+- **Triage**: check-in
+- **Decision**: Generalize file placement from `plugins/<plugin>/skills/<skill>/` to `<output-directory>/<skill-name>/` where the output directory is any author-specified path. CMP-normalize collects the output directory alongside the skill name (per GAP-37). All downstream components use the author-specified path. The 'plugin directory' concept is removed — the skill is agnostic to the project's directory conventions. Update: technical.md § CMP-normalize (add output directory collection), § CMP-skill-md and § CMP-fsm-json-finalize (generalize paths), § Data flow table; requirements/skill-file-generation § Rule 4 (generalize path and rename 'plugin directory' to 'output directory'); infra.md § skill-file-generation coverage.
+- **Primary-file**: technical.md
+- **Status**: resolved
+- **Outcome**: Added output directory collection to CMP-normalize (description and responsibilities). Replaced all `plugins/<plugin>/skills/<skill>/` paths with `<output-directory>/<skill-name>/` in CMP-skill-md (3 occurrences: directory creation, file placement guide) and CMP-fsm-json-finalize (file write path). Updated CMP-dependency-map and CMP-skill-md dependencies to include output directory. Updated data flow table rows. Added Y-statement for output directory generalization. Note: cascading updates needed in requirements/skill-file-generation Rule 4 and infra.md coverage table (out of scope for this file). [diff: +14/-8 technical.md]
+
+
+
+
+### GAP-54: Untitled finding
+- **Source**: Implicit Gap Detection-detection
+- **Severity**: medium
+- **Description**: Merge of adjacent tasks produces a self-referencing blockedBy in the surviving entry. CMP-descriptions specifies merge as: 'the lower task ID survives; blockedBy entries from both tasks are unioned into the surviving entry.' For adjacent tasks (which share a direct blockedBy edge), the removed task's blockedBy contains the surviving task's ID. After union, the surviving entry has its own ID in its blockedBy — a self-cycle. Example: task A (ID 1, blockedBy: []) and task B (ID 2, blockedBy: [1]) are merged; surviving entry A gets blockedBy: union([], [1]) = [1], a self-reference. The spec also claims 'both deterministic node expansion (split) and blockedBy union (merge) are structure-preserving operations on acyclic graphs — re-validation is retained as defense-in-depth,' but merge of adjacent tasks always produces a self-loop, contradicting the structure-preservation claim. Re-validation would catch the self-loop, but the defense-in-depth framing implies re-validation is expected to pass normally. An implementor following the spec literally would produce an invalid merge on every adjacent-task merge, with no specified correction (the obvious fix — filtering the surviving ID from the union — is not part of the algorithm).
+- **Triage**: check-in
+- **Decision**: Add self-ID filtering to the CMP-descriptions merge algorithm: after unioning blockedBy entries from both tasks into the surviving entry, filter the surviving task's own ID from the resulting blockedBy set. Add a clarifying note: for adjacent tasks (the sole merge-eligible case), the removed task's blockedBy contains the surviving task's ID, so raw union produces a self-reference that this filter removes. The structure-preservation claim is retained — the complete merge procedure (union + self-ID filter) is structure-preserving. Re-validation remains defense-in-depth. Update: technical.md § CMP-descriptions merge algorithm.
+- **Primary-file**: technical.md
+- **Status**: resolved
+- **Outcome**: Added self-ID filter step to the CMP-descriptions merge algorithm with explanatory note about why adjacent-task merges produce self-references. Updated the structure-preservation claim to reference 'the complete merge procedure (blockedBy union followed by self-ID filter)' instead of just 'blockedBy union'. Note: integration.feature.md contains a parallel structure-preservation claim using the old 'blockedBy union' language (out of scope for this file). [diff: +2/-2 technical.md]
+
+
+
+### GAP-56: Untitled finding
+- **Source**: Resolution Normative Detection-detection
+- **Severity**: medium
+- **Description**: Resolution of GAP-15 introduced normative issues in workflow-validation:1.7: the Then step 'the skill re-runs validation and advances to the next phase if validation passes' contains (a) mechanism language — 're-runs validation' describes an internal trigger rather than an observable outcome — and (b) a conditional 'if validation passes' embedded inside a Then step; conditions belong in Given/When, not in Then. In requirements/workflow-validation/requirements.feature.md.
+- **Triage**: delegate
+- **Decision**: Rewrite workflow-validation:1.7 Then step from 'the skill re-runs validation and advances to the next phase if validation passes' to 'the workflow advances to the next phase.' Removes mechanism language ('re-runs validation') and embedded conditional ('if validation passes'). The scenario's Given/When already establish the correction context; the Then states only the observable outcome. Update integration.feature.md cross-capability bullet to replace 'correction-triggered re-validation (1.7)' with 'correction-unblocked progression (1.7).'
+- **Primary-file**: requirements/workflow-validation/requirements.feature.md
+- **Status**: resolved
+- **Outcome**: The assigned file (requirements/workflow-validation/requirements.feature.md) already contains the corrected Then step at line 60: 'Then the workflow advances to the next phase'. No modification needed in this file. Note: the decision also calls for updating integration.feature.md line 23 to replace 'correction-triggered re-validation (1.7)' with 'correction-unblocked progression (1.7)' — that change is outside this assignment's scope and remains pending. [diff: +0/-0 requirements/workflow-validation/requirements.feature.md]
+
+
+
+
+### GAP-57: Untitled finding
+- **Source**: Resolution Normative Detection-detection
+- **Severity**: medium
+- **Description**: Resolution of GAP-17 introduced a conditional 'if' gate and bundled conditions in workflow-validation:2.1: the Then step 'validation passes if each entry contains id, subject, description, activeForm, and blockedBy fields with correct types, all IDs are unique, and all blockedBy references resolve to existing IDs' is structured as 'Then X if [multi-condition clause]', which embeds the precondition inside the outcome. The three independently falsifiable checks (field presence, type correctness, ID uniqueness, reference validity) are the same class of bundled-condition defect that GAP-15 was explicitly tasked with resolving elsewhere in the same file. In requirements/workflow-validation/requirements.feature.md.
+- **Triage**: delegate
+- **Decision**: Rewrite workflow-validation:2.1 Then step using And-chained assertions, removing the 'if' gate: 'Then each entry contains `id`, `subject`, `description`, `activeForm`, and `blockedBy` fields / And each field has the correct type / And all IDs are unique / And all `blockedBy` references resolve to existing IDs.' The scenario title 'Structural integrity check passes' serves as the named composite gate per GAP-15's allowance. And-chaining per GAP-12's precedent makes each condition individually falsifiable without requiring separate scenarios or renumbering.
+- **Primary-file**: requirements/workflow-validation/requirements.feature.md
+- **Status**: resolved
+- **Outcome**: The assigned file (requirements/workflow-validation/requirements.feature.md) already contains the And-chained assertions at lines 72-75, matching the decision exactly. No modification needed. [diff: +0/-0 requirements/workflow-validation/requirements.feature.md]
+
+
+
+
+### GAP-58: Untitled finding
+- **Source**: Resolution Normative Detection-detection
+- **Severity**: medium
+- **Description**: Resolution of GAP-18 introduced mechanism language in dependency-mapping:5.4: the Then step 'each dependent of the removed task adds the removed task's blockedBy entries to its own blockedBy list' uses 'adds ... to its own blockedBy list' — a verb describing an internal state-mutation operation — rather than stating the observable outcome (e.g., that the dependent's blockedBy list now contains the predecessor entries). In requirements/dependency-mapping/requirements.feature.md.
+- **Triage**: delegate
+- **Decision**: Rewrite dependency-mapping:5.4 Then step from 'each dependent of the removed task adds the removed task's blockedBy entries to its own blockedBy list' to 'the blockedBy list of each task that depended on the removed task contains the removed task's blockedBy entries.' Replaces the state-mutation verb 'adds' with the observable-state verb 'contains,' following GAP-31's established pattern for fixing mechanism language in Then steps.
+- **Primary-file**: requirements/dependency-mapping/requirements.feature.md
+- **Status**: resolved
+- **Outcome**: No change needed. The file already contains the corrected Then step at @dependency-mapping:5.4 (line 135): 'the blockedBy list of each task that depended on the removed task contains the removed task's blockedBy entries.' The fix was already applied in a prior resolution pass. [diff: +0/-0 requirements/dependency-mapping/requirements.feature.md]
+
+
+
+### GAP-62: Lightweight quality check no longer exists in infra
+- **Source**: Stale Gap Detection-detection
+- **Severity**: medium
+- **Description**: 
+- **Status**: deprecated
+- **Outcome**: Stale finding — already covered. Confirmed live: infra.md dependency-mapping Rule 5 coverage row (line 57) contains no quality check language — only dependency prompting, graph updates, ID assignment, and predecessor inheritance. The lightweight quality check described in GAP-55 is already absent from infra.md. However, GAP-55 is still open in gaps.md with a Decision to remove it. This stale finding implies GAP-55's concern is also resolved. Needs human review to close GAP-55 as stale and confirm whether the quality check was removed before or after GAP-55 was recorded.
+
+
+
+
+### GAP-63: Requirements still use pre-resolution plugin directory path
+- **Source**: Stale Gap Detection-detection
+- **Severity**: medium
+- **Description**: 
+- **Status**: superseded
+- **Outcome**: Superseded by broader gap. Identical concern to GAP-59: requirements still use the pre-GAP-48 plugin directory path. GAP-59 already captures this in full detail with the same primary file, root cause, and fix. GAP-63's empty description and 'Stale Gap Detection' source indicate the detector recognized this as redundant. Should be closed as superseded by GAP-59.
+
+
+
+## High
+
+### GAP-53: The PreToolUse guard blocking disk reads of fsm.json conflicts with the progressive fsm.json construction pattern
+- **Source**: technical-consistency-critic
+- **Severity**: high
+- **Description**: The FSM plugin's PreToolUse guard blocks the agent from reading SKILL.md and fsm.json directly. The technical design for this change documents a progressive fsm.json construction pattern in which CMP-descriptions must read and update the partial fsm.json that CMP-dependency-map wrote to disk. This cross-task disk read of fsm.json occurs within the authoring workflow and is a core part of the specified data flow. The technical context acknowledges the guard exists but neither the component specifications nor the data flow documentation addresses how the authoring workflow's fsm.json read operations interact with the guard — whether the guard applies to the intermediate partial fsm.json, whether an exemption exists, or whether the construction pattern must be redesigned to avoid the conflict.
+- **Triage**: check-in
+- **Decision**: The PreToolUse guard conflict with the progressive fsm.json construction pattern is resolved by the fsm-session-hook-bypass change, which provides a hook bypass mechanism for the authoring workflow. No spec changes needed in this change beyond a context reference. Update: technical.md § Context (add brief note referencing fsm-session-hook-bypass as the resolution).
+- **Primary-file**: technical.md
+- **Status**: resolved
+- **Outcome**: Strengthened the existing Context reference to fsm-session-hook-bypass to explicitly state it resolves the conflict between the guard and the progressive construction pattern, and to name the specific cross-task disk read operations that benefit from the bypass (CMP-descriptions reading/updating the partial fsm.json, CMP-fsm-json-finalize reading the enriched result). [diff: +1/-1 technical.md]
+

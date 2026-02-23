@@ -65,11 +65,12 @@
 - Then the root structure is a JSON array where each element is a task object
 
 `@skill-file-generation:3.5`
-#### Scenario: Task IDs renumbered to topological order with author notification
+#### Scenario: Task IDs renumbered to topological order
 
 - Given the workflow has tasks with dependencies that impose a topological ordering
 - When fsm.json is generated
-- Then task IDs are assigned in topological order and the author is notified of any ID changes
+- Then task IDs are assigned in topological order
+- And the author is notified of the old-to-new ID mapping
 
 ---
 

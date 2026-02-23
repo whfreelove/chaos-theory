@@ -18,11 +18,7 @@ This change deploys via merge to main. The delivered files are placed at `plugin
 
 This change has two distinct verification modes:
 
-1. **Structural validation** (automated at runtime): The fsm.json is validated by the existing `validate_fsm_tasks` function when the skill is invoked via `hydrate-tasks.py`. This catches structural defects — missing required fields, duplicate IDs, dangling `blockedBy` references, invalid JSON — without needing new test code. The `description` field SHALL be added to `validate_fsm_tasks` required field checks as part of this change so that empty or missing descriptions are caught at hydration time. Verification command for the description field validation test:
-   ```
-   pytest plugins/finite-skill-machine/tests/ -v -k "description"
-   ```
-   Test file path to be confirmed once the description field validation test is written.
+1. **Structural validation** (automated at runtime): The fsm.json is validated by the existing `validate_fsm_tasks` function when the skill is invoked via `hydrate-tasks.py`. This catches structural defects — missing required fields, duplicate IDs, dangling `blockedBy` references, invalid JSON — without needing new test code.
 
 2. **Behavioral verification** (manual, author-driven): The 5 requirement capabilities describe agent behavior during the guided workflow. These are verified by invoking the skill and observing agent behavior, not by automated tests. The "code under test" is the agent following task descriptions, not a Python function.
 
@@ -58,7 +54,7 @@ This means the blocking behavior is **guaranteed by construction**, not by testi
 | Rule 2: Parallel execution patterns | Independent task identification, parallel grouping confirmation | Manual: define independent tasks, verify no blocking relationships between them |
 | Rule 3: Fan-in and fan-out patterns | Fan-out from single predecessor, fan-in to single successor, diamond pattern, cycle detection and rejection | Manual: define fan-out/fan-in workflows, verify dependency graph captures convergence and divergence; specify dependencies that form a cycle, verify the skill rejects the cycle and prompts the author to resolve it |
 | Rule 4: Author confirmation of graph | Dependency summary presentation, modification after review, approval gate | Manual: verify the skill presents a complete dependency summary and allows modifications |
-| Rule 5: Step list modifications during dependency mapping | Author removes a task (graph updated, dangling refs removed; when the removed task had predecessors and dependents, its dependents inherit its blockedBy entries to preserve ordering chains); author adds a task (lightweight quality check applied, graph updated, new relationships prompted); author renames a task (label updated, relationships preserved); re-validation after each modification; lightweight quality check pass/fail boundary for added tasks (label present/non-empty, description specificity, actionability) | Manual: during dependency mapping, remove a task and verify graph updates correctly; when removing a middle-node task, verify its dependents inherit its blockedBy entries (ordering chain preserved, not silently converted to parallel); add a task and verify the lightweight quality check runs before the task enters the graph — verify pass when label and description meet specificity and actionability criteria, verify fail when label is empty, description is vague, or task is not actionable; verify the skill prompts for blocking relationships with all existing tasks (predecessors and successors); rename a task and verify existing dependencies preserved. **Single-task boundary example**: when adding a task to a workflow with one existing task, the skill prompts for the new task's relationship to the single existing task — blocked by it, blocks it, or independent. Pass: the skill references the one existing task by name. Fail: the skill prompts generically without referencing the existing task |
+| Rule 5: Step list modifications during dependency mapping | Author removes a task (graph updated, dangling refs removed; when the removed task had predecessors and dependents, its dependents inherit its blockedBy entries to preserve ordering chains); author adds a task (dependency prompting, graph updated with next sequential ID); author renames a task (label updated, relationships preserved); re-validation after each modification | Manual: during dependency mapping, remove a task and verify graph updates correctly; when removing a middle-node task, verify its dependents inherit its blockedBy entries (ordering chain preserved, not silently converted to parallel); add a task and verify the skill prompts for the new task's dependencies before updating the graph; verify the task is assigned the next sequential ID; rename a task and verify existing dependencies preserved. **Single-task boundary example**: when adding a task to a workflow with one existing task, the skill prompts for the new task's relationship to the single existing task — blocked by it, blocks it, or independent. Pass: the skill references the one existing task by name. Fail: the skill prompts generically without referencing the existing task |
 | Rule 6: Single-task workflows | Empty dependency graph, immediate progression for single-task workflow | Manual: define a workflow with exactly one task, verify the task's blockedBy array is empty, verify the skill confirms the trivially empty graph and proceeds |
 
 #### `self-contained-descriptions`
@@ -67,7 +63,7 @@ This means the blocking behavior is **guaranteed by construction**, not by testi
 |------|---------------|----------------------|
 | Rule 1: Sole instruction source | Self-contained descriptions accepted; missing context flagged; external references ("as described in the skill") caught; author can revise previously approved descriptions with re-validation | Manual: write descriptions with and without external references, verify the skill flags non-self-contained ones; revise an approved description, verify re-validation runs |
 | Rule 2: No inter-task references | Named task references, "the previous task" references, implicit ordering assumptions | Manual: write descriptions referencing sibling tasks, verify the skill flags each reference type |
-| Rule 3: Appropriate task sizing | Overly large descriptions prompt splitting; overly small prompt merging; appropriate size accepted; author-confirmed split updates fsm.json with new task (next sequential ID), propagates parent/child relationships, and re-validates the dependency graph; author-confirmed merge consolidates tasks in fsm.json and re-validates the dependency graph | Manual: write descriptions of varying sizes, verify the skill recommends splitting, merging, or accepts as appropriate; confirm a split suggestion, verify fsm.json is updated with the new task and the dependency graph passes re-validation; confirm a merge suggestion, verify fsm.json is consolidated and the dependency graph passes re-validation |
+| Rule 3: Appropriate task sizing | Overly large descriptions prompt splitting; overly small prompt merging; appropriate size accepted; author-confirmed split updates fsm.json with new task (next sequential ID), propagates parent/child relationships, and re-validates the dependency graph; author-confirmed merge consolidates tasks in fsm.json and re-validates the dependency graph; author-declined suggestion accepts the description as-is and continues to the next task | Manual: write descriptions of varying sizes, verify the skill recommends splitting, merging, or accepts as appropriate; confirm a split suggestion, verify fsm.json is updated with the new task and the dependency graph passes re-validation; confirm a merge suggestion, verify fsm.json is consolidated and the dependency graph passes re-validation; decline a split or merge suggestion, verify the description is accepted as-is and description-writing continues to the next task |
 | Rule 4: activeForm auto-generation | Present-continuous form derived from task label; author confirmation or override; author-provided overrides accepted as-is without format validation (4.2) | Manual: define tasks with labels, verify the skill generates activeForm and allows override; override with non-present-continuous text and verify the skill accepts it without validation |
 | Rule 5: Task descriptions are presented in dependency order | Tasks presented in dependency order with prerequisites before dependents | Manual: complete dependency mapping with a multi-level dependency graph, verify the skill presents tasks for description writing in dependency order (prerequisites before dependents) |
 
@@ -78,7 +74,7 @@ This means the blocking behavior is **guaranteed by construction**, not by testi
 | Rule 1: SKILL.md generation | Valid YAML frontmatter with `name` and `description`; author-facing body language; correct directory placement; self-validation failure (missing frontmatter) triggers author correction and re-validation before SKILL.md is finalized | Manual: complete the workflow, verify generated SKILL.md has frontmatter and describes steps without internal identifiers; verify that a self-validation failure triggers author correction and re-validation before SKILL.md is finalized |
 | Rule 2: Task definition file generation | All workflow steps present; dependencies encoded correctly; required fields (`id`, `subject`, `description`) per entry; display-friendly names auto-normalized to directory-safe format with author confirmation | Structural: `validate_fsm_tasks` checks required fields, unique IDs, and `blockedBy` resolution at runtime. Manual: verify step count matches workflow definition; provide a display-friendly name, verify normalization and confirmation prompt |
 | Rule 2 (self-validation): SKILL.md self-validation | Self-validation failure triggers author correction and re-validation before SKILL.md is finalized | Manual: trigger a self-validation failure (e.g., remove a frontmatter field), verify the skill reports the issue, correct it, verify re-validation runs and passes |
-| Rule 3: Correct directory structure | Files placed under `plugins/<plugin>/skills/<skill>/`; SKILL.md and fsm.json colocated; target directory created if it does not exist; existing directory detected with overwrite/rename/abort options | Manual: verify the skill instructs placement at the correct path; verify the skill creates the target directory when it does not exist; verify the skill detects an existing directory and offers overwrite/rename/abort options before placing files |
+| Rule 3: Correct directory structure | Files placed under `<output-directory>/<skill-name>/`; SKILL.md and fsm.json colocated; target directory created if it does not exist; existing directory detected with overwrite/rename/abort options | Manual: verify the skill instructs placement at the correct path; verify the skill creates the target directory when it does not exist; verify the skill detects an existing directory and offers overwrite/rename/abort options before placing files |
 
 #### `workflow-validation`
 
@@ -92,9 +88,15 @@ This means the blocking behavior is **guaranteed by construction**, not by testi
 
 #### Prerequisites
 
+**Behavioral verification prerequisites:**
+
 - **Claude Code CLI**: Installed and available on PATH. Required for invoking skills and executing the FSM hook pipeline.
 - **FSM plugin enabled**: The `finite-skill-machine` plugin must be installed and active in the Claude Code plugin configuration.
 - **Fresh session**: Each verification attempt should start a new Claude Code session to avoid state contamination from prior skill invocations. A fresh session ensures the task directory is clean and no prior FSM tasks interfere with verification.
+
+**Structural validation test environment:**
+
+Contributor setup and general verification approach for the structural validation tests (pytest-based validation of `validate_fsm_tasks`) are documented in `openspec/common/infra.md`. This covers Python version, virtual environment setup, pytest installation, and test execution commands.
 
 #### Base setup steps
 
@@ -110,8 +112,8 @@ These steps apply to all verification scenarios.
 
 Some verification scenarios require directory-state preconditions that must be established after base setup but before exercising the scenario:
 
-- **Directory-creation scenario** (skill-file-generation:4.1): Remove the target skill directory (`plugins/<plugin>/skills/<skill>/`) if it exists, so the skill must create it during file placement.
-- **Collision-detection scenario** (skill-file-generation:4.2): Pre-populate the target skill directory (`plugins/<plugin>/skills/<skill>/`) with existing files, so the skill detects the collision and offers resolution options.
+- **Directory-creation scenario** (skill-file-generation:4.1): Remove the target skill directory (`<output-directory>/<skill-name>/`) if it exists, so the skill must create it during file placement.
+- **Collision-detection scenario** (skill-file-generation:4.2): Pre-populate the target skill directory (`<output-directory>/<skill-name>/`) with existing files, so the skill detects the collision and offers resolution options.
 
 #### Session management
 
