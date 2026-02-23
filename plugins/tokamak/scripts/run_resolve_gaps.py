@@ -1080,22 +1080,24 @@ def run_cleanup(
     dry_run: bool,
 ) -> ResolutionLog:
     """Section G: Gap cleanup."""
-    console.rule("[bold blue]Section G: Gap Cleanup")
+    tracker.enter_section('G', 4)
 
     sys.path.insert(0, str(Path(__file__).parent))
     from run_critics import run_all_critics, select_critics
 
     # Step 1: Run gap detectors
-    console.print("[cyan]Running gap detectors...[/cyan]")
+    tracker.step("Running gap detectors")
     critics_data = select_critics(change_dir, config_type='gap-detectors')
     project_dir = resolve_project_dir(change_dir)
 
-    detector_result = asyncio.run(run_all_critics(
-        critics_data, change_dir, project_dir,
-        max_concurrent, timeout, budget, dry_run,
-    ))
+    with tracker.spinner("Running gap detectors..."):
+        detector_result = asyncio.run(run_all_critics(
+            critics_data, change_dir, project_dir,
+            max_concurrent, timeout, budget, dry_run,
+        ))
 
     # Step 2: Record implicit gaps
+    tracker.step("Recording implicit gaps")
     all_findings = []
     for cr in detector_result.get('results', []):
         if cr.get('status') != 'success':
@@ -1124,14 +1126,18 @@ def run_cleanup(
         console.print(f"[green]Recorded {len(new_gaps)} implicit gaps.[/green]")
 
         # Step 3: Categorize findings via AI + user validation (Issue 6)
+        tracker.step("Categorizing findings")
         if new_gaps and not dry_run:
-            _categorize_findings(
-                change_dir, new_gaps, log, max_concurrent, timeout, budget
-            )
+            with tracker.spinner("Categorizing findings..."):
+                _categorize_findings(
+                    change_dir, new_gaps, log, max_concurrent, timeout, budget
+                )
     else:
         console.print("[dim]No detector findings.[/dim]")
+        tracker.step("Categorizing findings — skipped (0 findings)")
 
     # Step 4: Handle remaining actionable gaps from cleanup
+    tracker.step("Handling remaining gaps + summary")
     from run_solvers import find_actionable_gaps
     remaining = find_actionable_gaps(change_dir)
     remaining_checkin = [g for g in remaining if g['triage'] in ('check-in', 'delegate')]
@@ -1305,11 +1311,12 @@ def run_report(
     dry_run: bool,
 ) -> None:
     """Section H: Report and commit."""
-    console.rule("[bold blue]Section H: Report + Commit")
+    tracker.enter_section('H', 3)
 
     change_name = change_dir.name
 
     # Build summary
+    tracker.step("Building summary tables")
     resolved_table = Table(title="Resolved Gaps")
     resolved_table.add_column("Gap ID", style="green")
     resolved_table.add_column("Outcome")
@@ -1324,6 +1331,7 @@ def run_report(
             implicit_table.add_row(gap_id, title)
 
     # Display summary
+    tracker.step("Displaying report")
     console.print()
     if log.resolved:
         console.print(resolved_table)
@@ -1381,6 +1389,7 @@ def run_report(
         return
 
     # Stage and commit
+    tracker.step("Stage and commit")
     proceed = questionary.confirm("Stage and commit?", default=True).ask()
     if not proceed:
         console.print("[dim]Skipped commit.[/dim]")
