@@ -198,6 +198,7 @@ TRIAGE_SYSTEM_PROMPT = (
 
 def run_triage(
     change_dir: Path,
+    tracker: WorkflowTracker,
     log: ResolutionLog,
     max_concurrent: int,
     timeout: int,
@@ -405,6 +406,7 @@ GROUPER_SYSTEM_PROMPT = (
 
 def run_solve(
     change_dir: Path,
+    tracker: WorkflowTracker,
     log: ResolutionLog,
     max_concurrent: int,
     timeout: int,
@@ -911,6 +913,7 @@ def _ask_user_proposal_decision(proposal: dict) -> tuple[str | None, str]:
 
 def run_resolve(
     change_dir: Path,
+    tracker: WorkflowTracker,
     log: ResolutionLog,
     max_concurrent: int,
     timeout: int,
@@ -1057,6 +1060,7 @@ CATEGORIZER_SYSTEM_PROMPT = (
 
 def run_cleanup(
     change_dir: Path,
+    tracker: WorkflowTracker,
     log: ResolutionLog,
     max_concurrent: int,
     timeout: int,
@@ -1128,7 +1132,7 @@ def run_cleanup(
         # Reuse Section E flow for these gaps
         subset_ids = [g['id'] for g in remaining_checkin]
         log = run_solve(
-            change_dir, log, max_concurrent, timeout, budget, dry_run,
+            change_dir, tracker, log, max_concurrent, timeout, budget, dry_run,
             gap_subset=subset_ids,
         )
 
@@ -1284,6 +1288,7 @@ def _categorize_findings(
 
 def run_report(
     change_dir: Path,
+    tracker: WorkflowTracker,
     log: ResolutionLog,
     dry_run: bool,
 ) -> None:
@@ -1521,6 +1526,7 @@ def main(argv: list[str] | None = None):
     start_section = args.from_section
     start_idx = SECTION_ORDER.index(start_section)
     log = ResolutionLog()
+    tracker = WorkflowTracker(start_section=start_section)
 
     console.print(Panel(
         f"Change: [bold]{change_dir.name}[/bold]\n"
@@ -1534,9 +1540,10 @@ def main(argv: list[str] | None = None):
     # Section D: Triage
     if start_idx <= SECTION_ORDER.index('D'):
         log = run_triage(
-            change_dir, log,
+            change_dir, tracker, log,
             args.max_concurrent, args.timeout, args.budget, args.dry_run,
         )
+        tracker.complete_section()
 
     # Section E: Solve + Decide
     if start_idx <= SECTION_ORDER.index('E'):
@@ -1551,16 +1558,18 @@ def main(argv: list[str] | None = None):
                 _cleanup_sessions(sessions_path)
 
         log = run_solve(
-            change_dir, log,
+            change_dir, tracker, log,
             args.max_concurrent, args.timeout, args.budget, args.dry_run,
         )
+        tracker.complete_section()
 
     # Section F: Resolve (with circuit-break re-entry)
     if start_idx <= SECTION_ORDER.index('F'):
         log, circuit_break_ids = run_resolve(
-            change_dir, log,
+            change_dir, tracker, log,
             args.max_concurrent, args.timeout, args.budget, args.dry_run,
         )
+        tracker.complete_section()
 
         if circuit_break_ids:
             console.print(
@@ -1568,13 +1577,13 @@ def main(argv: list[str] | None = None):
                 f"circuit-broken gaps...[/magenta]"
             )
             log = run_solve(
-                change_dir, log,
+                change_dir, tracker, log,
                 args.max_concurrent, args.timeout, args.budget, args.dry_run,
                 gap_subset=circuit_break_ids,
             )
             # Re-run resolve for the subset
             log, still_broken = run_resolve(
-                change_dir, log,
+                change_dir, tracker, log,
                 args.max_concurrent, args.timeout, args.budget, args.dry_run,
             )
             if still_broken:
@@ -1583,13 +1592,15 @@ def main(argv: list[str] | None = None):
     # Section G: Cleanup
     if start_idx <= SECTION_ORDER.index('G'):
         log = run_cleanup(
-            change_dir, log,
+            change_dir, tracker, log,
             args.max_concurrent, args.timeout, args.budget, args.dry_run,
         )
+        tracker.complete_section()
 
     # Section H: Report + Commit
     if start_idx <= SECTION_ORDER.index('H'):
-        run_report(change_dir, log, args.dry_run)
+        run_report(change_dir, tracker, log, args.dry_run)
+        tracker.complete_section()
 
     console.print("\n[bold green]Workflow complete.[/bold green]")
 
