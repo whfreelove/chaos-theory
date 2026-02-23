@@ -417,13 +417,14 @@ def run_solve(
     gap_subset: list[str] | None = None,
 ) -> ResolutionLog:
     """Section E: Solve + apply decisions."""
-    console.rule("[bold blue]Section E: Solve + Apply Decisions")
+    tracker.enter_section('E', 5)
 
     # Import solver functions
     sys.path.insert(0, str(Path(__file__).parent))
     from run_solvers import find_actionable_gaps, run_initial, run_resume
 
     # Find actionable gaps (optionally filtered to subset)
+    tracker.step("Finding actionable gaps")
     actionable = find_actionable_gaps(change_dir)
     if gap_subset:
         actionable = [g for g in actionable if g['id'] in gap_subset]
@@ -448,13 +449,16 @@ def run_solve(
         console.print(f"  {gap['id']}: defer-resolution (auto)")
 
     # Group gaps for parallel solving
-    groups_json = _run_gap_grouper(change_dir, actionable, max_concurrent, timeout, budget, dry_run)
+    tracker.step("Grouping gaps")
+    with tracker.spinner("Running gap grouper..."):
+        groups_json = _run_gap_grouper(change_dir, actionable, max_concurrent, timeout, budget, dry_run)
 
     # Run solvers (explore + solve)
-    console.print("\n[cyan]Running solvers...[/cyan]")
-    solver_result = asyncio.run(run_initial(
-        change_dir, groups_json, max_concurrent, timeout, budget, dry_run,
-    ))
+    tracker.step("Running solvers")
+    with tracker.spinner("Running solvers (explore + solve)..."):
+        solver_result = asyncio.run(run_initial(
+            change_dir, groups_json, max_concurrent, timeout, budget, dry_run,
+        ))
 
     sessions = solver_result.get('sessions', {})
     proposals = solver_result.get('proposals', [])
@@ -497,14 +501,16 @@ def run_solve(
             checkin_proposals.append((gap, proposal))  # fallback
 
     # Process delegate proposals via AI reviewer
+    tracker.step("Processing proposals")
     if delegate_proposals:
         console.print(f"\n[cyan]Reviewing {len(delegate_proposals)} delegate proposals...[/cyan]")
-        rework_feedback.update(
-            _process_delegate_proposals(
-                change_dir, delegate_proposals, log,
-                max_concurrent, timeout, budget, dry_run
+        with tracker.spinner("Reviewing delegate proposals..."):
+            rework_feedback.update(
+                _process_delegate_proposals(
+                    change_dir, delegate_proposals, log,
+                    max_concurrent, timeout, budget, dry_run
+                )
             )
-        )
 
     # Process check-in proposals via user
     if checkin_proposals:
@@ -528,13 +534,14 @@ def run_solve(
         )
 
     # Rework loop
+    tracker.step(f"Rework loop — {len(rework_feedback)} proposals" if rework_feedback else "Rework loop — skipped (0 proposals)")
     if rework_feedback:
-        console.print(f"\n[magenta]Reworking {len(rework_feedback)} proposals...[/magenta]")
         feedback_text = {gid: info['feedback'] for gid, info in rework_feedback.items()}
-        rework_result = asyncio.run(run_resume(
-            change_dir, sessions, feedback_text,
-            max_concurrent, timeout, budget, dry_run,
-        ))
+        with tracker.spinner("Reworking proposals..."):
+            rework_result = asyncio.run(run_resume(
+                change_dir, sessions, feedback_text,
+                max_concurrent, timeout, budget, dry_run,
+            ))
         reworked = rework_result.get('proposals', [])
         reworked_map = {p['gap_id']: p for p in reworked if 'gap_id' in p}
 
