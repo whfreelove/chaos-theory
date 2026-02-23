@@ -930,13 +930,14 @@ def run_resolve(
     dry_run: bool,
 ) -> tuple[ResolutionLog, list[str] | None]:
     """Section F: Resolve per-file."""
-    console.rule("[bold blue]Section F: Resolve Per-File")
+    tracker.enter_section('F', 3)
 
     sys.path.insert(0, str(Path(__file__).parent))
     from group_gaps import group_gaps
     from run_resolvers import run_all_phases
 
     # Check for ungrouped gaps
+    tracker.step("Checking gap grouping")
     grouping = group_gaps(change_dir)
     ungrouped = grouping.get('ungrouped', [])
 
@@ -974,10 +975,11 @@ def run_resolve(
             write_gap_field(change_dir, gap_id, 'Primary-file', chosen_file)
 
     # Run all resolver phases
-    console.print("\n[cyan]Running resolvers (primary → propagation → collation)...[/cyan]")
-    result = asyncio.run(run_all_phases(
-        change_dir, max_concurrent, timeout, budget, dry_run,
-    ))
+    tracker.step("Running resolvers")
+    with tracker.spinner("Running resolvers (primary → propagation → collation)..."):
+        result = asyncio.run(run_all_phases(
+            change_dir, max_concurrent, timeout, budget, dry_run,
+        ))
 
     collation = result.get('collation') or {}
     resolved_count = collation.get('resolved', 0)
@@ -992,6 +994,7 @@ def run_resolve(
                 outcome = entry.get('outcome', '')
                 log.resolved.append((gap_id, _truncate(outcome, 60)))
 
+    tracker.step("Summary + circuit-break check")
     console.print(Panel(
         f"[green]Resolved: {resolved_count}[/green]\n"
         f"Placement rejected: {placement_rejected}\n"
