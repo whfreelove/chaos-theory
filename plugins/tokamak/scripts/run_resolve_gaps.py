@@ -206,8 +206,9 @@ def run_triage(
     dry_run: bool,
 ) -> ResolutionLog:
     """Section D: Triage gap resolution method."""
-    console.rule("[bold blue]Section D: Triage Gap Resolution Method")
+    tracker.enter_section('D', 4)
 
+    tracker.step("Loading triage policy and finding untriaged gaps")
     policy = load_triage_policy(change_dir)
     gaps_path = change_dir / 'gaps.md'
     if not gaps_path.exists():
@@ -246,27 +247,28 @@ def run_triage(
             user_decided.append((gap, actions))
 
     # Path 1: Single-option — apply directly
+    tracker.step(f"Applying single-option triage values — {len(single_option)} gaps" if single_option else "Applying single-option triage values — skipped (0 gaps)")
     if single_option:
-        console.print(f"\n[green]Applying {len(single_option)} single-option triage values...[/green]")
         for gap, action in single_option:
             write_gap_field(change_dir, gap['id'], 'Triage', action)
             log.triaged.append((gap['id'], action))
             console.print(f"  {gap['id']}: {action} (auto)")
 
     # Path 2: Agent-decided — claude -p
+    tracker.step(f"Agent triage — {len(agent_decided)} gaps" if agent_decided else "Agent triage — skipped (0 gaps)")
     if agent_decided:
-        console.print(f"\n[cyan]Launching agent triage for {len(agent_decided)} gaps...[/cyan]")
-        triage_results = _run_agent_triage(
-            change_dir, agent_decided, policy, max_concurrent, timeout, budget, dry_run
-        )
+        with tracker.spinner("Running agent triage..."):
+            triage_results = _run_agent_triage(
+                change_dir, agent_decided, policy, max_concurrent, timeout, budget, dry_run
+            )
         for gap_id, triage_value in triage_results:
             write_gap_field(change_dir, gap_id, 'Triage', triage_value)
             log.triaged.append((gap_id, triage_value))
             console.print(f"  {gap_id}: {triage_value} (agent)")
 
     # Path 3: User-decided — questionary
+    tracker.step(f"User triage + summary — {len(user_decided)} gaps" if user_decided else "User triage + summary — skipped (0 gaps)")
     if user_decided:
-        console.print(f"\n[yellow]User triage needed for {len(user_decided)} gaps...[/yellow]")
         for gap, actions in user_decided:
             _display_gap_panel(gap)
             choice = questionary.select(
