@@ -18,7 +18,7 @@
 - Given the author specifies that two tasks must run in a particular sequence
 - And the dependency is presented for confirmation
 - When the author confirms the order
-- Then the ordering is recorded in the dependency table
+- Then the dependency table reflects the specified order
 
 ---
 
@@ -38,7 +38,7 @@
 - Given the skill identifies tasks that appear to be independent
 - And the parallel grouping is presented for author confirmation
 - When the author confirms the tasks are independent
-- Then the tasks are recorded with no blocking relationships
+- Then the tasks have no blockedBy entries
 
 ---
 

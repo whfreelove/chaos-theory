@@ -113,8 +113,7 @@
 - When re-validation detects a cycle in the updated dependency graph
 - Then the skill presents the cycle-participating tasks and edges to the author
 - And the skill prompts the author to remove or redirect specific blockedBy entries to break the cycle
-- And re-validation runs again after the author's correction
-- And the skill does not present the next task for description until re-validation passes
+- And the skill does not present the next task for description
 
 ##### Examples
 
