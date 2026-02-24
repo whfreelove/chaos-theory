@@ -46,8 +46,8 @@ requirements:
     added:
       REQ-env-var-bypass:
         rule: >-
-          When FSM_BYPASS is set to a non-empty value, the hook MUST allow
-          Read, Glob, and Grep access to skill files without denying the request.
+          When FSM_BYPASS is set to a non-empty value, Read, Glob, and Grep
+          access to skill files MUST be allowed without denying the request.
         scenarios:
           SCN-bypass-active:
             given:
