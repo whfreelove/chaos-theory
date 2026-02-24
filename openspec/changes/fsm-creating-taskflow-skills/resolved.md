@@ -402,6 +402,89 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 
 
 
+
+### GAP-61: Infra workflow-intake Rule 2 verification references unspecified conditional logic decomposition
+- **Source**: Implicit Gap Detection-detection
+- **Severity**: medium
+- **Description**: The infra.md workflow-intake Rule 2 coverage table instructs verifiers to 'provide a skill with conditional branching, verify the skill presents decomposition options and incorporates the author's choice.' Neither the workflow-intake Rule 2 requirements (scenarios 2.1–2.4: sequential extraction, parallelism identification, author confirmation, author modification) nor CMP-intake-existing's responsibilities mention conditional logic, branching, or decomposition options. An implementor following requirements would not build conditional-branching decomposition; a verifier following infra would test for it and fail verification against a correct implementation. This is the same class of infra-requirements mismatch as GAP-55 (infra references behavior absent from requirements and technical).
+- **Triage**: check-in
+- **Decision**: Remove 'conditional logic decomposition (author chooses strategy)' from infra.md workflow-intake Rule 2 'What it covers' column and the corresponding verification step about conditional branching. The behavior has no backing in requirements (workflow-intake:2.1–2.4 specify only sequential extraction, parallelism identification, author confirmation, and author modification) or technical (CMP-intake-existing lists no conditional logic responsibilities), and is architecturally infeasible (fsm.json defines a static task list that cannot conditionally activate tasks). Same resolution class as GAP-55. Update: infra.md § workflow-intake Rule 2 coverage row.
+- **Primary-file**: infra.md
+- **Status**: resolved
+- **Outcome**: Removed 'conditional logic decomposition (author chooses strategy)' from the What it covers column and 'provide a skill with conditional branching, verify the skill presents decomposition options and incorporates the author's choice' from the Verification approach column in workflow-intake Rule 2 row. Replaced verification with steps aligned to the actual requirements: sequential execution order verification, concurrent step identification with author confirmation, and author confirm/modify capability. [diff: +1/-1 infra.md]
+
+
+
+
+### GAP-59: skill-file-generation Rule 4 uses stale plugin directory path
+- **Source**: Implicit Gap Detection-detection
+- **Severity**: medium
+- **Description**: skill-file-generation:4.1 specifies files are written to `<plugin>/skills/<skill-name>/`, the Rule 4 title says 'correct plugin directory', and the Given clause references 'plugin directory'. GAP-48 resolved the path generalization in technical.md and infra.md to `<output-directory>/<skill-name>/` (with CMP-normalize collecting the output directory), but its outcome explicitly notes 'cascading updates needed in requirements/skill-file-generation Rule 4 and infra.md coverage table (out of scope for this file).' The cascading update to requirements was never applied. An implementor reading requirements/skill-file-generation would build plugin-specific directory logic (collecting a plugin name from a known plugin list), while technical.md expects a generic author-specified output directory. The two artifacts specify incompatible file placement interfaces.
+- **Triage**: check-in
+- **Decision**: Apply the cascading update deferred by GAP-48: update requirements/skill-file-generation Rule 4 to use the generalized output-directory path. Replace 'correct plugin directory' with 'correct output directory' in the Rule 4 title, 'plugin directory' with 'output directory' in the 4.1 Given clause, and `<plugin>/skills/<skill-name>/` with `<output-directory>/<skill-name>/` in the 4.1 Then step. Scenario 4.2 needs no change. This aligns requirements with technical.md and infra.md which both already use the generalized path.
+- **Primary-file**: requirements/skill-file-generation/requirements.feature.md
+- **Status**: resolved
+- **Outcome**: Updated Rule 4 title from 'correct plugin directory' to 'correct output directory', Scenario 4.1 title from 'plugin's skills directory' to 'output directory', 4.1 Given clause from 'plugin directory' to 'output directory', and 4.1 Then step from `<plugin>/skills/<skill-name>/` to `<output-directory>/<skill-name>/`. Scenario 4.2 unchanged. Requirements now align with technical.md (CMP-normalize collects output directory, all components use `<output-directory>/<skill-name>/`) and infra.md coverage table. [diff: +4/-4 requirements/skill-file-generation/requirements.feature.md]
+
+
+
+### GAP-60: Pipeline gate scenario for cycle after split/merge missing from requirements
+- **Source**: Implicit Gap Detection-detection
+- **Severity**: medium
+- **Description**: GAP-27's resolved outcome states: 'added Scenario Outline @self-contained-descriptions:3.6 covering the pipeline gate behavior — when re-validation detects a cycle after a confirmed split or merge, the description-writing phase does not continue and the author is prompted to resolve the cycle.' However, the current requirements/self-contained-descriptions/requirements.feature.md shows @self-contained-descriptions:3.6 as 'Scenario Outline: Author declines a <suggestion_type> suggestion' — an unrelated scenario. The pipeline gate scenario is absent from the file. Technical.md (CMP-descriptions) specifies the behavior in detail: 'if re-validation detects a cycle, present the cycle-participating tasks and edges to the author and allow removal or redirection of specific blockedBy entries to break the cycle, then re-run re-validation.' An implementor following requirements alone would not implement cycle correction after restructuring because no requirement backs it; CMP-final-validation's cycle detection is the only specified cycle handling, but it runs too late — after description writing completes.
+- **Triage**: check-in
+- **Decision**: Add @self-contained-descriptions:3.7 Scenario Outline covering the pipeline gate when re-validation detects a cycle after a confirmed split or merge. The scenario specifies that cycle-participating tasks and edges are presented to the author, the author is prompted to resolve the cycle by removing or redirecting blockedBy entries, and the description-writing phase does not continue until re-validation passes. Uses a Scenario Outline with split/merge in the Examples table. Placed after the existing 3.6 (decline path) to avoid renumbering. Update integration.feature.md to reference the new scenario. Update infra.md Rule 3 coverage to include cycle-correction verification.
+- **Primary-file**: requirements/self-contained-descriptions/requirements.feature.md
+- **Status**: resolved
+- **Outcome**: Added @self-contained-descriptions:3.7 Scenario Outline 'Re-validation detects a cycle after a confirmed <restructure_type>' with four Then steps covering cycle presentation, author correction prompting, re-validation re-run, and pipeline gating. Includes Examples table with split and merge rows. Placed between 3.6 and the Rule 4 section separator. [diff: +17/-0 requirements/self-contained-descriptions/requirements.feature.md]
+
+
+
+
+### GAP-64: "dependency graph passes validation" is mechanism language in Then steps
+- **Source**: Resolution Normative Detection-detection
+- **Severity**: medium
+- **Description**: Resolution of GAP-31 introduced mechanism language in self-contained-descriptions:3.4 and 3.5: the Then step 'And the dependency graph passes validation' describes an internal validation operation running and passing rather than an author-observable state. Per MDG normative guidance, Then steps must state observable outcomes. The observable outcome is 'the dependency graph contains no cycles' or 'the dependency graph is valid', not the mechanism by which validity is established. In requirements/self-contained-descriptions/requirements.feature.md.
+- **Triage**: delegate
+- **Decision**: Rewrite the Then step in self-contained-descriptions:3.4 (line 81) and 3.5 (line 91) from 'And the dependency graph passes validation' to 'And the dependency graph contains no cycles.' Replaces mechanism language (validation operation running and passing) with the observable state outcome (graph is acyclic), matching the pattern established in workflow-validation:1.2. Reference preservation is already covered by the preceding Then steps in both scenarios.
+- **Primary-file**: requirements/self-contained-descriptions/requirements.feature.md
+- **Status**: resolved
+- **Outcome**: Rewrote Then steps in scenarios 3.4 (line 81) and 3.5 (line 91) from 'And the dependency graph passes validation' to 'And the dependency graph contains no cycles', matching the observable-state pattern from workflow-validation:1.2. [diff: +2/-2 requirements/self-contained-descriptions/requirements.feature.md]
+
+
+
+
+### GAP-65: "description-writing phase continues" is pipeline-state mechanism language
+- **Source**: Resolution Normative Detection-detection
+- **Severity**: medium
+- **Description**: Resolution of GAP-31 introduced mechanism language in self-contained-descriptions:3.4 ('the description-writing phase continues with the post-split tasks') and 3.5 ('the description-writing phase continues with the merged task'); scenario 3.6 also contains 'the description-writing phase continues to the next task'. These Then steps describe internal pipeline state transitions rather than author-observable outcomes. The author observes being presented with the next task for description, not that an internal phase progresses. This is the same class of mechanism-verb defect that GAP-30 fixed in workflow-intake:5.1. In requirements/self-contained-descriptions/requirements.feature.md.
+- **Triage**: delegate
+- **Decision**: Rewrite the Then steps in self-contained-descriptions:3.4 (line 82), 3.5 (line 92), and 3.6 (line 100) from 'the description-writing phase continues with [X]' to 'the skill presents [X] to the author for description.' Specifically: 3.4 becomes 'And the skill presents the post-split tasks to the author for description'; 3.5 becomes 'And the skill presents the merged task to the author for description'; 3.6 becomes 'And the skill presents the next task to the author for description.' Replaces internal pipeline-state mechanism language ('phase continues') with the observable author interaction ('skill presents ... to the author'), following the pattern established in self-contained-descriptions:5.1 and the precedent set by GAP-30.
+- **Primary-file**: requirements/self-contained-descriptions/requirements.feature.md
+- **Status**: resolved
+- **Outcome**: Rewrote Then steps in scenario 3.4 (line 82) to 'the skill presents the post-split tasks to the author for description', scenario 3.5 (line 92) to 'the skill presents the merged task to the author for description', and scenario 3.6 (line 100) to 'the skill presents the next task to the author for description'. Replaced pipeline-state mechanism language with observable author-facing interaction verbs. [diff: +3/-3 requirements/self-contained-descriptions/requirements.feature.md]
+
+
+
+### GAP-66: No component generates metadata.fsm field
+- **Source**: Implicit Gap Detection-detection
+- **Severity**: medium
+- **Description**: CMP-fsm-json-finalize's description says the output 'Produces a JSON array with 5 core fields per entry plus metadata' and its responsibilities include 'Verify each entry contains metadata (object) with an fsm key whose value is a non-empty string matching the skill name.' However, no component's responsibilities include GENERATING the metadata.fsm field. CMP-dependency-map writes {id, subject, blockedBy}. CMP-descriptions adds description and activeForm. Neither writes metadata. The data flow table output for CMP-fsm-json-finalize lists only '{id, subject, description, activeForm, blockedBy} per entry' — omitting metadata entirely, contradicting the component description. CMP-fsm-json-finalize's responsibilities are: validate and format, renumber, verify fields, verify metadata, validate refs, write. 'Verify' is not 'generate.' An implementor following the responsibilities strictly would verify a field that no upstream component created, failing verification with no specified correction path (CMP-fsm-json-finalize has no correction mechanism — only CMP-final-validation specifies correction paths). The confirmed skill name is available from CMP-normalize, but no responsibility assigns the work of populating metadata.fsm from that name into each fsm.json entry.
+- **Status**: superseded
+- **Outcome**: Superseded by broader gap. GAP-66 is genuine and unresolved. The data flow table (technical.md line 97) still lists the finalized fsm.json format as '{id, subject, description, activeForm, blockedBy}' per entry — metadata is omitted from the format column entirely, contradicting CMP-fsm-json-finalize's own description ('5 core fields per entry plus metadata'). CMP-normalize mentions the confirmed name will populate metadata.fsm but assigns no explicit write responsibility. CMP-descriptions and CMP-dependency-map never touch metadata. CMP-fsm-json-finalize's responsibilities say 'Verify' not 'Generate'. No prior gap resolution addressed the generation assignment. Needs check-in because the fix requires an architectural decision: which component (most likely CMP-fsm-json-finalize, since it already holds the confirmed skill name and overwrites the file) gains the responsibility to populate metadata.fsm in each entry, and the data flow table format must be updated to include metadata.
+
+
+
+
+### GAP-69: Quality check already absent from infra Rule 5
+- **Source**: Stale Gap Detection-detection
+- **Severity**: medium
+- **Description**: 
+- **Status**: deprecated
+- **Outcome**: Stale finding — already covered. GAP-69 is stale. Its own source tag is 'Stale Gap Detection-detection' and its description is empty — the detector found no defect to describe. GAP-62 ('Lightweight quality check no longer exists in infra') was already marked deprecated after confirming the quality check language is absent from infra.md dependency-mapping Rule 5. Infra.md Rule 5 (line 57) contains only dependency prompting, graph updates, ID assignment, and predecessor inheritance — no quality check language. The concern from GAP-55 (the underlying open gap about the phantom quality check) is already resolved in the artifact. Check-in is appropriate rather than delegate because the stale finding also signals GAP-55 should be closed: it remains open in gaps.md with a Decision but its target artifact already reflects the intended outcome, requiring a human confirmation to move it to resolved.
+
+
+
 ## High
 
 ### GAP-53: The PreToolUse guard blocking disk reads of fsm.json conflicts with the progressive fsm.json construction pattern

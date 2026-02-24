@@ -75,14 +75,14 @@
 ---
 
 `@skill-file-generation:4`
-### Rule: Generated files are placed in the correct plugin directory
+### Rule: Generated files are placed in the correct output directory
 
 `@skill-file-generation:4.1`
-#### Scenario: Generated files placed in the plugin's skills directory
+#### Scenario: Generated files placed in the output directory
 
-- Given the author has specified a target skill name and plugin directory
+- Given the author has specified a target skill name and output directory
 - When file generation completes
-- Then SKILL.md and fsm.json are written to `<plugin>/skills/<skill-name>/`
+- Then SKILL.md and fsm.json are written to `<output-directory>/<skill-name>/`
 
 `@skill-file-generation:4.2`
 #### Scenario: Existing skill directory collision prompts author to choose resolution

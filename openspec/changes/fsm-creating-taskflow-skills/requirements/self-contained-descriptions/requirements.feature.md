@@ -78,8 +78,8 @@
 - When the author confirms the split
 - Then the workflow contains the original task split into its component parts
 - And each part preserves the predecessor and successor relationships of the original task
-- And the dependency graph passes validation
-- And the description-writing phase continues with the post-split tasks
+- And the dependency graph contains no cycles
+- And the skill presents the post-split tasks to the author for description
 
 `@self-contained-descriptions:3.5`
 #### Scenario: Author confirms a merge suggestion
@@ -88,8 +88,8 @@
 - When the author confirms the merge
 - Then the workflow consolidates the two tasks into one
 - And the consolidated task preserves the combined predecessor and successor relationships of both original tasks
-- And the dependency graph passes validation
-- And the description-writing phase continues with the merged task
+- And the dependency graph contains no cycles
+- And the skill presents the merged task to the author for description
 
 `@self-contained-descriptions:3.6`
 #### Scenario Outline: Author declines a <suggestion_type> suggestion
@@ -97,7 +97,7 @@
 - Given the skill has suggested a <suggestion_type> for a task
 - When the author declines the <suggestion_type> suggestion
 - Then the description is accepted as-is
-- And the description-writing phase continues to the next task
+- And the skill presents the next task to the author for description
 
 ##### Examples
 
@@ -105,6 +105,23 @@
 |-----------------|
 | split           |
 | merge           |
+
+`@self-contained-descriptions:3.7`
+#### Scenario Outline: Re-validation detects a cycle after a confirmed <restructure_type>
+
+- Given the author has confirmed a <restructure_type> and the dependency graph has been updated
+- When re-validation detects a cycle in the updated dependency graph
+- Then the skill presents the cycle-participating tasks and edges to the author
+- And the skill prompts the author to remove or redirect specific blockedBy entries to break the cycle
+- And re-validation runs again after the author's correction
+- And the skill does not present the next task for description until re-validation passes
+
+##### Examples
+
+| restructure_type |
+|------------------|
+| split            |
+| merge            |
 
 ---
 
