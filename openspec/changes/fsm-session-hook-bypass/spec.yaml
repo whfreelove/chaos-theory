@@ -47,7 +47,7 @@ requirements:
       REQ-env-var-bypass:
         rule: >-
           When FSM_BYPASS is set to a non-empty value, the hook MUST allow
-          Read, Glob, and Grep access to skill files without emitting a deny.
+          Read, Glob, and Grep access to skill files without denying the request.
         scenarios:
           SCN-bypass-active:
             given:
@@ -62,7 +62,7 @@ requirements:
             when:
               - The agent attempts to Read a skill-internal file (SKILL.md)
             then:
-              - The hook emits a deny decision
+              - The tool request is denied
           SCN-bypass-active-glob:
             given:
               - FSM_BYPASS is exported and non-empty in the shell environment
@@ -97,14 +97,14 @@ requirements:
             when:
               - The agent attempts to Read a skill-internal file (SKILL.md)
             then:
-              - The hook emits a deny decision
+              - The tool request is denied
           SCN-denial-grep:
             given:
               - FSM_BYPASS is not present in the shell environment
             when:
               - The agent attempts to Grep with a path targeting a skill-internal file
             then:
-              - The hook emits a deny decision
+              - The tool request is denied
   CAP-actionable-denial:
     added:
       REQ-updated-denial-message:
@@ -119,7 +119,7 @@ requirements:
             when:
               - The agent attempts to Glob a skill-internal file (fsm.json)
             then:
-              - The hook emits a deny decision
+              - The tool request is denied
               - The denial message contains "export FSM_BYPASS=1"
           SCN-denial-removes-plugin-advice:
             given:
@@ -127,7 +127,7 @@ requirements:
             when:
               - The agent attempts to Glob a skill-internal file (fsm.json)
             then:
-              - The hook emits a deny decision
+              - The tool request is denied
               - The denial message does not contain "Disable finite-skill-machine"
 
 # ── TECHNICAL ───────────────────────────────────────────────

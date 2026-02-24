@@ -293,6 +293,18 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Outcome**: Appended the denial message field coverage deferral sentence to the existing out-of-scope list in functional > user-impact, materializing the artifact change documented in GAP-19 and GAP-23 outcomes. [diff: +2/-0 spec.yaml]
 
 
+
+### GAP-61: Then clauses use 'hook emits' implementation mechanism language
+- **Source**: Resolution Normative Detection-detection
+- **Severity**: medium
+- **Description**: Resolution of GAP-31, GAP-38, and GAP-41 introduced 'The hook emits a deny decision' in Then clauses of SCN-bypass-not-set, SCN-bypass-empty-string, SCN-denial-grep, SCN-denial-contains-bypass-instructions, and SCN-denial-removes-plugin-advice in requirements.yaml. 'The hook emits' names the internal hook script mechanism and its JSON emission action rather than an externally observable outcome. This spec has established (GAP-1, GAP-26, GAP-30) that 'hook' is implementation terminology to be removed from behavioral sections. Observable behavioral language would be 'The tool request is denied' or 'Access to the skill file is blocked.'
+- **Triage**: delegate
+- **Decision**: Replace 'The hook emits a deny decision' with 'The tool request is denied' in all 5 affected Then clauses (SCN-bypass-not-set, SCN-bypass-empty-string, SCN-denial-grep, SCN-denial-contains-bypass-instructions, SCN-denial-removes-plugin-advice). Also update REQ-env-var-bypass rule text from 'without emitting a deny' to 'without denying the request' for rule-scenario consistency. Follows the established pattern from GAP-1, GAP-26, and GAP-30 of replacing internal mechanism language with observable behavioral outcomes. Parallels INT-deny-response's own language: 'tool use is blocked.'
+- **Primary-file**: spec.yaml
+- **Status**: resolved
+- **Outcome**: Replaced all 5 Then clause instances of 'The hook emits a deny decision' with 'The tool request is denied' across SCN-bypass-not-set, SCN-bypass-empty-string, SCN-denial-grep, SCN-denial-contains-bypass-instructions, and SCN-denial-removes-plugin-advice. Updated REQ-env-var-bypass rule text from 'without emitting a deny' to 'without denying the request'. All behavioral language now describes observable outcomes rather than internal hook mechanisms, consistent with GAP-1/GAP-26/GAP-30 precedent and INT-deny-response's own phrasing. [diff: +6/-6 spec.yaml]
+
+
 ## Low
 
 ### GAP-17: Capabilities reference internal component names

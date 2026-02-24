@@ -22,12 +22,13 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 
 
 
-### GAP-61: Then clauses use 'hook emits' implementation mechanism language
+
+### GAP-62: REQ-env-var-bypass rule places MUST obligation on internal hook component
 - **Source**: Resolution Normative Detection-detection
 - **Severity**: medium
-- **Description**: Resolution of GAP-31, GAP-38, and GAP-41 introduced 'The hook emits a deny decision' in Then clauses of SCN-bypass-not-set, SCN-bypass-empty-string, SCN-denial-grep, SCN-denial-contains-bypass-instructions, and SCN-denial-removes-plugin-advice in requirements.yaml. 'The hook emits' names the internal hook script mechanism and its JSON emission action rather than an externally observable outcome. This spec has established (GAP-1, GAP-26, GAP-30) that 'hook' is implementation terminology to be removed from behavioral sections. Observable behavioral language would be 'The tool request is denied' or 'Access to the skill file is blocked.'
+- **Description**: Resolution of GAP-18 introduced 'the hook MUST allow' in the REQ-env-var-bypass rule text in spec.yaml, placing the normative obligation on the internal hook script rather than expressing an observable behavioral constraint. GAP-61 subsequently updated the tail of the same rule sentence ('without emitting a deny' → 'without denying the request') but did not address the subject. The established cleanup pattern across GAP-1, GAP-5, GAP-17, GAP-26, GAP-30, GAP-42, and GAP-61 has been to remove 'hook' from all behavioral sections. A rule-level normative statement should not name an internal implementation artifact as the acting subject; it should describe the required observable outcome, e.g. 'Read, Glob, and Grep access to skill files MUST be allowed without denying the request when FSM_BYPASS is set to a non-empty value.'
 - **Triage**: delegate
-- **Decision**: Replace 'The hook emits a deny decision' with 'The tool request is denied' in all 5 affected Then clauses (SCN-bypass-not-set, SCN-bypass-empty-string, SCN-denial-grep, SCN-denial-contains-bypass-instructions, SCN-denial-removes-plugin-advice). Also update REQ-env-var-bypass rule text from 'without emitting a deny' to 'without denying the request' for rule-scenario consistency. Follows the established pattern from GAP-1, GAP-26, and GAP-30 of replacing internal mechanism language with observable behavioral outcomes. Parallels INT-deny-response's own language: 'tool use is blocked.'
-- **Primary-file**: spec.yaml
+- **Decision**: Rewrite REQ-env-var-bypass rule from 'the hook MUST allow Read, Glob, and Grep access to skill files without denying the request' to 'Read, Glob, and Grep access to skill files MUST be allowed without denying the request.' Removes the internal implementation artifact as the normative subject, expressing the requirement as an observable behavioral outcome. Completes the cleanup started by GAP-61, which updated the tail of the same sentence but not the subject. Consistent with the established pattern across GAP-1, GAP-5, GAP-17, GAP-26, GAP-30, GAP-42, and GAP-61.
+- **Primary-file**: openspec/changes/fsm-session-hook-bypass/spec.yaml
 
 ## Low
