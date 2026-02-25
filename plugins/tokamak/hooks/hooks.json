@@ -66,7 +66,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre_opsx_continue.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre_plan_skills.sh"
           }
         ]
       }
