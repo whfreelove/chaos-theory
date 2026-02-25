@@ -1,0 +1,156 @@
+name: chaos-theory-lite
+version: 1
+description: >-
+  Lightweight OpenSpec workflow — all six artifact sections collapsed into a
+  single spec.yaml. Same tooling pipeline (critics, gap tracking, ratification)
+  via section extraction.
+artifacts:
+  - id: spec
+    generates: spec.yaml
+    description: Complete specification with functional, requirements, technical, infra, integration, and tasks sections
+    template: spec.yaml
+    instruction: >
+      Create a complete specification in a single YAML file covering all six
+      artifact sections. Write sections in order: functional → requirements →
+      technical → infra → integration → tasks.
+
+
+      YAML CONVENTIONS:
+
+      - Use `>-` (folded block scalar, strip) for prose paragraphs
+
+      - Use `|` (literal block scalar) for Gherkin steps and Mermaid diagrams
+
+      - Use slugs as mapping keys (kebab-case identifiers)
+
+      - Every identifier uses a typed prefix from the registry below
+
+
+      PREFIX REGISTRY:
+
+      - CAP- = capability, IMP- = impact item, CHG- = change entry
+
+      - REQ- = requirement rule, SCN- = scenario
+
+      - OBJ- = objective, CMP- = component, EXT- = external dependency
+
+      - INT- = interface contract, DEC- = decision, RSK- = risk
+
+      - ENV- = environment, LOG- = log event, MET- = metric, ALR- = alert
+
+      - XCP- = cross-capability rule, TSK- = task
+
+
+      ── FUNCTIONAL SECTION ──
+
+      Invoke skill: `tokamak:writing-functional-specs`
+
+
+      Write the `functional` key with these sub-keys:
+
+      - `why`: 1-2 sentences describing human burden (not technical gaps)
+
+      - `capabilities`: mapping of CAP-slug → description ("actor can outcome")
+
+      - `user-impact`: mapping with `scope`, `out-of-scope`, `known-risks` sub-keys
+
+      - `what-changes`: mapping of CHG-slug → change description with `type: major|minor|patch`
+
+
+      ── REQUIREMENTS SECTION ──
+
+      Invoke skill: `tokamak:writing-markdown-gherkin`
+
+
+      Write the `requirements` key as a mapping of capability slugs. Each capability contains:
+
+      - `added`: mapping of REQ-slug → rule with `rule` (text) and `scenarios` (mapping of SCN-slug → scenario)
+
+      - `modified`: same structure for changed rules
+
+      - `removed`: mapping of REQ-slug → `reason` text
+
+      - `renamed`: mapping of REQ-slug → `new-slug` + `reason`
+
+
+      Each scenario has `given`, `when`, `then` keys (lists of step strings).
+
+      Terminology: "Capability" = Feature, "Requirement" = Rule.
+
+
+      ── TECHNICAL SECTION ──
+
+      Invoke skills: `tokamak:writing-technical-design`, `tokamak:writing-y-statements`
+
+
+      Write the `technical` key with these sub-keys:
+
+      - `context`: background info as prose (>-)
+
+      - `objectives`: mapping of OBJ-slug → outcome statement
+
+      - `architecture`: mapping with `system-overview` and `component-interactions` (Mermaid via |)
+
+      - `components`: mapping of CMP-slug → {description, responsibilities, dependencies}
+
+      - `interfaces`: mapping of INT-slug → {operation, input, output, errors}
+
+      - `decisions`: mapping of DEC-slug → Y-statement text (>-)
+
+      - `risks`: mapping of RSK-slug → {risk, mitigation}
+
+
+      Decisions must be approved before writing. Y-statements only. Delete superseded decisions.
+
+
+      ── INFRA SECTION ──
+
+      Write the `infra` key with these sub-keys:
+
+      - `context`: current infrastructure state (>-)
+
+      - `objectives`: mapping of OBJ-slug → outcome statement
+
+      - `deployment`: mapping with `environments` (ENV-slug →), `feature-flags`, `rollout-strategy`
+
+      - `testing-strategy`: mapping with `coverage-mapping` (SCN-slug → test type)
+
+      - `observability`: mapping with `logging` (LOG-slug →), `metrics` (MET-slug →), `alerts` (ALR-slug →)
+
+      - `migration`: rollout strategy, rollback triggers (optional)
+
+
+      ── INTEGRATION SECTION ──
+
+      Invoke skill: `tokamak:writing-markdown-gherkin`
+
+
+      Write the `integration` key. Only include when capabilities interact in ways
+      not captured by single-capability requirements.
+
+      - Mapping of XCP-slug → {rule, capabilities (list), scenarios (SCN-slug → scenario)}
+
+      - Each scenario has `given`, `when`, `then` keys
+
+      - Tag involved capabilities in the `capabilities` list
+
+
+      ── TASKS SECTION ──
+
+      Write the `tasks` key as a mapping of kebab-case group names → lists of
+      TSK-prefixed task entries. Each entry has `id` (TSK-slug) and `description`.
+      Order groups by dependency.
+
+
+      SELF-CHECK before finalizing:
+
+      1. Does every identifier use the correct prefix?
+
+      2. Are prose values using >- and Gherkin/Mermaid using |?
+
+      3. Are all six top-level keys present?
+
+      4. Do requirements cover all capabilities?
+
+      5. Do tasks reference technical components?
+    requires: []

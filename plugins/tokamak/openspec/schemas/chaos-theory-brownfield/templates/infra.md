@@ -22,7 +22,7 @@ Map discovered requirements to actual test files.
 
 - Test environments: where tests currently run
 - Test data: how it's managed today
-- Requirements coverage: which @slug:Y.Z scenarios have tests
+- Requirements coverage: how capabilities map to test files/suites (NOT per-scenario enumeration — scenario details are owned by requirements files)
 - Coverage gaps: requirements that lack test coverage
 - CI/CD integration: current pipeline configuration -->
 

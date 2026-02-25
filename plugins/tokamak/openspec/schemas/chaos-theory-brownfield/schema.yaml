@@ -168,7 +168,7 @@ artifacts:
       Derive from actual API signatures, function parameters, message formats.
 
       - **Decisions**: Y-statements documenting existing design choices.
-      Invoke skill `tokamak:writing-y-statements` for format reference.
+      Invoke skill: `tokamak:writing-y-statements` for format reference.
       Provenance tag: `[initial-docs]` — these decisions already exist in code.
       Mark uncertain decisions: "we believe we decided X, accepting uncertainty
       about the original rationale."

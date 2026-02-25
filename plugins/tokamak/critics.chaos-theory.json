@@ -48,7 +48,7 @@
       "files": ["functional.md", "requirements", "integration.feature.md"],
       "model": "opus",
       "skills": ["tokamak:writing-markdown-gherkin"],
-      "evaluate": "Identify missing single-capability requirement scenarios that would meaningfully increase coverage:\n\n- **User Behaviors**: Flag expected user interactions not captured by any requirement scenario (e.g., edge cases, error paths, common workflows)\n- **Boundary Conditions**: Flag missing scenarios for limits, empty states, or invalid inputs that users would realistically encounter\n\nUse `integration.feature.md` as deduplication context — do NOT suggest requirement scenarios for behaviors already covered as integration scenarios.\n\nDo NOT:\n- Duplicate scenarios that already exist (check existing requirements AND integration scenarios carefully)\n- Nitpick minor variations that don't change behavior\n- Suggest scenarios that break Gherkin rules (one When-Then per scenario, observable outcomes only)\n- Flag hypothetical edge cases users would never encounter\n\nFor each gap, describe the missing behavior concisely. Only flag gaps that would catch real bugs."
+      "evaluate": "Identify missing single-capability requirement scenarios that would meaningfully increase coverage:\n\n- **User Behaviors**: Flag expected user interactions not captured by any requirement scenario (e.g., edge cases, error paths, common workflows)\n- **Boundary Conditions**: Flag missing scenarios for limits, empty states, or invalid inputs that users would realistically encounter\n\nUse `integration.feature.md` as deduplication context — do NOT suggest requirement scenarios for behaviors already covered as integration scenarios.\n\nDo NOT:\n- Duplicate scenarios that already exist (check existing requirements AND integration scenarios carefully)\n- Nitpick minor variations that don't change behavior\n- Suggest scenarios that break Gherkin rules (one When-Then per scenario, observable outcomes only)\n- Flag hypothetical edge cases users would never encounter\n\nMATERIALITY: Only flag missing scenarios that would catch bugs in a REAL implementation — not theoretical completeness gaps. Ask: \"Would a competent developer who reads the existing scenarios misimplement this?\" If no, don't flag it.\n\nDo NOT flag:\n- Edge cases that require unlikely user behavior (empty inputs, single-item lists, format boundary cases)\n- Scenarios that duplicate coverage from a different angle\n- Scenarios whose absence would not cause incorrect implementation\n\nFor each gap, describe the missing behavior concisely. Only flag gaps that would catch real bugs."
     },
     {
       "name": "Validation",
@@ -62,14 +62,14 @@
       "files": ["infra.md", "requirements", "integration.feature.md"],
       "model": "sonnet",
       "skills": ["tokamak:writing-markdown-gherkin"],
-      "evaluate": "Each requirement scenario is verifiable with the test infrastructure defined in `infra.md`; flag scenarios that cannot be tested with available environments, tooling, or data"
+      "evaluate": "Each requirement scenario is verifiable with the test infrastructure defined in `infra.md`; flag scenarios that cannot be tested with available environments, tooling, or data\n\nDo NOT flag infrastructure gaps — focus on whether scenarios describe testable outcomes. Infrastructure completeness is checked by the design-for-test critic."
     },
     {
       "name": "Design for Test",
       "files": ["infra.md", "requirements", "integration.feature.md"],
       "model": "sonnet",
       "skills": ["writing-infra-specs"],
-      "evaluate": "`infra.md` defines test environments, tooling, and data management needed to execute requirement scenarios; flag missing infrastructure"
+      "evaluate": "`infra.md` defines test environments, tooling, and data management needed to execute requirement scenarios; flag missing infrastructure\n\nDo NOT flag scenario testability — focus on whether infra.md provides the environments, tooling, and data needed. Scenario quality is checked by the verification critic."
     },
     {
       "name": "Logic",
@@ -83,14 +83,14 @@
       "files": ["tasks.yaml", "technical.md"],
       "model": "sonnet",
       "skills": [],
-      "evaluate": "Tasks in `tasks.yaml` implement changes from `technical.md`; each task is small, verifiable (clear done state), and groups are ordered by dependency"
+      "evaluate": "Tasks in `tasks.yaml` implement changes from `technical.md`; each task is small, verifiable (clear done state), and groups are ordered by dependency\n\nDo NOT flag:\n- Task groupings that don't mirror technical.md component boundaries — tasks group by implementation dependency, not spec structure\n- Missing implementation details obvious from the technical.md reference — tasks are guidance, not a spec mirror\n- Undefined references like \"the skill\" when the actor is clear from context"
     },
     {
       "name": "Test Tasks",
       "files": ["tasks.yaml", "requirements", "infra.md", "integration.feature.md"],
       "model": "sonnet",
       "skills": ["tokamak:writing-markdown-gherkin", "writing-infra-specs"],
-      "evaluate": "Tasks implement requirement scenarios as E2E/integration tests, following `infra.md` Testing Strategy"
+      "evaluate": "Tasks implement requirement scenarios as E2E/integration tests, following `infra.md` Testing Strategy\n\nDo NOT flag:\n- Missing per-scenario granularity — tasks describe verification STRATEGY, not per-assertion checklists\n- Tasks covering scenario groups rather than individual scenarios\n- Missing explicit scenario ID references when the task's scope clearly covers them"
     },
     {
       "name": "Test Infra",

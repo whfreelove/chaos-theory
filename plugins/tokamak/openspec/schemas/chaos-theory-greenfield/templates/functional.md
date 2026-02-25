@@ -5,7 +5,7 @@ If it takes a paragraph, the project may need splitting. -->
 
 ## Capabilities
 
-<!-- kebab-case slugs. Each creates requirements/<slug>/requirements.feature.md
+<!-- kebab-case slugs. Each creates requirements/<slug>/requirements.feature.md, i.e. actor-verbs-object
 Format: `<slug>`: <actor> can <outcome>
 Brainstorm with user — don't assume capabilities from a vague prompt. -->
 

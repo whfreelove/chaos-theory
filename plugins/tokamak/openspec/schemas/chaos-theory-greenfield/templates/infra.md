@@ -21,7 +21,7 @@ Map requirements to test types (unit, integration, E2E).
 
 - Test environments: where tests run
 - Test data: seeding, isolation, cleanup
-- Requirements coverage: which @slug:Y.Z scenarios become which test types
+- Requirements coverage: how capabilities map to test types/suites (NOT per-scenario enumeration — scenario details are owned by requirements files)
 - CI/CD integration: when tests run, what blocks deployment -->
 
 ## Observability

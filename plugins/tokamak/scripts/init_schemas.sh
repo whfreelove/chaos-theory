@@ -65,11 +65,14 @@ EOF
   fi
 
   mkdir -p "$CWD/$TARGET_DIR"
-  cp -r "$PLUGIN_ROOT/openspec/schemas/chaos-theory" "$CWD/$TARGET_DIR/"
+  for schema in "$PLUGIN_ROOT/openspec/schemas"/*/; do
+    [ -d "$schema" ] && cp -r "$schema" "$CWD/$TARGET_DIR/"
+  done
 
+  SCHEMA_NAMES=$(ls -1 "$CWD/$TARGET_DIR" | tr '\n' ', ' | sed 's/,$//')
   cat <<EOF
 <system-reminder>
-Initialized OpenSpec schemas at $TARGET_DIR/chaos-theory/. Run '/new-change <change-name>' to start a change.
+Initialized OpenSpec schemas at $TARGET_DIR/ ($SCHEMA_NAMES). Run '/new-change <change-name>' to start a change.
 </system-reminder>
 EOF
   exit 0
@@ -90,12 +93,16 @@ if [ -d "$TARGET_DIR" ]; then
   rm -rf "$TARGET_DIR"
 fi
 
-# Copy schemas
+# Copy all schemas
 mkdir -p "$TARGET_DIR"
-cp -r "$PLUGIN_ROOT/openspec/schemas/chaos-theory" "$TARGET_DIR/"
+for schema in "$PLUGIN_ROOT/openspec/schemas"/*/; do
+  [ -d "$schema" ] && cp -r "$schema" "$TARGET_DIR/"
+done
 
 # Report results
-echo "Copied schemas to $TARGET_DIR/chaos-theory/"
+for schema in "$TARGET_DIR"/*/; do
+  echo "Copied schemas to $schema"
+done
 find "$TARGET_DIR" -type f
 echo ""
 echo "Next: Run '/new-change <change-name>' to start a change."

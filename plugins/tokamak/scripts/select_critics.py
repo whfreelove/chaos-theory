@@ -148,6 +148,9 @@ def main():
                         help='Save current file hashes and exit (no critic selection)')
     parser.add_argument('--scope', choices=['single', 'cross'],
                         help='Filter by critic scope: single (1 file) or cross (2+ files)')
+    parser.add_argument('--type', default='critics', dest='config_type',
+                        help='Config type to load (default: critics). '
+                             'Resolves <type>.<schema>.json')
     args = parser.parse_args()
 
     # Mutual exclusion: --update-hashes cannot combine with selection flags
@@ -175,7 +178,7 @@ def main():
                 if m:
                     schema_name = m.group(1).strip()
                     if not args.config:
-                        schema_config = plugin_root / f'critics.{schema_name}.json'
+                        schema_config = plugin_root / f'{args.config_type}.{schema_name}.json'
                         if schema_config.exists():
                             config_path = schema_config
                 m = re.match(r'^project:\s*(.+)', line)
@@ -195,7 +198,7 @@ def main():
         print(f"INFO: Project directory {project_dir} does not exist yet. Project files skipped.", file=sys.stderr)
         project_dir = None
 
-    default_path = plugin_root / 'critics.chaos-theory.json'
+    default_path = plugin_root / f'{args.config_type}.chaos-theory.json'
 
     # Error: Directory not found
     if not change_dir.exists():

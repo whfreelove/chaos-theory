@@ -1,22 +1,22 @@
 {
   "default": {
-    "high":   { "authority": "user", "actions": ["check-in", "defer-resolution"] },
-    "medium": { "authority": "user", "actions": ["check-in", "delegate", "defer-release", "defer-resolution"] },
-    "low":    { "authority": "agent", "actions": ["check-in", "delegate", "defer-release"] }
+    "high":   { "authority": "user", "actions": ["check-in", "defer-resolution"], "categorization": { "authority": "user", "model": "opus" } },
+    "medium": { "authority": "user", "actions": ["check-in", "delegate", "defer-release", "defer-resolution"], "categorization": { "authority": "user", "model": "sonnet" } },
+    "low":    { "authority": "agent", "actions": ["check-in", "delegate", "defer-release"], "categorization": { "authority": "agent", "model": "sonnet" } }
   },
   "conservative": {
-    "high":   { "authority": "user", "actions": ["check-in"] },
-    "medium": { "authority": "user", "actions": ["check-in"] },
-    "low":    { "authority": "user", "actions": ["check-in", "delegate", "defer-release"] }
+    "high":   { "authority": "user", "actions": ["check-in"], "categorization": { "authority": "user", "model": "opus" } },
+    "medium": { "authority": "user", "actions": ["check-in"], "categorization": { "authority": "user", "model": "opus" } },
+    "low":    { "authority": "user", "actions": ["check-in", "delegate", "defer-release"], "categorization": { "authority": "user", "model": "sonnet" } }
   },
   "confident": {
-    "high":   { "authority": "user", "actions": ["check-in", "delegate", "defer-resolution"] },
-    "medium": { "authority": "agent", "actions": ["check-in", "delegate"] },
-    "low":    { "authority": "agent", "actions": ["delegate", "defer-release"] }
+    "high":   { "authority": "user", "actions": ["check-in", "delegate", "defer-resolution"], "categorization": { "authority": "user", "model": "opus" } },
+    "medium": { "authority": "agent", "actions": ["check-in", "delegate"], "categorization": { "authority": "agent", "model": "sonnet" } },
+    "low":    { "authority": "agent", "actions": ["delegate", "defer-release"], "categorization": { "authority": "agent", "model": "sonnet" } }
   },
   "autonomous": {
-    "high":   { "authority": "agent", "actions": ["delegate"] },
-    "medium": { "authority": "agent", "actions": ["delegate"] },
-    "low":    { "authority": "agent", "actions": ["delegate", "defer-release"] }
+    "high":   { "authority": "agent", "actions": ["delegate"], "categorization": { "authority": "agent", "model": "opus" } },
+    "medium": { "authority": "agent", "actions": ["delegate"], "categorization": { "authority": "agent", "model": "sonnet" } },
+    "low":    { "authority": "agent", "actions": ["delegate", "defer-release"], "categorization": { "authority": "agent", "model": "sonnet" } }
   }
 }

@@ -1,0 +1,63 @@
+{
+  "output_template": "## GAP DETECTOR OUTPUT FORMAT (required)\n\nRespond with a JSON list of findings. Each finding MUST include a \"title\" field — a complete noun phrase that names the problem (max 10 words). Good: \"Bypass Then clauses retain hook exit-code language\". Bad: \"rule subjects MUST to internal component\".\n\nIf no issues found, respond with: []\n\nDo NOT invent issues. Only report genuine gaps.",
+  "critics": [
+    {
+      "name": "Implicit Gap Detection",
+      "files": ["gaps.md", "functional.md", "requirements", "technical.md", "infra.md"],
+      "model": "opus",
+      "skills": [],
+      "evaluate": "As an experienced software technical writer, detect implicit gaps in documentation:\n1. Search `functional.md`, `technical.md`, `infra.md`, and `requirements/*/requirements.feature.md`\n2. Find verbiage that indicates uncertainties and ambiguity\n3. If none found, respond with empty JSON list: []\n4. For each finding, respond with: {\"id\": <next_gap_id>, \"change\": \"new\", \"title\": \"short title\", \"description\": \"what you found\"}\n5. Use `Source: implicit-detection` for any new gaps\n\nMATERIALITY THRESHOLD: Only flag ambiguities where an implementor could reasonably make a WRONG decision. Do NOT flag:\n- Terms where context provides sufficient meaning for correct implementation\n- Boundaries that implementation would naturally resolve with a reasonable default\n- Definitions that only matter if someone is reading the spec in isolation without implementation context"
+    },
+    {
+      "name": "Stale Gap Detection",
+      "files": ["gaps.md", "functional.md", "requirements", "technical.md", "infra.md"],
+      "project_files": ["functional.md", "technical.md", "infra.md", "requirements"],
+      "model": "opus",
+      "skills": [],
+      "evaluate": "As an experienced software technical writer, detect stale gaps:\n1. For each open gap in `gaps.md`, compare its concern against `functional.md`, `technical.md`, `infra.md`, and `requirements/*/requirements.feature.md`\n2. A gap is STALE only when specification artifact text has been updated to address the gap's concern — the description no longer identifies a genuine deficiency in the current spec text\n3. Do NOT flag record-keeping or metadata issues (missing fields, incomplete pointers, formatting) — those are validation concerns, not staleness\n4. Do NOT examine `resolved.md` entries — resolved gaps reference old spec versions by design\n5. If project documentation is provided, also check if gaps are stale because project state already addresses the concern\n6. If none found, respond with empty JSON list: []\n7. Use `Source: stale-detection` for any new gaps\n8. Each finding MUST include a description citing the specific spec text that now covers the concern\n9. Respond with stale gap JSON list, e.g. [{\"id\": 42, \"rationale\": \"why\", \"description\": \"The concern is now addressed by functional.md Section X which states...\"}]"
+    },
+    {
+      "name": "Gap Supersession Detection",
+      "files": ["gaps.md"],
+      "model": "opus",
+      "skills": ["tokamak:managing-spec-gaps"],
+      "evaluate": "Apply supersession rules from tokamak:managing-spec-gaps.\nAs an experienced software technical writer, detect superseded gaps:\n1. Search `gaps.md`\n2. Determine if any valid gaps appear to supersede others\n3. If none found, respond with empty JSON list: []\n4. One valid gap A that supersedes multiple gaps B, C should create two entries: A > B, A > C\n5. Multiple valid gaps A, B that, combined, supersede one gap C should create two entries: A > C, B > C\n6. Any new gaps recorded from supersession concerns should use `Source: supersession-detection`\n7. Respond with gap comparison summary JSON list, e.g. [{\"valid\": 42, \"superseded\": 13, \"rationale\": \"why\"}]"
+    },
+    {
+      "name": "Defer-Release Coverage Detection",
+      "files": ["gaps.md", "functional.md", "technical.md"],
+      "project_files": ["functional.md", "technical.md"],
+      "model": "opus",
+      "skills": ["tokamak:managing-spec-gaps"],
+      "evaluate": "Apply resolution completeness principles from tokamak:managing-spec-gaps.\nAs an experienced software technical writer, detect defer-release gaps lacking artifact coverage:\n1. Extract all gaps marked \"defer-release\" or \"DEFERRED TO FUTURE RELEASE\" from `gaps.md`\n2. For each defer-release gap:\n   a. Check if the gap's concern is semantically addressed in `functional.md` Out of Scope section\n   b. Check if the gap's concern is semantically addressed in `technical.md` Decisions section (Y-Statements)\n   c. If project documentation is provided, also check project-level Out of Scope, Current Limitations, and Decisions\n   d. \"Covered\" means the artifact explicitly acknowledges the limitation/deferral, not just tangentially mentions the topic\n3. If all defer-release gaps are covered, respond with empty JSON list: []\n4. Any new gaps recorded from coverage concerns should use `Source: defer-release-coverage-detection`\n5. Respond with uncovered gap JSON list, e.g. [{\"gap_id\": 108, \"title\": \"short title\", \"description\": \"gap description\", \"rationale\": \"why not covered by Out of Scope or Decisions\"}]"
+    },
+    {
+      "name": "Resolution Leakage Detection",
+      "files": ["gaps.md", "resolved.md", "functional.md"],
+      "model": "opus",
+      "skills": [],
+      "evaluate": "Detect implementation leakage introduced by recent gap resolutions:\n1. Read `resolved.md` for resolved gaps with Outcome fields describing changes to functional.md\n2. For each, check whether the added/modified text in `functional.md` contains:\n   a. Internal component identifiers (CMP-* prefixes, pipeline stage names)\n   b. Implementation mechanism names (triggers, hooks, guards, protocols)\n   c. Technical thresholds or architecture terms (specific counts, phase-gate, topological sort)\n   d. Implementor-facing language (deferred to implementation, implementor determines)\n3. If none found: []\n4. For each: {\"id\": <next_gap_id>, \"change\": \"new\", \"title\": \"short title\", \"description\": \"Resolution of GAP-XX introduced <term> in functional.md <section>\"}\n5. Source: resolution-leakage-detection"
+    },
+    {
+      "name": "Cross-Artifact Propagation Detection",
+      "files": ["gaps.md", "resolved.md", "requirements", "infra.md", "tasks.yaml"],
+      "model": "opus",
+      "skills": [],
+      "evaluate": "Detect cross-artifact propagation gaps from recent resolutions:\n1. Read `resolved.md` for resolved gaps with Outcome fields\n2. For each resolution that added/modified a requirement scenario:\n   a. Check if infra.md coverage table has a corresponding verification entry\n   b. Check if tasks.yaml behavioral-verification checklists include the scenario\n3. For each resolution that added a new Rule:\n   a. Check if infra.md has a coverage row for the new Rule\n   b. Check if tasks.yaml behavioral-verification has a checklist item for the Rule\n4. If complete: []\n5. For each: {\"id\": <next_gap_id>, \"change\": \"new\", \"title\": \"short title\", \"description\": \"Resolution of GAP-XX added <what> but <artifact> was not updated\"}\n6. Source: propagation-detection"
+    },
+    {
+      "name": "Resolution Normative Detection",
+      "files": ["gaps.md", "resolved.md", "requirements"],
+      "model": "sonnet",
+      "skills": ["tokamak:writing-markdown-gherkin"],
+      "evaluate": "Detect normative language issues introduced by recent gap resolutions:\n1. Read `resolved.md` for resolved gaps with Outcome fields describing requirement changes\n2. For each, check whether added/modified requirement text contains:\n   a. Weak normative language (should, may, might, can, will) where SHALL/MUST is needed\n   b. Implementation mechanism language in Then clauses (internal state, triggers, loops)\n   c. Requirements on actors other than the skill (author SHALL, system SHALL)\n3. If none found: []\n4. For each: {\"id\": <next_gap_id>, \"change\": \"new\", \"title\": \"short title\", \"description\": \"Resolution of GAP-XX introduced normative issue: <text> in <file>\"}\n5. Source: resolution-normative-detection"
+    },
+    {
+      "name": "Placement Drift Detection",
+      "files": ["resolved.md", "functional.md", "technical.md", "infra.md", "tasks.yaml"],
+      "model": "sonnet",
+      "skills": [],
+      "evaluate": "Detect resolution content that ended up in the wrong artifact.\nUse the FILE PURPOSE INSTRUCTIONS provided above (injected from schema.yaml) to understand what belongs in each file.\n1. Read `resolved.md` for recently resolved gaps with Outcome fields\n2. For each resolved gap, check whether the Outcome content matches the assigned file's purpose per the schema instruction\n3. If none found: []\n4. For each: {\"id\": <next_gap_id>, \"change\": \"new\", \"title\": \"short title\", \"description\": \"Resolution of GAP-XX placed <content type> in <file> — belongs in <correct file>\"}\n5. Source: placement-drift-detection"
+    }
+  ]
+}

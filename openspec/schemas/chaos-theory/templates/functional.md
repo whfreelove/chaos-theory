@@ -6,7 +6,7 @@
 
 ### New Capabilities
 
-<!-- kebab-case. Each creates specs/<slug>/requirements.md, i.e. actor-verbs-object -->
+<!-- kebab-case. Each creates specs/<slug>/requirements.md -->
 - `<slug>`: <actor> can <outcome>
 
 ### Modified Capabilities

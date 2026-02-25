@@ -185,7 +185,7 @@ artifacts:
       consumed by other components. Skip for internal implementation details.
 
       - **Decisions**: Y-statements ONLY. Each decision is a single structured sentence.
-      Invoke skill `tokamak:writing-y-statements` for Y-statement format reference.
+      Invoke skill: `tokamak:writing-y-statements` for Y-statement format reference.
       Decisions must be approved before writing - no "proposed" decisions in technical.md.
       If a decision is superseded, delete it immediately (no deprecated status).
 
@@ -215,9 +215,6 @@ artifacts:
       operate, and validate this change using EXISTING infrastructure.
 
 
-      Invoke skill: `tokamak:writing-infra-specs` for infrastructure specification concepts.
-
-
       IMPORTANT: infra.md does NOT propose infrastructure changes. Changes to
       infrastructure itself (new services, topology changes, new dependencies)
       belong in technical.md because they affect other work in flight.
@@ -238,9 +235,7 @@ artifacts:
       Use Mermaid diagrams to show deployment flow, not topology changes.
 
       - **Testing Strategy**: Integration and E2E test approach for this change.
-      Test environments, test data management, requirements coverage at the
-      capability/Rule level (NOT per-scenario enumeration — scenario details
-      belong in requirements files and will go stale if duplicated here).
+      Test environments, test data management, requirements coverage mapping.
       Unit testing belongs in technical.md.
 
       - **Observability**: OPTIONAL. Logging, metrics, alerts for NEW components in this change.
@@ -248,6 +243,9 @@ artifacts:
 
       - **Migration**: OPTIONAL. Rollout strategy, rollback triggers, data migration.
       Only if this change requires careful deployment sequencing.
+
+
+      Invoke skill: `tokamak:writing-infra-specs` for infrastructure specification concepts.
 
 
       Reference technical.md for architecture decisions this deployment supports.
@@ -332,6 +330,15 @@ artifacts:
       - Tasks should be atomic (isolated and small)
 
       - Each task should be verifiable - you know when it's done
+
+
+      Anti-mirroring: Tasks reference specs by slug or section — they do NOT reproduce
+      spec content. If a task describes component responsibilities, algorithm steps,
+      or verification criteria already documented in technical.md or infra.md, replace
+      the description with a reference (e.g., "Implement CMP-dependency-map per
+      technical.md § Components" or "Verify @dep-mapping scenarios per infra.md
+      § Testing Strategy"). The HOW lives in technical.md; the WHAT-to-test lives
+      in infra.md; tasks say WHAT to implement and WHERE to verify.
 
 
       Reference requirements for what needs to be built, technical design for

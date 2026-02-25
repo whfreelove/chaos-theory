@@ -1,0 +1,123 @@
+# chaos-theory-lite spec template
+#
+# PREFIX REGISTRY:
+#   CAP- capability       IMP- impact item      CHG- change entry
+#   REQ- requirement rule SCN- scenario          OBJ- objective
+#   CMP- component        EXT- external dep      INT- interface contract
+#   DEC- decision         RSK- risk              ENV- environment
+#   LOG- log event        MET- metric            ALR- alert
+#   XCP- cross-cap rule   TSK- task
+#
+# YAML CONVENTIONS:
+#   >- for prose paragraphs
+#   |  for Gherkin steps and Mermaid diagrams
+#   Slugs as mapping keys (kebab-case)
+
+# ── FUNCTIONAL ──────────────────────────────────────────────
+# Human burden, not technical gaps. 1-2 sentences max.
+functional:
+  why: null
+  # CAP-slug: "actor can outcome"
+  capabilities: {}
+  user-impact:
+    # What users experience differently
+    scope: null
+    out-of-scope: null
+    known-risks: null
+  # CHG-slug: {description, type: major|minor|patch}
+  # Mark breaking changes with type: major
+  what-changes: {}
+
+# ── REQUIREMENTS ────────────────────────────────────────────
+# One key per capability slug from functional.capabilities.
+# Terminology: "Capability" = Feature, "Requirement" = Rule
+requirements: {}
+  # <capability-slug>:
+  #   added:
+  #     REQ-slug:
+  #       rule: >-
+  #         Business rule this capability must satisfy
+  #       scenarios:
+  #         SCN-slug:
+  #           given:
+  #             - initial state
+  #           when:
+  #             - action being tested
+  #           then:
+  #             - expected outcome
+  #   modified: {}
+  #   removed: {}
+  #   renamed: {}
+
+# ── TECHNICAL ───────────────────────────────────────────────
+# Only include if: cross-cutting change, new dependency, complex
+# internal solution, security/perf/migration, or ambiguity.
+technical:
+  # Background, prior decisions, relevant tech stack
+  context: null
+  # OBJ-slug: measurable outcome statement
+  objectives: {}
+  architecture:
+    # Mermaid diagram (use | block scalar)
+    system-overview: null
+    component-interactions: null
+  # CMP-slug: {description, responsibilities, dependencies}
+  components: {}
+  # INT-slug: {operation, input, output, errors} (optional)
+  interfaces: {}
+  # DEC-slug: Y-statement text (>-). Approved before writing.
+  decisions: {}
+  # RSK-slug: {risk, mitigation} (optional)
+  risks: {}
+
+# ── INFRA ───────────────────────────────────────────────────
+# Deployment and operations for THIS change using EXISTING infra.
+# Infrastructure changes belong in technical section.
+infra:
+  # Current infrastructure state
+  context: null
+  # OBJ-slug: operational outcome statement
+  objectives: {}
+  deployment:
+    # ENV-slug: environment config
+    environments: {}
+    feature-flags: null
+    rollout-strategy: null
+  testing-strategy:
+    # SCN-slug: test-type (e2e, integration, etc.)
+    coverage-mapping: {}
+  observability:
+    # LOG-slug: {event, level}
+    logging: {}
+    # MET-slug: {name, type, labels}
+    metrics: {}
+    # ALR-slug: {condition, threshold, runbook}
+    alerts: {}
+  # Rollout/rollback strategy (optional)
+  migration: null
+
+# ── INTEGRATION ─────────────────────────────────────────────
+# Cross-capability scenarios only. Skip if all behaviors are
+# testable within single-capability requirements.
+integration: {}
+  # XCP-slug:
+  #   rule: >-
+  #     Cross-capability behavior description
+  #   capabilities:
+  #     - capability-a
+  #     - capability-b
+  #   scenarios:
+  #     SCN-slug:
+  #       given:
+  #         - state involving multiple capabilities
+  #       when:
+  #         - cross-capability action
+  #       then:
+  #         - observable outcome across capabilities
+
+# ── TASKS ───────────────────────────────────────────────────
+# Kebab-case group names, ordered by dependency.
+tasks: {}
+  # group-name:
+  #   - id: TSK-slug
+  #     description: Atomic, verifiable task

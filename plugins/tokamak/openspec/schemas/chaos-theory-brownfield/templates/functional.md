@@ -6,7 +6,7 @@ user explanation. 1-2 sentences max. -->
 ## Capabilities
 
 <!-- Derive from what the code actually does.
-Each creates requirements/<slug>/requirements.feature.md
+Each creates requirements/<slug>/requirements.feature.md, i.e. actor-verbs-object
 Format: `<slug>`: <actor> can <outcome>
 Confirm each capability with the user. -->
 

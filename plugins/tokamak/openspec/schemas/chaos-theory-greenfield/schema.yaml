@@ -155,7 +155,7 @@ artifacts:
       Include data model shapes inline.
 
       - **Decisions**: Y-statements ONLY. Each is a single structured sentence.
-      Invoke skill `tokamak:writing-y-statements` for format reference.
+      Invoke skill: `tokamak:writing-y-statements` for format reference.
       All decisions must be discussed and approved with the user first.
       Provenance tag: `[initial-design]`
 
@@ -254,4 +254,45 @@ artifacts:
       - Focus on integration boundaries, not internal capability behavior
     requires:
       - requirements
+      - infra
+  - id: tasks
+    generates: tasks.yaml
+    description: Implementation checklist with trackable tasks for building the project
+    template: tasks.yaml
+    instruction: >
+      Create the task list that breaks down the project build work.
+
+
+      FORMAT: YAML with task groups as top-level keys (kebab-case).
+
+
+      Structure:
+
+      ```yaml
+      group-name:
+        - Task description
+        - Another task
+
+      another-group:
+        - Task description
+      ```
+
+
+      Guidelines:
+
+      - Group names must be kebab-case (lowercase, hyphens)
+
+      - Order groups by dependency (what must be done first?)
+
+      - Tasks should be atomic (isolated and small)
+
+      - Each task should be verifiable - you know when it's done
+
+
+      Reference requirements for what needs to be built, technical design for
+      how to build it, infra for how to test, deploy, and monitor it, and
+      integration (if it exists) for cross-capability test scenarios.
+    requires:
+      - requirements
+      - technical
       - infra

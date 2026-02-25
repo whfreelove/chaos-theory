@@ -27,7 +27,7 @@ Unit testing belongs in technical.md.
 
 - Test environments: where E2E tests run
 - Test data: seeding, isolation, cleanup
-- Requirements coverage: which @slug:Y.Z scenarios become E2E tests
+- Requirements coverage: how capabilities map to test suites/classes (NOT per-scenario enumeration — scenario details are owned by requirements files)
 - CI/CD integration: when tests run, what blocks deployment -->
 
 ## Observability

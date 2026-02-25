@@ -185,7 +185,7 @@ artifacts:
       consumed by other components. Skip for internal implementation details.
 
       - **Decisions**: Y-statements ONLY. Each decision is a single structured sentence.
-      Invoke skill `tokamak:writing-y-statements` for Y-statement format reference.
+      Invoke skill: `tokamak:writing-y-statements` for Y-statement format reference.
       Decisions must be approved before writing - no "proposed" decisions in technical.md.
       If a decision is superseded, delete it immediately (no deprecated status).
 
@@ -215,6 +215,9 @@ artifacts:
       operate, and validate this change using EXISTING infrastructure.
 
 
+      Invoke skill: `tokamak:writing-infra-specs` for infrastructure specification concepts.
+
+
       IMPORTANT: infra.md does NOT propose infrastructure changes. Changes to
       infrastructure itself (new services, topology changes, new dependencies)
       belong in technical.md because they affect other work in flight.
@@ -235,7 +238,9 @@ artifacts:
       Use Mermaid diagrams to show deployment flow, not topology changes.
 
       - **Testing Strategy**: Integration and E2E test approach for this change.
-      Test environments, test data management, requirements coverage mapping.
+      Test environments, test data management, requirements coverage at the
+      capability/Rule level (NOT per-scenario enumeration — scenario details
+      belong in requirements files and will go stale if duplicated here).
       Unit testing belongs in technical.md.
 
       - **Observability**: OPTIONAL. Logging, metrics, alerts for NEW components in this change.
