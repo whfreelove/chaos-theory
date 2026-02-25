@@ -16,42 +16,6 @@
 See tokamak:managing-spec-gaps for triage and status semantics.
 -->
 
-### GAP-28: infra.md workflow-validation coverage table references phantom scenario IDs
-- **Source**: implicit-detection
-- **Severity**: high
-- **Description**: The infra.md workflow-validation Rule 1 and Rule 2 coverage rows reference scenario IDs that do not exist in the requirements. Rule 1 cites 1.3.2 (no sub-scenario format is used), 1.7.1 (does not exist), and 1.8 (does not exist; last scenario is 1.7), and mislabels 1.7 as "phase-completion summary gate" when the actual scenario title is "Corrected validation error unblocks phase progression." Rule 2 cites 2.10, 2.11, and 2.12, none of which exist (last scenario is 2.4). The associated behaviors — phase-completion summary gate, advancement blocked when phase-completion summary reveals skipped items, and artifact recovery — do not appear in requirements, functional.md, or technical.md components. This is the same class of defect as GAP-22, which fixed only the skill-file-generation phantom references; the workflow-validation phantoms were not addressed by that resolution.
-- **Triage**: check-in
-- **Decision**: Strip all phantom scenario ID references from the workflow-validation coverage rows. Rewrite Rule 1 and Rule 2 coverage entries at Rule level only — no scenario ID citations, following writing-infra-specs guidance to describe coverage patterns rather than per-scenario line items.
-- **Status**: resolved
-- **Outcome**: Rewrote infra.md workflow-validation Rule 1 and Rule 2 coverage table entries to describe coverage at the Rule level with no scenario ID citations. Removed all phantom references (1.3.2, mislabeled 1.7, 1.7.1, 1.8, 2.10, 2.11, 2.12) and their associated undocumented behaviors (phase-completion summary gate, artifact recovery, metadata fsm validation, name consistency). Both rows now describe the behavioral pattern each Rule covers and the verification approach without referencing specific scenario IDs.
-
-### GAP-29: Auto-normalization of skill names has no component responsibility or requirement scenario
-- **Source**: implicit-detection
-- **Severity**: medium
-- **Description**: A technical.md Y-statement decision states that CMP-skill-md's auto-normalize step produces consistent directory name, metadata.fsm, and SKILL.md name values from the same normalized input. The infra.md skill-file-generation Rule 2 verification plan instructs verifiers to "provide a display-friendly name, verify normalization and confirmation prompt." However, CMP-skill-md's responsibilities do not include name normalization, no requirement scenario specifies when normalization occurs or what triggers a confirmation prompt, and the normalization algorithm is undefined. Implementations could apply different or no normalization and satisfy the requirements as written while failing the infra verification step.
-- **Triage**: delegate
-- **Decision**: Add "normalizes author-provided display names to directory-safe kebab-case format (lowercase; spaces and special characters replaced with hyphens)" to CMP-skill-md responsibilities in technical.md. The normalization algorithm is now defined at the component level; infra.md verification language remains valid.
-- **Status**: resolved
-- **Outcome**: Added normalization responsibility to CMP-skill-md in technical.md: "Normalize the author-provided display name to a directory-safe kebab-case format (lowercase; spaces and special characters replaced with hyphens); present the normalized name to the author for confirmation or override; use the confirmed normalized name for the directory path, the frontmatter name field, and the metadata.fsm value." The algorithm is now defined; infra.md verification language ("verify normalization and confirmation prompt") is now backed by a component specification.
-
-### GAP-30: workflow-intake:5.1 Then steps describe internal intake source execution order rather than observable outcomes
-- **Source**: resolution-normative-detection
-- **Severity**: medium
-- **Description**: The Then steps in workflow-intake Rule 5 Scenario 1 specify that existing-skill analysis is performed first, written step descriptions are processed second, brainstorming fills gaps after both complete, and all results are merged during normalization. These steps describe internal component sequencing — HOW intake sources are ordered and combined — rather than what the author observes as a result. Per MDG normative guidance, Then steps must state observable outcomes, not mechanism execution order.
-- **Triage**: delegate
-- **Decision**: Replace the multi-step mechanism Then clause with a single declarative Then step: "the skill produces a unified normalized step list that incorporates content from both the existing-skill analysis and the written step descriptions."
-- **Status**: resolved
-- **Outcome**: Replaced the four mechanism Then steps in workflow-intake:5.1 with a single declarative Then step: "the skill produces a unified normalized step list that incorporates content from both the existing-skill analysis and the written step descriptions." Updated the scenario title from "Multi-source intake follows a defined interaction sequence" to "Multi-source intake produces a unified step list incorporating both sources" to match the observable outcome being tested.
-
-### GAP-31: self-contained-descriptions:3.4 and 3.5 Then steps name an internal artifact and use a mechanism verb
-- **Source**: resolution-normative-detection
-- **Severity**: medium
-- **Description**: The Then steps in self-contained-descriptions scenarios 3.4 and 3.5 reference "partial fsm.json" by name — an internal intermediate artifact — rather than describing what the author observes. Scenario 3.4 also uses "propagated" as a mechanism verb for dependency inheritance. Per MDG normative guidance, Then steps must describe observable author-facing outcomes (e.g., a new task appears in the workflow, the task is consolidated) rather than naming internal artifacts or describing internal data transfer mechanisms.
-- **Triage**: delegate
-- **Decision**: Rewrite 3.4 Then as "the workflow contains the original task split into its component parts, each part preserves the predecessor and successor relationships of the original task, and the dependency graph passes validation." Rewrite 3.5 Then as "the workflow consolidates the two tasks into one, preserving their combined predecessor and successor relationships, and the dependency graph passes validation."
-- **Status**: resolved
-- **Outcome**: Rewrote 3.4 Then steps to: "the workflow contains the original task split into its component parts / And each part preserves the predecessor and successor relationships of the original task / And the dependency graph passes validation / And the description-writing phase continues with the post-split tasks." Rewrote 3.5 Then steps to: "the workflow consolidates the two tasks into one / And the consolidated task preserves the combined predecessor and successor relationships of both original tasks / And the dependency graph passes validation / And the description-writing phase continues with the merged task." Internal artifact naming and mechanism verbs removed.
-
 ### GAP-1: "Compaction" is internal mechanism language in functional.md
 - **Source**: functional-critic
 - **Severity**: medium
@@ -295,7 +259,41 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Added explicit pipeline gate responsibility to CMP-descriptions: after any confirmed split or merge, the pipeline does not continue to the next description until dependency graph re-validation passes. Updated the validation scope table to cover both splits and merges with the pipeline gate noted. [diff: +2/-1 technical.md] Propagated to requirements/self-contained-descriptions/requirements.feature.md: added Scenario Outline @self-contained-descriptions:3.6 covering the pipeline gate behavior — when re-validation detects a cycle after a confirmed split or merge, the description-writing phase does not continue and the author is prompted to resolve the cycle. Propagated to integration.feature.md: reframed forward-only pipeline justification paragraph as 'with one designed exception', added description of the split/merge callback and reference to self-contained-descriptions:3.4–3.5.
 
-## Medium
+### GAP-28: infra.md workflow-validation coverage table references phantom scenario IDs
+- **Source**: implicit-detection
+- **Severity**: high
+- **Description**: The infra.md workflow-validation Rule 1 and Rule 2 coverage rows reference scenario IDs that do not exist in the requirements. Rule 1 cites 1.3.2 (no sub-scenario format is used), 1.7.1 (does not exist), and 1.8 (does not exist; last scenario is 1.7), and mislabels 1.7 as "phase-completion summary gate" when the actual scenario title is "Corrected validation error unblocks phase progression." Rule 2 cites 2.10, 2.11, and 2.12, none of which exist (last scenario is 2.4). The associated behaviors — phase-completion summary gate, advancement blocked when phase-completion summary reveals skipped items, and artifact recovery — do not appear in requirements, functional.md, or technical.md components. This is the same class of defect as GAP-22, which fixed only the skill-file-generation phantom references; the workflow-validation phantoms were not addressed by that resolution.
+- **Triage**: check-in
+- **Decision**: Strip all phantom scenario ID references from the workflow-validation coverage rows. Rewrite Rule 1 and Rule 2 coverage entries at Rule level only — no scenario ID citations, following writing-infra-specs guidance to describe coverage patterns rather than per-scenario line items.
+- **Status**: resolved
+- **Outcome**: Rewrote infra.md workflow-validation Rule 1 and Rule 2 coverage table entries to describe coverage at the Rule level with no scenario ID citations. Removed all phantom references (1.3.2, mislabeled 1.7, 1.7.1, 1.8, 2.10, 2.11, 2.12) and their associated undocumented behaviors (phase-completion summary gate, artifact recovery, metadata fsm validation, name consistency). Both rows now describe the behavioral pattern each Rule covers and the verification approach without referencing specific scenario IDs.
+
+### GAP-29: Auto-normalization of skill names has no component responsibility or requirement scenario
+- **Source**: implicit-detection
+- **Severity**: medium
+- **Description**: A technical.md Y-statement decision states that CMP-skill-md's auto-normalize step produces consistent directory name, metadata.fsm, and SKILL.md name values from the same normalized input. The infra.md skill-file-generation Rule 2 verification plan instructs verifiers to "provide a display-friendly name, verify normalization and confirmation prompt." However, CMP-skill-md's responsibilities do not include name normalization, no requirement scenario specifies when normalization occurs or what triggers a confirmation prompt, and the normalization algorithm is undefined. Implementations could apply different or no normalization and satisfy the requirements as written while failing the infra verification step.
+- **Triage**: delegate
+- **Decision**: Add "normalizes author-provided display names to directory-safe kebab-case format (lowercase; spaces and special characters replaced with hyphens)" to CMP-skill-md responsibilities in technical.md. The normalization algorithm is now defined at the component level; infra.md verification language remains valid.
+- **Status**: resolved
+- **Outcome**: Added normalization responsibility to CMP-skill-md in technical.md: "Normalize the author-provided display name to a directory-safe kebab-case format (lowercase; spaces and special characters replaced with hyphens); present the normalized name to the author for confirmation or override; use the confirmed normalized name for the directory path, the frontmatter name field, and the metadata.fsm value." The algorithm is now defined; infra.md verification language ("verify normalization and confirmation prompt") is now backed by a component specification.
+
+### GAP-30: workflow-intake:5.1 Then steps describe internal intake source execution order rather than observable outcomes
+- **Source**: resolution-normative-detection
+- **Severity**: medium
+- **Description**: The Then steps in workflow-intake Rule 5 Scenario 1 specify that existing-skill analysis is performed first, written step descriptions are processed second, brainstorming fills gaps after both complete, and all results are merged during normalization. These steps describe internal component sequencing — HOW intake sources are ordered and combined — rather than what the author observes as a result. Per MDG normative guidance, Then steps must state observable outcomes, not mechanism execution order.
+- **Triage**: delegate
+- **Decision**: Replace the multi-step mechanism Then clause with a single declarative Then step: "the skill produces a unified normalized step list that incorporates content from both the existing-skill analysis and the written step descriptions."
+- **Status**: resolved
+- **Outcome**: Replaced the four mechanism Then steps in workflow-intake:5.1 with a single declarative Then step: "the skill produces a unified normalized step list that incorporates content from both the existing-skill analysis and the written step descriptions." Updated the scenario title from "Multi-source intake follows a defined interaction sequence" to "Multi-source intake produces a unified step list incorporating both sources" to match the observable outcome being tested.
+
+### GAP-31: self-contained-descriptions:3.4 and 3.5 Then steps name an internal artifact and use a mechanism verb
+- **Source**: resolution-normative-detection
+- **Severity**: medium
+- **Description**: The Then steps in self-contained-descriptions scenarios 3.4 and 3.5 reference "partial fsm.json" by name — an internal intermediate artifact — rather than describing what the author observes. Scenario 3.4 also uses "propagated" as a mechanism verb for dependency inheritance. Per MDG normative guidance, Then steps must describe observable author-facing outcomes (e.g., a new task appears in the workflow, the task is consolidated) rather than naming internal artifacts or describing internal data transfer mechanisms.
+- **Triage**: delegate
+- **Decision**: Rewrite 3.4 Then as "the workflow contains the original task split into its component parts, each part preserves the predecessor and successor relationships of the original task, and the dependency graph passes validation." Rewrite 3.5 Then as "the workflow consolidates the two tasks into one, preserving their combined predecessor and successor relationships, and the dependency graph passes validation."
+- **Status**: resolved
+- **Outcome**: Rewrote 3.4 Then steps to: "the workflow contains the original task split into its component parts / And each part preserves the predecessor and successor relationships of the original task / And the dependency graph passes validation / And the description-writing phase continues with the post-split tasks." Rewrote 3.5 Then steps to: "the workflow consolidates the two tasks into one / And the consolidated task preserves the combined predecessor and successor relationships of both original tasks / And the dependency graph passes validation / And the description-writing phase continues with the merged task." Internal artifact naming and mechanism verbs removed.
 
 ### GAP-36: Intermediate partial fsm.json has no specified file path
 - **Source**: implementation-critic
@@ -307,7 +305,6 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Documented the shared intermediate artifact path `<output-directory>/<skill-name>/fsm.json` in CMP-dependency-map (creates directory and writes initial file), CMP-descriptions (reads and updates in-place at same path), CMP-fsm-json-finalize (overwrites at same path). Updated data flow table rows for dependency mapping, description writing, SKILL.md generation, and fsm.json finalization to include explicit file paths. Updated CMP-fsm-json-finalize dependencies to reference the explicit path. [diff: +10/-8 technical.md]
 
-
 ### GAP-37: CMP-fsm-json-finalize has no documented dependency on CMP-skill-md and no mechanism for acquiring the confirmed skill name
 - **Source**: implementation-critic
 - **Severity**: medium
@@ -317,8 +314,6 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Primary-file**: technical.md
 - **Status**: resolved
 - **Outcome**: Added skill name normalization to CMP-normalize (description and responsibilities). Replaced CMP-skill-md's normalization responsibility with receiving the confirmed name from CMP-normalize. Updated CMP-skill-md description to reference confirmed skill name. Updated CMP-fsm-json-finalize dependencies to list confirmed skill name propagated from CMP-normalize. Updated architecture annotation for CMP-normalize and CMP-skill-md. Updated data flow table normalization row. Updated CMP-dependency-map and CMP-skill-md dependencies to include confirmed skill name. Added Y-statement for the normalization move. Fixed stale reference in name-consistency decision (CMP-skill-md -> CMP-normalize). [diff: +18/-10 technical.md]
-
-
 
 ### GAP-48: No component is responsible for eliciting the plugin directory from the author
 - **Source**: logic-critic
@@ -330,8 +325,15 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Added output directory collection to CMP-normalize (description and responsibilities). Replaced all `plugins/<plugin>/skills/<skill>/` paths with `<output-directory>/<skill-name>/` in CMP-skill-md (3 occurrences: directory creation, file placement guide) and CMP-fsm-json-finalize (file write path). Updated CMP-dependency-map and CMP-skill-md dependencies to include output directory. Updated data flow table rows. Added Y-statement for output directory generalization. Note: cascading updates needed in requirements/skill-file-generation Rule 4 and infra.md coverage table (out of scope for this file). [diff: +14/-8 technical.md]
 
-
-
+### GAP-53: The PreToolUse guard blocking disk reads of fsm.json conflicts with the progressive fsm.json construction pattern
+- **Source**: technical-consistency-critic
+- **Severity**: high
+- **Description**: The FSM plugin's PreToolUse guard blocks the agent from reading SKILL.md and fsm.json directly. The technical design for this change documents a progressive fsm.json construction pattern in which CMP-descriptions must read and update the partial fsm.json that CMP-dependency-map wrote to disk. This cross-task disk read of fsm.json occurs within the authoring workflow and is a core part of the specified data flow. The technical context acknowledges the guard exists but neither the component specifications nor the data flow documentation addresses how the authoring workflow's fsm.json read operations interact with the guard — whether the guard applies to the intermediate partial fsm.json, whether an exemption exists, or whether the construction pattern must be redesigned to avoid the conflict.
+- **Triage**: check-in
+- **Decision**: The PreToolUse guard conflict with the progressive fsm.json construction pattern is resolved by the fsm-session-hook-bypass change, which provides a hook bypass mechanism for the authoring workflow. No spec changes needed in this change beyond a context reference. Update: technical.md § Context (add brief note referencing fsm-session-hook-bypass as the resolution).
+- **Primary-file**: technical.md
+- **Status**: resolved
+- **Outcome**: Strengthened the existing Context reference to fsm-session-hook-bypass to explicitly state it resolves the conflict between the guard and the progressive construction pattern, and to name the specific cross-task disk read operations that benefit from the bypass (CMP-descriptions reading/updating the partial fsm.json, CMP-fsm-json-finalize reading the enriched result). [diff: +1/-1 technical.md]
 
 ### GAP-54: Untitled finding
 - **Source**: Implicit Gap Detection-detection
@@ -343,7 +345,15 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Added self-ID filter step to the CMP-descriptions merge algorithm with explanatory note about why adjacent-task merges produce self-references. Updated the structure-preservation claim to reference 'the complete merge procedure (blockedBy union followed by self-ID filter)' instead of just 'blockedBy union'. Note: integration.feature.md contains a parallel structure-preservation claim using the old 'blockedBy union' language (out of scope for this file). [diff: +2/-2 technical.md]
 
-
+### GAP-55: Untitled finding
+- **Source**: Implicit Gap Detection-detection
+- **Severity**: medium
+- **Description**: Infra.md dependency-mapping Rule 5 coverage specifies a 'lightweight quality check' for tasks added during dependency mapping — including pass/fail criteria (label present/non-empty, description specificity, actionability) and a detailed verification procedure ('verify the lightweight quality check runs before the task enters the graph — verify pass when label and description meet specificity and actionability criteria, verify fail when label is empty, description is vague, or task is not actionable'). This behavior has no backing in requirements or technical: dependency-mapping:5.2 specifies only that 'the skill prompts the author to specify the new task's dependencies before re-presenting the graph,' and CMP-dependency-map's add operation says only 'prompt the author for the new task's dependencies before updating the graph; assign the next sequential ID.' An implementor reading requirements and technical would not implement a quality check; a verifier following infra would expect one and fail verification.
+- **Triage**: check-in
+- **Decision**: Remove the lightweight quality check from infra.md dependency-mapping Rule 5 coverage. The quality check has no backing in requirements (dependency-mapping:5.2) or technical (CMP-dependency-map Add). Infra verification should verify specified behavior: dependency prompting, graph update, and ID assignment. Content quality for added tasks is handled by CMP-descriptions, which is the specified home for content quality enforcement. Update: infra.md § dependency-mapping Rule 5 coverage.
+- **Primary-file**: infra.md
+- **Status**: resolved
+- **Outcome**: Removed the Single-task boundary example with its pass/fail criteria from the dependency-mapping Rule 5 verification approach. The verification now covers only the specified behaviors: task removal with graph update and inheritance, task addition with dependency prompting and sequential ID assignment, and task rename with dependency preservation. [diff: +1/-1 infra.md]
 
 ### GAP-56: Untitled finding
 - **Source**: Resolution Normative Detection-detection
@@ -355,9 +365,6 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: The assigned file (requirements/workflow-validation/requirements.feature.md) already contains the corrected Then step at line 60: 'Then the workflow advances to the next phase'. No modification needed in this file. Note: the decision also calls for updating integration.feature.md line 23 to replace 'correction-triggered re-validation (1.7)' with 'correction-unblocked progression (1.7)' — that change is outside this assignment's scope and remains pending. [diff: +0/-0 requirements/workflow-validation/requirements.feature.md]
 
-
-
-
 ### GAP-57: Untitled finding
 - **Source**: Resolution Normative Detection-detection
 - **Severity**: medium
@@ -367,9 +374,6 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Primary-file**: requirements/workflow-validation/requirements.feature.md
 - **Status**: resolved
 - **Outcome**: The assigned file (requirements/workflow-validation/requirements.feature.md) already contains the And-chained assertions at lines 72-75, matching the decision exactly. No modification needed. [diff: +0/-0 requirements/workflow-validation/requirements.feature.md]
-
-
-
 
 ### GAP-58: Untitled finding
 - **Source**: Resolution Normative Detection-detection
@@ -381,41 +385,6 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: No change needed. The file already contains the corrected Then step at @dependency-mapping:5.4 (line 135): 'the blockedBy list of each task that depended on the removed task contains the removed task's blockedBy entries.' The fix was already applied in a prior resolution pass. [diff: +0/-0 requirements/dependency-mapping/requirements.feature.md]
 
-
-
-### GAP-62: Lightweight quality check no longer exists in infra
-- **Source**: Stale Gap Detection-detection
-- **Severity**: medium
-- **Description**: 
-- **Status**: deprecated
-- **Outcome**: Stale finding — already covered. Confirmed live: infra.md dependency-mapping Rule 5 coverage row (line 57) contains no quality check language — only dependency prompting, graph updates, ID assignment, and predecessor inheritance. The lightweight quality check described in GAP-55 is already absent from infra.md. However, GAP-55 is still open in gaps.md with a Decision to remove it. This stale finding implies GAP-55's concern is also resolved. Needs human review to close GAP-55 as stale and confirm whether the quality check was removed before or after GAP-55 was recorded.
-
-
-
-
-### GAP-63: Requirements still use pre-resolution plugin directory path
-- **Source**: Stale Gap Detection-detection
-- **Severity**: medium
-- **Description**: 
-- **Status**: superseded
-- **Outcome**: Superseded by broader gap. Identical concern to GAP-59: requirements still use the pre-GAP-48 plugin directory path. GAP-59 already captures this in full detail with the same primary file, root cause, and fix. GAP-63's empty description and 'Stale Gap Detection' source indicate the detector recognized this as redundant. Should be closed as superseded by GAP-59.
-
-
-
-
-### GAP-61: Infra workflow-intake Rule 2 verification references unspecified conditional logic decomposition
-- **Source**: Implicit Gap Detection-detection
-- **Severity**: medium
-- **Description**: The infra.md workflow-intake Rule 2 coverage table instructs verifiers to 'provide a skill with conditional branching, verify the skill presents decomposition options and incorporates the author's choice.' Neither the workflow-intake Rule 2 requirements (scenarios 2.1–2.4: sequential extraction, parallelism identification, author confirmation, author modification) nor CMP-intake-existing's responsibilities mention conditional logic, branching, or decomposition options. An implementor following requirements would not build conditional-branching decomposition; a verifier following infra would test for it and fail verification against a correct implementation. This is the same class of infra-requirements mismatch as GAP-55 (infra references behavior absent from requirements and technical).
-- **Triage**: check-in
-- **Decision**: Remove 'conditional logic decomposition (author chooses strategy)' from infra.md workflow-intake Rule 2 'What it covers' column and the corresponding verification step about conditional branching. The behavior has no backing in requirements (workflow-intake:2.1–2.4 specify only sequential extraction, parallelism identification, author confirmation, and author modification) or technical (CMP-intake-existing lists no conditional logic responsibilities), and is architecturally infeasible (fsm.json defines a static task list that cannot conditionally activate tasks). Same resolution class as GAP-55. Update: infra.md § workflow-intake Rule 2 coverage row.
-- **Primary-file**: infra.md
-- **Status**: resolved
-- **Outcome**: Removed 'conditional logic decomposition (author chooses strategy)' from the What it covers column and 'provide a skill with conditional branching, verify the skill presents decomposition options and incorporates the author's choice' from the Verification approach column in workflow-intake Rule 2 row. Replaced verification with steps aligned to the actual requirements: sequential execution order verification, concurrent step identification with author confirmation, and author confirm/modify capability. [diff: +1/-1 infra.md]
-
-
-
-
 ### GAP-59: skill-file-generation Rule 4 uses stale plugin directory path
 - **Source**: Implicit Gap Detection-detection
 - **Severity**: medium
@@ -425,8 +394,6 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Primary-file**: requirements/skill-file-generation/requirements.feature.md
 - **Status**: resolved
 - **Outcome**: Updated Rule 4 title from 'correct plugin directory' to 'correct output directory', Scenario 4.1 title from 'plugin's skills directory' to 'output directory', 4.1 Given clause from 'plugin directory' to 'output directory', and 4.1 Then step from `<plugin>/skills/<skill-name>/` to `<output-directory>/<skill-name>/`. Scenario 4.2 unchanged. Requirements now align with technical.md (CMP-normalize collects output directory, all components use `<output-directory>/<skill-name>/`) and infra.md coverage table. [diff: +4/-4 requirements/skill-file-generation/requirements.feature.md]
-
-
 
 ### GAP-60: Pipeline gate scenario for cycle after split/merge missing from requirements
 - **Source**: Implicit Gap Detection-detection
@@ -438,8 +405,29 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Added @self-contained-descriptions:3.7 Scenario Outline 'Re-validation detects a cycle after a confirmed <restructure_type>' with four Then steps covering cycle presentation, author correction prompting, re-validation re-run, and pipeline gating. Includes Examples table with split and merge rows. Placed between 3.6 and the Rule 4 section separator. [diff: +17/-0 requirements/self-contained-descriptions/requirements.feature.md]
 
+### GAP-61: Infra workflow-intake Rule 2 verification references unspecified conditional logic decomposition
+- **Source**: Implicit Gap Detection-detection
+- **Severity**: medium
+- **Description**: The infra.md workflow-intake Rule 2 coverage table instructs verifiers to 'provide a skill with conditional branching, verify the skill presents decomposition options and incorporates the author's choice.' Neither the workflow-intake Rule 2 requirements (scenarios 2.1–2.4: sequential extraction, parallelism identification, author confirmation, author modification) nor CMP-intake-existing's responsibilities mention conditional logic, branching, or decomposition options. An implementor following requirements would not build conditional-branching decomposition; a verifier following infra would test for it and fail verification against a correct implementation. This is the same class of infra-requirements mismatch as GAP-55 (infra references behavior absent from requirements and technical).
+- **Triage**: check-in
+- **Decision**: Remove 'conditional logic decomposition (author chooses strategy)' from infra.md workflow-intake Rule 2 'What it covers' column and the corresponding verification step about conditional branching. The behavior has no backing in requirements (workflow-intake:2.1–2.4 specify only sequential extraction, parallelism identification, author confirmation, and author modification) or technical (CMP-intake-existing lists no conditional logic responsibilities), and is architecturally infeasible (fsm.json defines a static task list that cannot conditionally activate tasks). Same resolution class as GAP-55. Update: infra.md § workflow-intake Rule 2 coverage row.
+- **Primary-file**: infra.md
+- **Status**: resolved
+- **Outcome**: Removed 'conditional logic decomposition (author chooses strategy)' from the What it covers column and 'provide a skill with conditional branching, verify the skill presents decomposition options and incorporates the author's choice' from the Verification approach column in workflow-intake Rule 2 row. Replaced verification with steps aligned to the actual requirements: sequential execution order verification, concurrent step identification with author confirmation, and author confirm/modify capability. [diff: +1/-1 infra.md]
 
+### GAP-62: Lightweight quality check no longer exists in infra
+- **Source**: Stale Gap Detection-detection
+- **Severity**: medium
+- **Description**: 
+- **Status**: deprecated
+- **Outcome**: Stale finding — already covered. Confirmed live: infra.md dependency-mapping Rule 5 coverage row (line 57) contains no quality check language — only dependency prompting, graph updates, ID assignment, and predecessor inheritance. The lightweight quality check described in GAP-55 is already absent from infra.md. However, GAP-55 is still open in gaps.md with a Decision to remove it. This stale finding implies GAP-55's concern is also resolved. Needs human review to close GAP-55 as stale and confirm whether the quality check was removed before or after GAP-55 was recorded.
 
+### GAP-63: Requirements still use pre-resolution plugin directory path
+- **Source**: Stale Gap Detection-detection
+- **Severity**: medium
+- **Description**: 
+- **Status**: superseded
+- **Outcome**: Superseded by broader gap. Identical concern to GAP-59: requirements still use the pre-GAP-48 plugin directory path. GAP-59 already captures this in full detail with the same primary file, root cause, and fix. GAP-63's empty description and 'Stale Gap Detection' source indicate the detector recognized this as redundant. Should be closed as superseded by GAP-59.
 
 ### GAP-64: "dependency graph passes validation" is mechanism language in Then steps
 - **Source**: Resolution Normative Detection-detection
@@ -451,9 +439,6 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Rewrote Then steps in scenarios 3.4 (line 81) and 3.5 (line 91) from 'And the dependency graph passes validation' to 'And the dependency graph contains no cycles', matching the observable-state pattern from workflow-validation:1.2. [diff: +2/-2 requirements/self-contained-descriptions/requirements.feature.md]
 
-
-
-
 ### GAP-65: "description-writing phase continues" is pipeline-state mechanism language
 - **Source**: Resolution Normative Detection-detection
 - **Severity**: medium
@@ -464,54 +449,12 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Rewrote Then steps in scenario 3.4 (line 82) to 'the skill presents the post-split tasks to the author for description', scenario 3.5 (line 92) to 'the skill presents the merged task to the author for description', and scenario 3.6 (line 100) to 'the skill presents the next task to the author for description'. Replaced pipeline-state mechanism language with observable author-facing interaction verbs. [diff: +3/-3 requirements/self-contained-descriptions/requirements.feature.md]
 
-
-
 ### GAP-66: No component generates metadata.fsm field
 - **Source**: Implicit Gap Detection-detection
 - **Severity**: medium
 - **Description**: CMP-fsm-json-finalize's description says the output 'Produces a JSON array with 5 core fields per entry plus metadata' and its responsibilities include 'Verify each entry contains metadata (object) with an fsm key whose value is a non-empty string matching the skill name.' However, no component's responsibilities include GENERATING the metadata.fsm field. CMP-dependency-map writes {id, subject, blockedBy}. CMP-descriptions adds description and activeForm. Neither writes metadata. The data flow table output for CMP-fsm-json-finalize lists only '{id, subject, description, activeForm, blockedBy} per entry' — omitting metadata entirely, contradicting the component description. CMP-fsm-json-finalize's responsibilities are: validate and format, renumber, verify fields, verify metadata, validate refs, write. 'Verify' is not 'generate.' An implementor following the responsibilities strictly would verify a field that no upstream component created, failing verification with no specified correction path (CMP-fsm-json-finalize has no correction mechanism — only CMP-final-validation specifies correction paths). The confirmed skill name is available from CMP-normalize, but no responsibility assigns the work of populating metadata.fsm from that name into each fsm.json entry.
 - **Status**: superseded
 - **Outcome**: Superseded by broader gap. GAP-66 is genuine and unresolved. The data flow table (technical.md line 97) still lists the finalized fsm.json format as '{id, subject, description, activeForm, blockedBy}' per entry — metadata is omitted from the format column entirely, contradicting CMP-fsm-json-finalize's own description ('5 core fields per entry plus metadata'). CMP-normalize mentions the confirmed name will populate metadata.fsm but assigns no explicit write responsibility. CMP-descriptions and CMP-dependency-map never touch metadata. CMP-fsm-json-finalize's responsibilities say 'Verify' not 'Generate'. No prior gap resolution addressed the generation assignment. Needs check-in because the fix requires an architectural decision: which component (most likely CMP-fsm-json-finalize, since it already holds the confirmed skill name and overwrites the file) gains the responsibility to populate metadata.fsm in each entry, and the data flow table format must be updated to include metadata.
-
-
-
-
-### GAP-69: Quality check already absent from infra Rule 5
-- **Source**: Stale Gap Detection-detection
-- **Severity**: medium
-- **Description**: 
-- **Status**: deprecated
-- **Outcome**: Stale finding — already covered. GAP-69 is stale. Its own source tag is 'Stale Gap Detection-detection' and its description is empty — the detector found no defect to describe. GAP-62 ('Lightweight quality check no longer exists in infra') was already marked deprecated after confirming the quality check language is absent from infra.md dependency-mapping Rule 5. Infra.md Rule 5 (line 57) contains only dependency prompting, graph updates, ID assignment, and predecessor inheritance — no quality check language. The concern from GAP-55 (the underlying open gap about the phantom quality check) is already resolved in the artifact. Check-in is appropriate rather than delegate because the stale finding also signals GAP-55 should be closed: it remains open in gaps.md with a Decision but its target artifact already reflects the intended outcome, requiring a human confirmation to move it to resolved.
-
-
-
-
-### GAP-55: Untitled finding
-- **Source**: Implicit Gap Detection-detection
-- **Severity**: medium
-- **Description**: Infra.md dependency-mapping Rule 5 coverage specifies a 'lightweight quality check' for tasks added during dependency mapping — including pass/fail criteria (label present/non-empty, description specificity, actionability) and a detailed verification procedure ('verify the lightweight quality check runs before the task enters the graph — verify pass when label and description meet specificity and actionability criteria, verify fail when label is empty, description is vague, or task is not actionable'). This behavior has no backing in requirements or technical: dependency-mapping:5.2 specifies only that 'the skill prompts the author to specify the new task's dependencies before re-presenting the graph,' and CMP-dependency-map's add operation says only 'prompt the author for the new task's dependencies before updating the graph; assign the next sequential ID.' An implementor reading requirements and technical would not implement a quality check; a verifier following infra would expect one and fail verification.
-- **Triage**: check-in
-- **Decision**: Remove the lightweight quality check from infra.md dependency-mapping Rule 5 coverage. The quality check has no backing in requirements (dependency-mapping:5.2) or technical (CMP-dependency-map Add). Infra verification should verify specified behavior: dependency prompting, graph update, and ID assignment. Content quality for added tasks is handled by CMP-descriptions, which is the specified home for content quality enforcement. Update: infra.md § dependency-mapping Rule 5 coverage.
-- **Primary-file**: infra.md
-- **Status**: resolved
-- **Outcome**: Removed the Single-task boundary example with its pass/fail criteria from the dependency-mapping Rule 5 verification approach. The verification now covers only the specified behaviors: task removal with graph update and inheritance, task addition with dependency prompting and sequential ID assignment, and task rename with dependency preservation. [diff: +1/-1 infra.md]
-
-
-
-
-
-### GAP-68: Infra skill-file-generation Rule numbers mismatch requirements
-- **Source**: Implicit Gap Detection-detection
-- **Severity**: medium
-- **Description**: The infra.md skill-file-generation coverage table uses Rule numbers that do not match the requirements file. Requirements define: Rule 1 (SKILL.md structure), Rule 2 (SKILL.md self-validation), Rule 3 (fsm.json generation), Rule 4 (output directory placement). Infra labels: 'Rule 1: SKILL.md generation' (maps to Req Rule 1 but also includes self-validation content from Req Rule 2 and directory placement from Req Rule 4), 'Rule 2: Task definition file generation' (maps to Req Rule 3 — wrong number), 'Rule 2 (self-validation): SKILL.md self-validation' (maps to Req Rule 2 — correct content but creates a numbering collision with the other Rule 2 row), 'Rule 3: Correct directory structure' (maps to Req Rule 4 — wrong number). A verifier tracing infra 'Rule 2' back to requirements would find Req Rule 2 is SKILL.md self-validation, not task definition file generation. The numbering collision (two rows labeled Rule 2) and the off-by-one shift for Rules 3/4 break the traceability chain from infra verification to requirements. Same class of defect as GAP-28 (phantom references breaking traceability), but affecting Rule numbers rather than scenario IDs.
-- **Triage**: delegate
-- **Decision**: Renumber the skill-file-generation coverage table to exact 1:1 correspondence with requirements Rules 1–4. Redistribute bleed-through content: move self-validation content from Rule 1 to a dedicated Rule 2 row; move directory placement content from Rule 1 to Rule 4. Renumber 'Rule 2: Task definition file generation' to Rule 3. Renumber 'Rule 3: Correct directory structure' to Rule 4. Eliminate the 'Rule 2 (self-validation)' collision row by absorbing its content into the properly numbered Rule 2 row. Same resolution class as GAP-28.
-- **Primary-file**: infra.md
-- **Status**: resolved
-- **Outcome**: Restructured the skill-file-generation coverage table to 4 rows with exact 1:1 Rule number correspondence to requirements: Rule 1 (SKILL.md structure — frontmatter and body language only), Rule 2 (SKILL.md self-validation — dedicated row absorbing content from the former collision row and Rule 1 bleed-through), Rule 3 (Task definition file generation — renumbered from former Rule 2), Rule 4 (Output directory placement — renumbered from former Rule 3, absorbed directory placement content from former Rule 1). Eliminated the 'Rule 2 (self-validation)' numbering collision. [diff: +4/-4 infra.md]
-
-
-
 
 ### GAP-67: Split child-reference update mechanism unspecified
 - **Source**: Implicit Gap Detection-detection
@@ -523,8 +466,22 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Replaced vague 'all parents and children of the pre-split task are inherited by all post-split tasks' with two explicit labeled mutations: (1) parent-side — each post-split entry inherits the pre-split task's blockedBy entries, and (2) child-side fan-out — all blockedBy references to the pre-split task ID in other entries are replaced with references to all post-split task IDs. This matches the explicitness of the merge and remove mechanisms in the same file. [diff: +1/-1 technical.md]
 
+### GAP-68: Infra skill-file-generation Rule numbers mismatch requirements
+- **Source**: Implicit Gap Detection-detection
+- **Severity**: medium
+- **Description**: The infra.md skill-file-generation coverage table uses Rule numbers that do not match the requirements file. Requirements define: Rule 1 (SKILL.md structure), Rule 2 (SKILL.md self-validation), Rule 3 (fsm.json generation), Rule 4 (output directory placement). Infra labels: 'Rule 1: SKILL.md generation' (maps to Req Rule 1 but also includes self-validation content from Req Rule 2 and directory placement from Req Rule 4), 'Rule 2: Task definition file generation' (maps to Req Rule 3 — wrong number), 'Rule 2 (self-validation): SKILL.md self-validation' (maps to Req Rule 2 — correct content but creates a numbering collision with the other Rule 2 row), 'Rule 3: Correct directory structure' (maps to Req Rule 4 — wrong number). A verifier tracing infra 'Rule 2' back to requirements would find Req Rule 2 is SKILL.md self-validation, not task definition file generation. The numbering collision (two rows labeled Rule 2) and the off-by-one shift for Rules 3/4 break the traceability chain from infra verification to requirements. Same class of defect as GAP-28 (phantom references breaking traceability), but affecting Rule numbers rather than scenario IDs.
+- **Triage**: delegate
+- **Decision**: Renumber the skill-file-generation coverage table to exact 1:1 correspondence with requirements Rules 1–4. Redistribute bleed-through content: move self-validation content from Rule 1 to a dedicated Rule 2 row; move directory placement content from Rule 1 to Rule 4. Renumber 'Rule 2: Task definition file generation' to Rule 3. Renumber 'Rule 3: Correct directory structure' to Rule 4. Eliminate the 'Rule 2 (self-validation)' collision row by absorbing its content into the properly numbered Rule 2 row. Same resolution class as GAP-28.
+- **Primary-file**: infra.md
+- **Status**: resolved
+- **Outcome**: Restructured the skill-file-generation coverage table to 4 rows with exact 1:1 Rule number correspondence to requirements: Rule 1 (SKILL.md structure — frontmatter and body language only), Rule 2 (SKILL.md self-validation — dedicated row absorbing content from the former collision row and Rule 1 bleed-through), Rule 3 (Task definition file generation — renumbered from former Rule 2), Rule 4 (Output directory placement — renumbered from former Rule 3, absorbed directory placement content from former Rule 1). Eliminated the 'Rule 2 (self-validation)' numbering collision. [diff: +4/-4 infra.md]
 
-
+### GAP-69: Quality check already absent from infra Rule 5
+- **Source**: Stale Gap Detection-detection
+- **Severity**: medium
+- **Description**: 
+- **Status**: deprecated
+- **Outcome**: Stale finding — already covered. GAP-69 is stale. Its own source tag is 'Stale Gap Detection-detection' and its description is empty — the detector found no defect to describe. GAP-62 ('Lightweight quality check no longer exists in infra') was already marked deprecated after confirming the quality check language is absent from infra.md dependency-mapping Rule 5. Infra.md Rule 5 (line 57) contains only dependency prompting, graph updates, ID assignment, and predecessor inheritance — no quality check language. The concern from GAP-55 (the underlying open gap about the phantom quality check) is already resolved in the artifact. Check-in is appropriate rather than delegate because the stale finding also signals GAP-55 should be closed: it remains open in gaps.md with a Decision but its target artifact already reflects the intended outcome, requiring a human confirmation to move it to resolved.
 
 ### GAP-70: 3.7 Then step uses mechanism trigger 'runs again'
 - **Source**: Resolution Normative Detection-detection
@@ -536,9 +493,6 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Removed line 116 ('And re-validation runs again after the author's correction') from scenario @self-contained-descriptions:3.7. The scenario now has 4 steps instead of 5, with all remaining Then steps describing only observable outcomes. [diff: +0/-1 requirements/self-contained-descriptions/requirements.feature.md]
 
-
-
-
 ### GAP-71: 3.7 Then step embeds 'until re-validation passes' conditional
 - **Source**: Resolution Normative Detection-detection
 - **Severity**: medium
@@ -548,9 +502,6 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Primary-file**: requirements/self-contained-descriptions/requirements.feature.md
 - **Status**: resolved
 - **Outcome**: Rewrote line 117 to remove 'until re-validation passes' conditional. The observable gating behavior (skill does not present next task) is preserved; the condition is already scoped by the scenario's When clause ('re-validation detects a cycle'). [diff: +1/-1 requirements/self-contained-descriptions/requirements.feature.md]
-
-
-
 
 ### GAP-72: dependency-mapping:1.2 and 2.2 use 'recorded' state-mutation verb
 - **Source**: Resolution Normative Detection-detection
@@ -562,26 +513,9 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Status**: resolved
 - **Outcome**: Updated dependency-mapping:1.2 Then step from 'the ordering is recorded in the dependency table' to 'the dependency table reflects the specified order'. Updated dependency-mapping:2.2 Then step from 'the tasks are recorded with no blocking relationships' to 'the tasks have no blockedBy entries', which also aligns with the identical phrasing in dependency-mapping:2.1. [diff: +2/-2 requirements/dependency-mapping/requirements.feature.md]
 
-
-
 ### GAP-75: Superseded gap references non-existent broader gap
 - **Source**: Stale Gap Detection-detection
 - **Severity**: medium
 - **Description**: 
 - **Status**: deprecated
 - **Outcome**: Stale finding — already covered. GAP-75 has an empty description and a 'Stale Gap Detection' source — the same pattern as GAP-62 and GAP-69 in resolved.md, both of which were deprecated as stale findings with no active concern. The title 'Superseded gap references non-existent broader gap' may point to GAP-66 in resolved.md, which has 'Status: superseded' and 'Superseded by broader gap' in its Outcome but no 'Superseded by: GAP-XX' field attributing a specific gap. However, because the description is empty, no concrete defect can be verified as active. Needs check-in for human review to determine whether GAP-66's missing supersession attribution is a genuine record-keeping gap or whether the stale detector misfired.
-
-
-
-## High
-
-### GAP-53: The PreToolUse guard blocking disk reads of fsm.json conflicts with the progressive fsm.json construction pattern
-- **Source**: technical-consistency-critic
-- **Severity**: high
-- **Description**: The FSM plugin's PreToolUse guard blocks the agent from reading SKILL.md and fsm.json directly. The technical design for this change documents a progressive fsm.json construction pattern in which CMP-descriptions must read and update the partial fsm.json that CMP-dependency-map wrote to disk. This cross-task disk read of fsm.json occurs within the authoring workflow and is a core part of the specified data flow. The technical context acknowledges the guard exists but neither the component specifications nor the data flow documentation addresses how the authoring workflow's fsm.json read operations interact with the guard — whether the guard applies to the intermediate partial fsm.json, whether an exemption exists, or whether the construction pattern must be redesigned to avoid the conflict.
-- **Triage**: check-in
-- **Decision**: The PreToolUse guard conflict with the progressive fsm.json construction pattern is resolved by the fsm-session-hook-bypass change, which provides a hook bypass mechanism for the authoring workflow. No spec changes needed in this change beyond a context reference. Update: technical.md § Context (add brief note referencing fsm-session-hook-bypass as the resolution).
-- **Primary-file**: technical.md
-- **Status**: resolved
-- **Outcome**: Strengthened the existing Context reference to fsm-session-hook-bypass to explicitly state it resolves the conflict between the guard and the progressive construction pattern, and to name the specific cross-task disk read operations that benefit from the bypass (CMP-descriptions reading/updating the partial fsm.json, CMP-fsm-json-finalize reading the enriched result). [diff: +1/-1 technical.md]
-

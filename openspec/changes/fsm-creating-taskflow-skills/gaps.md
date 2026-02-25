@@ -16,10 +16,6 @@ New gaps from critique should NOT have Triage or Decision fields.
 See tokamak:managing-spec-gaps for triage and status semantics.
 -->
 
-## Medium
-
-
-
 ### GAP-73: CMP-skill-md collision detection fires against current-workflow artifacts
 - **Source**: Implicit Gap Detection-detection
 - **Severity**: medium
@@ -27,7 +23,6 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Triage**: check-in
 - **Decision**: Move collision detection and directory creation from CMP-skill-md and CMP-dependency-map to CMP-normalize. CMP-normalize already collects the output directory and skill name; collision detection is added as its final responsibility after the author confirms the output path. At normalize time, no current-workflow files exist on disk, eliminating the race condition where CMP-dependency-map's partial fsm.json triggers CMP-skill-md's collision detection. Remove 'Create the target directory if it does not exist' from CMP-dependency-map and CMP-skill-md. Remove collision detection from CMP-skill-md. Update: technical.md § CMP-normalize (add collision detection + directory creation), § CMP-dependency-map (remove directory creation), § CMP-skill-md (remove collision detection + directory creation), § Data flow table. Cascade: requirements/skill-file-generation Rule 4 timing, infra.md scenario-specific setup.
 - **Primary-file**: technical.md
-
 
 ### GAP-74: workflow-validation:2.3 self-containment audit scope narrower than component spec
 - **Source**: Implicit Gap Detection-detection
@@ -37,7 +32,6 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Decision**: Rewrite workflow-validation:2.3's Then step with And-chained assertions covering all 4 self-containment checklist items from CMP-final-validation: (a) every description contains a goal statement, (b) every description contains specific actions, (c) every description contains acceptance criteria, (d) no description contains cross-task references or external references. Removes the 'passes if' conditional-in-Then pattern (same defect GAP-57 fixed in 2.1). Follows GAP-57's precedent for And-chained assertions within a single composite scenario. Update: requirements/workflow-validation/requirements.feature.md § 2.3. Cascade: infra.md Rule 2 coverage (mention structural completeness), integration.feature.md 2.3 reference.
 - **Primary-file**: requirements/workflow-validation/requirements.feature.md
 
-
 ### GAP-76: 3.5 Then uses action verb 'consolidates'
 - **Source**: Resolution Normative Detection-detection
 - **Severity**: medium
@@ -45,4 +39,3 @@ See tokamak:managing-spec-gaps for triage and status semantics.
 - **Triage**: delegate
 - **Decision**: Rewrite self-contained-descriptions:3.5 Then step (line 89) from 'Then the workflow consolidates the two tasks into one' to 'Then the workflow contains one task in place of the two original tasks.' Replaces the action verb 'consolidates' with the state predicate 'contains', achieving exact parallelism with scenario 3.4 and following the pattern established by GAP-58, GAP-64, and GAP-65.
 - **Primary-file**: requirements/self-contained-descriptions/requirements.feature.md
-

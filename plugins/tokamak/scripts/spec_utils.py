@@ -7,7 +7,28 @@ import os
 import re
 import shutil
 import sys
+from collections.abc import Callable
 from pathlib import Path, PurePosixPath
+
+
+async def gather_with_callback(
+    coros: list,
+    on_complete: Callable[[], None] | None = None,
+) -> list:
+    """Wrap asyncio.gather with a per-completion callback.
+
+    Each coroutine's result is preserved in order. After each one finishes,
+    on_complete() is called (if provided) so callers can update progress.
+    """
+    if on_complete is None:
+        return await asyncio.gather(*coros)
+
+    async def _wrap(coro):
+        result = await coro
+        on_complete()
+        return result
+
+    return await asyncio.gather(*[_wrap(c) for c in coros])
 
 
 def resolve_skill_content(skill_name: str) -> str | None:
@@ -322,15 +343,6 @@ def _find_gap_range(lines: list[str], gap_id: str) -> tuple[int, int] | None:
     return None
 
 
-def _find_severity_section(lines: list[str], severity: str) -> int | None:
-    """Find the line index of a ## severity header."""
-    target = f'## {severity.capitalize()}'
-    for i, line in enumerate(lines):
-        if line.strip() == target:
-            return i
-    return None
-
-
 def write_gap_field(change_dir: Path, gap_id: str, field: str, value: str) -> None:
     """Update or add a field for a specific gap in gaps.md."""
     gaps_path = change_dir / 'gaps.md'
@@ -386,48 +398,32 @@ def clear_gap_field(change_dir: Path, gap_id: str, field: str) -> None:
 
 def append_gap_entry(change_dir: Path, gap_id: str, title: str,
                      severity: str, fields: dict[str, str]) -> None:
-    """Append a new gap entry to gaps.md under the correct severity section."""
+    """Append a new gap entry to gaps.md."""
     gaps_path = change_dir / 'gaps.md'
     content = gaps_path.read_text()
-    lines = content.splitlines()
 
-    # Build the entry lines
+    # Build the entry text
     entry_lines = [f'### {gap_id}: {title}']
     for field, value in fields.items():
         entry_lines.append(f'- **{field}**: {value}')
+    entry_text = '\n'.join(entry_lines)
 
-    # Find the severity section
-    section_idx = _find_severity_section(lines, severity)
-    if section_idx is None:
-        # Add the section at end of file
-        lines.append('')
-        lines.append(f'## {severity.capitalize()}')
-        lines.append('')
-        lines.extend(entry_lines)
-    else:
-        # Find the end of this severity section (next ## or end of file)
-        insert_at = len(lines)
-        for i in range(section_idx + 1, len(lines)):
-            if lines[i].startswith('## '):
-                # Insert before the next section, with a blank line
-                insert_at = i
-                break
-
-        # Insert entry with blank line before next section
-        entry_with_spacing = [''] + entry_lines + ['']
-        for j, el in enumerate(entry_with_spacing):
-            lines.insert(insert_at + j, el)
-
-    gaps_path.write_text('\n'.join(lines) + '\n')
+    # Append at end of file with a blank line separator
+    stripped = content.rstrip()
+    gaps_path.write_text(stripped + '\n\n' + entry_text + '\n')
 
 
 def move_gap_to_resolved(change_dir: Path, gap_id: str, status: str,
-                         outcome: str) -> None:
+                         outcome: str, *,
+                         superseded_by: str | None = None,
+                         current_approach: str | None = None) -> None:
     """Move a gap from gaps.md to resolved.md with status and outcome.
 
     Extracts the full entry from gaps.md, adds Status and Outcome fields,
-    inserts it into the correct severity section in resolved.md, and removes
-    it from gaps.md.
+    appends it to resolved.md, and removes it from gaps.md.
+
+    For superseded gaps, optional ``superseded_by`` and ``current_approach``
+    record the supersession chain per managing-spec-gaps rules.
     """
     gaps_path = change_dir / 'gaps.md'
     resolved_path = change_dir / 'resolved.md'
@@ -459,8 +455,18 @@ def move_gap_to_resolved(change_dir: Path, gap_id: str, status: str,
     for i, line in enumerate(entry_lines):
         if line.startswith('- **'):
             last_field_idx = i
-    entry_lines.insert(last_field_idx + 1, f'- **Status**: {status}')
-    entry_lines.insert(last_field_idx + 2, f'- **Outcome**: {outcome}')
+    offset = 1
+    entry_lines.insert(last_field_idx + offset, f'- **Status**: {status}')
+    offset += 1
+    if superseded_by:
+        entry_lines.insert(last_field_idx + offset,
+                           f'- **Superseded by**: {superseded_by}')
+        offset += 1
+    entry_lines.insert(last_field_idx + offset, f'- **Outcome**: {outcome}')
+    offset += 1
+    if current_approach:
+        entry_lines.insert(last_field_idx + offset,
+                           f'- **Current approach**: {current_approach}')
 
     # Remove from gaps.md
     # Also remove trailing blank line if present
@@ -476,27 +482,9 @@ def move_gap_to_resolved(change_dir: Path, gap_id: str, status: str,
         resolved_path.write_text('# Resolved Gaps\n\n')
 
     resolved_content = resolved_path.read_text()
-    resolved_lines = resolved_content.splitlines()
-
-    section_idx = _find_severity_section(resolved_lines, severity)
-    if section_idx is None:
-        # Add section at end
-        resolved_lines.append('')
-        resolved_lines.append(f'## {severity.capitalize()}')
-        resolved_lines.append('')
-        resolved_lines.extend(entry_lines)
-    else:
-        # Insert at end of severity section
-        insert_at = len(resolved_lines)
-        for i in range(section_idx + 1, len(resolved_lines)):
-            if resolved_lines[i].startswith('## '):
-                insert_at = i
-                break
-        entry_with_spacing = [''] + entry_lines + ['']
-        for j, el in enumerate(entry_with_spacing):
-            resolved_lines.insert(insert_at + j, el)
-
-    resolved_path.write_text('\n'.join(resolved_lines) + '\n')
+    entry_text = '\n'.join(entry_lines)
+    stripped = resolved_content.rstrip()
+    resolved_path.write_text(stripped + '\n\n' + entry_text + '\n')
 
 
 def next_gap_id(change_dir: Path) -> str:
@@ -522,7 +510,9 @@ def format_detector_finding_as_gap(
     """
     title = finding.get('title', finding.get('summary', 'Untitled finding'))
     severity = finding.get('severity', 'medium').lower()
-    source = f'{critic_name}-detection'
+    source = critic_name.strip().lower().replace(' ', '-')
+    if not source.endswith('-detection'):
+        source += '-detection'
     description = finding.get('description', finding.get('finding', ''))
 
     fields = {
@@ -637,6 +627,16 @@ def build_command(
     return cmd
 
 
+async def _read_both(proc):
+    """Read stdout and stderr concurrently and wait for process exit."""
+    stdout, stderr = await asyncio.gather(
+        proc.stdout.read(),
+        proc.stderr.read(),
+    )
+    await proc.wait()
+    return stdout, stderr
+
+
 async def run_one_subprocess(
     name: str,
     cmd: list[str],
@@ -644,22 +644,33 @@ async def run_one_subprocess(
     timeout: int,
     semaphore: asyncio.Semaphore,
 ) -> dict:
-    """Launch a single claude -p subprocess and collect output."""
+    """Launch a single claude -p subprocess and collect output.
+
+    On timeout, drains partial stdout before killing the process so that
+    any work already emitted (e.g. solver proposals) is preserved for
+    diagnostic purposes.
+    """
     async with semaphore:
         print(f"[RUNNING] {name}", file=sys.stderr)
 
         env = {k: v for k, v in os.environ.items() if k != 'CLAUDECODE'}
 
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+        )
+
+        # Send prompt and close stdin so the subprocess can start work
+        proc.stdin.write(prompt.encode())
+        await proc.stdin.drain()
+        proc.stdin.close()
+
         try:
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                env=env,
-            )
             stdout, stderr = await asyncio.wait_for(
-                proc.communicate(input=prompt.encode()),
+                _read_both(proc),
                 timeout=timeout,
             )
 
@@ -685,14 +696,24 @@ async def run_one_subprocess(
                 }
         except asyncio.TimeoutError:
             proc.kill()
+            # Drain any partial stdout emitted before the kill
+            partial = b''
+            try:
+                partial = await asyncio.wait_for(proc.stdout.read(), timeout=5)
+            except (asyncio.TimeoutError, Exception):
+                pass
             await proc.wait()
-            print(f"[TIMEOUT] {name}: exceeded {timeout}s", file=sys.stderr)
+
+            output = partial.decode().strip()
+            report = try_parse_json(output) if output else []
+            status_note = 'timeout' if not output else 'timeout (partial output captured)'
+            print(f"[TIMEOUT] {name}: {status_note} after {timeout}s", file=sys.stderr)
             return {
                 'name': name,
                 'status': 'error',
-                'output': '',
-                'error': f'timeout after {timeout}s',
-                'report': [],
+                'output': output,
+                'error': f'{status_note} after {timeout}s',
+                'report': report,
             }
 
 
