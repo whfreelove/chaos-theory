@@ -8,7 +8,16 @@ Claude Code plugins leveraging stochastic agent behavior. "Agents, uhh, find a w
 claude plugin marketplace add whfreelove/chaos-theory
 ```
 
-OpenSpec schemas are auto-initialized on your first session.
+### Dependencies
+
+- [jq](https://jqlang.org/download) (standard in MacOS Sequoia 15.0+)
+
+#### Tokamak
+
+- `pip install ruamel.yaml`
+- [OpenSpec](https://github.com/Fission-AI/OpenSpec#quick-start) (warning: confirm your [telemetry privacy settings](https://github.com/Fission-AI/OpenSpec#other))
+
+A SessionStart hook will install chaos-theory OpenSpec schemas for you (if `openspec/` already exists), and if a Tokamak update includes a new schema version, use `/init-schemas` upgrade.
 
 ## Available Plugins
 
@@ -19,15 +28,10 @@ A **spec-as-code** reactor that harnesses power from AI agents' thrashing plasma
 An OpenSpec-based, iterative, structured specification workflow based on turning software engineering best practices overhead into background noise.
 Agents push you to understand your design through repeated rounds of finding gaps, clarifying your solutions, documenting your decisions, then updating specifications.
 
-#### Setup
-
-[Install OpenSpec](https://github.com/Fission-AI/OpenSpec#quick-start) (warning: confirm your [telemetry privacy settings](https://github.com/Fission-AI/OpenSpec#other))
-
 ```bash
+pip install ruamel.yaml
 claude plugin install tokamak
 ```
-
-A SessionStart hook will install chaos-theory OpenSpec schemas for you (if `openspec/` already exists), and if a Tokamak update includes a new schema version, `/init-schemas` will upgrade.
 
 See [plugins/tokamak/README.md](plugins/tokamak/README.md) for the full change and brownfield documentation workflows.
 

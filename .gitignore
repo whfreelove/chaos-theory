@@ -1,5 +1,7 @@
 # OpenSpec
 openspec/changes/archive
+.sections/
+.solver-sessions.json
 
 # Planning files (session-specific)
 future-work.md

@@ -9,19 +9,20 @@ OpenSpec change management plugin for Claude Code. Manages the lifecycle of spec
 For new features, fixes, or modifications where specs are designed before implementation.
 
 ```
-new-change → [artifact creation] → critique-specs → resolve-gaps → ratify-specs
-           → implement-change → merge-change → archive-change
+new-change → [artifact creation] → sculpt-specs → critique-specs → resolve-gaps
+           → ratify-specs → implement-change → merge-change → archive-change
 ```
 
 Each change tracks two independent statuses:
 
-- **specs-status**: `new` → `draft` → `reviewed` → `ratified` → `merged`
+- **specs-status**: `new` → `draft` → `reviewing` → `ratified` → `merging` → `merged`
 - **code-status**: `waiting` → `ready` → `in-progress` → `done`
 
 | Stage | What happens |
 |---|---|
 | **new-change** | Creates change directory, selects triage policy and schema, initializes gap tracking |
-| **Artifact creation** | Functional spec, technical design, BDD specs, and tasks are authored (via `opsx:continue`) |
+| **Artifact creation** | Functional spec, technical design, BDD specs, and tasks are authored (via `opsx:continue`). Moves to `draft`. |
+| **sculpt-specs** | Freeform design refinement — reads all artifacts holistically, identifies cross-cutting tensions, revises directly. Iterative; promote to `reviewing` when coherent. |
 | **critique-specs** | Parallel critics validate artifacts against each other and document gaps |
 | **resolve-gaps** | Gaps are categorized, solutions designed, and documentation updated |
 | **ratify-specs** | Reviewed specs are locked, unlocking implementation |
@@ -60,6 +61,7 @@ For existing codebases where documentation is reverse-engineered from code.
 
 | Skill | Description |
 |---|---|
+| `sculpt-specs` | Freeform holistic design refinement for specs in `draft` state |
 | `critique-specs` | Run parallel critics against change artifacts and document gaps |
 | `resolve-gaps` | Resolve gaps from critique findings |
 | `validate-specs` | Validate artifacts before proceeding |
