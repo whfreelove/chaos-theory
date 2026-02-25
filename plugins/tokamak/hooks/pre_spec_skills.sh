@@ -56,6 +56,9 @@ case "$skill" in
   resolve-gaps-brownfield|tokamak:resolve-gaps-brownfield)
     skill_type="resolve"
     ;;
+  sculpt-specs|tokamak:sculpt-specs)
+    skill_type="sculpt"
+    ;;
   ratify-specs|tokamak:ratify-specs)
     skill_type="ratify"
     ;;
@@ -122,17 +125,36 @@ status_script="${PLUGIN_ROOT}/scripts/change_status.sh"
 
 case "$skill_type" in
   critique)
-    if ! current=$("$status_script" check "$change_dir" specs-status "new|reviewing"); then
-      deny \
-        "Cannot run ${skill} when specs-status is '${current}'. Specs have already been ratified. To critique again, the change must be in 'new' or 'reviewing' state." \
-        "${skill} blocked: specs-status is '${current}', requires 'new' or 'reviewing'."
+    if ! current=$("$status_script" check "$change_dir" specs-status "reviewing"); then
+      if [[ "$current" == "draft" ]]; then
+        deny \
+          "Cannot run ${skill} when specs-status is 'draft'. Use sculpt-specs to refine design first, then promote to reviewing. Call: Skill(tokamak:sculpt-specs, args: \"${args}\")" \
+          "${skill} blocked: specs-status is 'draft'. Use sculpt-specs to promote to reviewing."
+      else
+        deny \
+          "Cannot run ${skill} when specs-status is '${current}'. To critique, the change must be in 'reviewing' state." \
+          "${skill} blocked: specs-status is '${current}', requires 'reviewing'."
+      fi
     fi
     ;;
   resolve)
-    if ! current=$("$status_script" check "$change_dir" specs-status "new|reviewing"); then
+    if ! current=$("$status_script" check "$change_dir" specs-status "reviewing"); then
+      if [[ "$current" == "draft" ]]; then
+        deny \
+          "Cannot run ${skill} when specs-status is 'draft'. Use sculpt-specs to refine design first, then promote to reviewing. Call: Skill(tokamak:sculpt-specs, args: \"${args}\")" \
+          "${skill} blocked: specs-status is 'draft'. Use sculpt-specs to promote to reviewing."
+      else
+        deny \
+          "Cannot run ${skill} when specs-status is '${current}'. To resolve gaps, the change must be in 'reviewing' state." \
+          "${skill} blocked: specs-status is '${current}', requires 'reviewing'."
+      fi
+    fi
+    ;;
+  sculpt)
+    if ! current=$("$status_script" check "$change_dir" specs-status "draft"); then
       deny \
-        "Cannot run ${skill} when specs-status is '${current}'. Specs have already been ratified. To resolve gaps, the change must be in 'new' or 'reviewing' state." \
-        "${skill} blocked: specs-status is '${current}', requires 'new' or 'reviewing'."
+        "Cannot sculpt specs when specs-status is '${current}'. Sculpting requires 'draft' state." \
+        "${skill} blocked: specs-status is '${current}', requires 'draft'."
     fi
     ;;
   ratify)
@@ -162,10 +184,10 @@ case "$skill_type" in
     fi
     ;;
   merge)
-    if ! current=$("$status_script" check "$change_dir" specs-status "ready|merging"); then
+    if ! current=$("$status_script" check "$change_dir" specs-status "ratified|merging"); then
       deny \
         "Cannot merge change when specs-status is '${current}'. Specs must be ratified first. Run: Skill(tokamak:ratify-specs, args: \"${change_name}\")" \
-        "${skill} blocked: specs-status is '${current}', requires 'ready' or 'merging'."
+        "${skill} blocked: specs-status is '${current}', requires 'ratified' or 'merging'."
     fi
     ;;
   archive)

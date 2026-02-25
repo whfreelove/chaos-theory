@@ -5,7 +5,7 @@ description: Ratify reviewed specs to unlock implementation. Use after critique/
 
 # Ratify Specs
 
-Transition specs from reviewing to ready, unlocking implementation.
+Transition specs from reviewing to ratified, unlocking implementation.
 
 **Input**: `$0` is the change name. If empty, ask the user which change to ratify.
 
@@ -43,28 +43,32 @@ Include in the description:
   - Specs reflect intended design?
 
 Options:
-- **Ratify** — Mark specs as ready, unlock implementation
+- **Ratify** — Mark specs as ratified, unlock implementation
 - **Not ready** — Run another critique/resolve round first
 
 ## Step 4: Apply ratification
 
 If the user chooses "Ratify":
 
-1. Set `specs-status: ready`:
+1. Set `specs-status: ratified`:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" write "openspec/changes/$0" specs-status ready
+"${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" write "openspec/changes/$0" specs-status ratified
 ```
 
-2. Check `tasks.yaml` to determine code-status:
+2. Resolve artifacts to determine if tasks exist:
 ```bash
-tasks_file="openspec/changes/$0/tasks.yaml"
-if [[ ! -f "$tasks_file" ]] || ! grep -v '^#' "$tasks_file" | grep -v '^[[:space:]]*$' | grep -q .; then
-  # No tasks or empty tasks file → no implementation needed
-  "${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" write "openspec/changes/$0" code-status n/a
-else
-  "${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" write "openspec/changes/$0" code-status ready
-fi
+artifacts=$(python "${CLAUDE_PLUGIN_ROOT}/scripts/resolve_artifacts.py" "openspec/changes/$0")
 ```
+
+Check the `has_tasks` field from the JSON output:
+- If `has_tasks` is `false` → no implementation needed:
+  ```bash
+  "${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" write "openspec/changes/$0" code-status n/a
+  ```
+- If `has_tasks` is `true` → implementation needed:
+  ```bash
+  "${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" write "openspec/changes/$0" code-status ready
+  ```
 
 If the user chooses "Not ready", suggest running `Skill(tokamak:critique-specs, args: "$0")`.
 

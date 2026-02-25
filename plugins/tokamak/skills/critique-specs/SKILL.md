@@ -78,6 +78,15 @@ project doc section as the match source.
 Respond with findings summary JSON list, e.g. [{"finding": "...", "status": "COVERED", "matched_gaps": ["GAP-12"], "match_reason": "..."}, {"finding": "...", "status": "PARTIAL", "matched_gaps": ["GAP-4"], "match_reason": "..."}, {"finding": "...", "status": "UNCOVERED", "matched_gaps": [], "match_reason": ""}]
 ```
 
+2. Persist validation output to `findings.json` for cross-round analysis:
+
+    ```bash
+    echo '<validation_json>' | python "${CLAUDE_PLUGIN_ROOT}/scripts/record_findings.py" "openspec/changes/$0"
+    ```
+
+    Where `<validation_json>` is the JSON list from the validation subagent response.
+    This appends a round entry to `findings.json` with timestamp and per-finding status.
+
 ### C: Document Gaps
 
 1. Get the next available gap ID: `${CLAUDE_PLUGIN_ROOT}/scripts/next_gap.sh openspec/changes/$0`

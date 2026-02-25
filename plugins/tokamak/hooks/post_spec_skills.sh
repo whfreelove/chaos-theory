@@ -62,14 +62,18 @@ if [[ -n "$args" ]]; then
     status_script="${PLUGIN_ROOT}/scripts/change_status.sh"
 
     case "$skill" in
-      critique-specs|tokamak:critique-specs|\
-      critique-specs-brownfield|tokamak:critique-specs-brownfield)
-        # specs-status: new -> reviewing (only if currently new)
+      opsx:continue|openspec-continue-change)
+        # specs-status: new -> draft (artifact creation moves out of new)
         current=$("$status_script" read "$change_dir" specs-status)
         if [[ "$current" == "new" ]]; then
-          "$status_script" write "$change_dir" specs-status reviewing
-          echo "Status: specs-status transitioned new → reviewing" >&2
+          "$status_script" write "$change_dir" specs-status draft
+          echo "Status: specs-status transitioned new → draft" >&2
         fi
+        ;;
+      critique-specs|tokamak:critique-specs|\
+      critique-specs-brownfield|tokamak:critique-specs-brownfield)
+        # No auto-transition: critique requires reviewing (enforced by pre-hook).
+        # Promotion from draft → reviewing is handled by sculpt-specs.
         ;;
       implement-change|tokamak:implement-change)
         # code-status: ready -> in-progress (only if currently ready)
@@ -80,11 +84,11 @@ if [[ -n "$args" ]]; then
         fi
         ;;
       merge-change|tokamak:merge-change)
-        # specs-status: ready -> merging (only if currently ready)
+        # specs-status: ratified -> merging (only if currently ratified)
         current=$("$status_script" read "$change_dir" specs-status)
-        if [[ "$current" == "ready" ]]; then
+        if [[ "$current" == "ratified" ]]; then
           "$status_script" write "$change_dir" specs-status merging
-          echo "Status: specs-status transitioned ready → merging" >&2
+          echo "Status: specs-status transitioned ratified → merging" >&2
         fi
         ;;
     esac

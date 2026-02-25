@@ -9,7 +9,7 @@ Apply completed change artifacts into existing project-level documentation.
 
 ## When to Use
 
-When `specs-status` is `ready` or `merging`, merge the change's artifacts (functional.md, requirements, technical.md, infra.md, integration.feature.md) into the project's living documentation. The PreToolUse hook validates this state; the PostToolUse hook auto-transitions `ready → merging` on invocation.
+When `specs-status` is `ratified` or `merging`, merge the change's artifacts (functional.md, requirements, technical.md, infra.md, integration.feature.md) into the project's living documentation. The PreToolUse hook validates this state; the PostToolUse hook auto-transitions `ratified → merging` on invocation.
 
 ## Inputs
 
@@ -24,13 +24,13 @@ If not provided, detect from context:
 
 ## Step 0: Validate state and resolve project
 
-Read `specs-status` and verify it is `ready` or `merging` (redundant with hook gate, but serves as instruction-level safety):
+Read `specs-status` and verify it is `ratified` or `merging` (redundant with hook gate, but serves as instruction-level safety):
 
 ```bash
 current=$("${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" read "openspec/changes/$0" specs-status)
 ```
 
-If not `ready` or `merging`, inform the user what state the change is in and what needs to happen first. The PostToolUse hook auto-transitions `ready → merging` on skill invocation, so by the time this runs, status will be `merging`.
+If not `ratified` or `merging`, inform the user what state the change is in and what needs to happen first. The PostToolUse hook auto-transitions `ratified → merging` on skill invocation, so by the time this runs, status will be `merging`.
 
 Read the project path from `.openspec.yaml`:
 
