@@ -1,6 +1,7 @@
 """Shared helpers for research notebooks."""
 import json
 import subprocess
+import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,11 +14,13 @@ class ClaudeResult:
     session_id: str         # the session UUID used
     returncode: int         # subprocess exit code
     stderr: str             # stderr output (diagnostics)
+    duration_s: float       # wall-clock seconds
 
 
 def run_claude(
     prompt: str,
     *,
+    model: str = "haiku",
     plugin_dir: Path | None = None,
     session_id: str | None = None,
     permission_mode: str = "default",
@@ -26,12 +29,13 @@ def run_claude(
 
     Args:
         prompt: The prompt to send to claude -p.
+        model: Model to use. Default "haiku".
         plugin_dir: Optional plugin directory to load via --plugin-dir.
         session_id: Optional session ID. Generated if not provided.
         permission_mode: Permission mode for the session. Default "default".
 
     Returns:
-        ClaudeResult with parsed output, session_id, returncode, stderr.
+        ClaudeResult with parsed output, session_id, returncode, stderr, duration_s.
     """
     if session_id is None:
         session_id = str(uuid.uuid4())
@@ -41,13 +45,16 @@ def run_claude(
         prompt,
         "--session-id", session_id,
         "--output-format", "json",
-        "--model", "haiku",
+        "--model", model,
         "--permission-mode", permission_mode,
     ]
     if plugin_dir is not None:
         cmd.extend(["--plugin-dir", str(plugin_dir)])
 
+    t0 = time.perf_counter()
     result = subprocess.run(cmd, capture_output=True, text=True)
+    duration_s = time.perf_counter() - t0
+
     output = json.loads(result.stdout) if result.stdout.strip() else {"error": result.stderr}
 
     return ClaudeResult(
@@ -55,4 +62,5 @@ def run_claude(
         session_id=session_id,
         returncode=result.returncode,
         stderr=result.stderr,
+        duration_s=duration_s,
     )
