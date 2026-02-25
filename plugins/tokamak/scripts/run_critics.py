@@ -20,13 +20,12 @@ import sys
 from pathlib import Path
 
 
-def resolve_skill_content(skill_name: str) -> str | None:
-    """Read a tokamak skill's SKILL.md content."""
-    name = skill_name.removeprefix('tokamak:')
-    skill_file = Path(__file__).parent.parent / 'skills' / name / 'SKILL.md'
-    if skill_file.exists():
-        return skill_file.read_text()
-    return None
+from spec_utils import (
+    gather_with_callback,
+    load_schema_artifacts,
+    resolve_project_dir,
+    resolve_skill_content,
+)
 
 
 ACCURACY_CRITICS = frozenset({
@@ -44,22 +43,28 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument('change_dir', type=Path,
                         help='Path to OpenSpec change directory')
-    parser.add_argument('--max-concurrent', type=int, default=5,
-                        help='Maximum parallel claude -p processes (default: 5)')
-    parser.add_argument('--timeout', type=int, default=300,
-                        help='Timeout per critic in seconds (default: 300)')
+    parser.add_argument('--max-concurrent', type=int, default=6,
+                        help='Maximum parallel claude -p processes (default: 6)')
+    parser.add_argument('--timeout', type=int, default=600,
+                        help='Timeout per critic in seconds (default: 600)')
     parser.add_argument('--dry-run', action='store_true',
                         help='Print prompts and commands without launching processes')
     parser.add_argument('--budget', type=float, default=None,
                         help='Max budget per critic in USD')
+    parser.add_argument('--type', default='critics', dest='config_type',
+                        help='Config type to load (default: critics). '
+                             'Resolves <type>.<schema>.json')
     return parser.parse_args(argv)
 
 
-def select_critics(change_dir: Path) -> dict:
+def select_critics(change_dir: Path, config_type: str = 'critics') -> dict:
     """Call select_critics.py and parse its JSON output."""
     script = Path(__file__).parent / 'select_critics.py'
+    cmd = [sys.executable, str(script), str(change_dir)]
+    if config_type != 'critics':
+        cmd.extend(['--type', config_type])
     result = subprocess.run(
-        [sys.executable, str(script), str(change_dir)],
+        cmd,
         capture_output=True, text=True,
     )
     if result.stderr:
@@ -69,23 +74,6 @@ def select_critics(change_dir: Path) -> dict:
               file=sys.stderr)
         sys.exit(1)
     return json.loads(result.stdout)
-
-
-def resolve_project_dir(change_dir: Path) -> Path | None:
-    """Resolve project directory from .openspec.yaml project field."""
-    openspec_path = change_dir / '.openspec.yaml'
-    if not openspec_path.exists():
-        return None
-    with open(openspec_path) as f:
-        for line in f:
-            m = re.match(r'^project:\s*(.+)', line)
-            if m:
-                openspec_root = change_dir.parent.parent  # openspec/changes/<name>/ → openspec/
-                project_dir = (openspec_root / m.group(1).strip()).resolve()
-                if project_dir.exists():
-                    return project_dir
-                return None
-    return None
 
 
 def is_accuracy_critic(name: str) -> bool:
@@ -117,6 +105,20 @@ def build_prompt(critic: dict, change_dir: Path,
             if content:
                 parts.append(f"### {skill_name}\n")
                 parts.append(content)
+                parts.append("")
+
+    # Schema artifact instructions (for critics that reference FILE PURPOSE)
+    if 'FILE PURPOSE' in critic['evaluate']:
+        schema_artifacts = load_schema_artifacts(change_dir)
+        if schema_artifacts:
+            parts.append("## File Purpose Instructions\n")
+            parts.append(
+                "The following instructions from schema.yaml define what content "
+                "belongs in each artifact file:\n"
+            )
+            for generates, config in schema_artifacts.items():
+                parts.append(f"### `{generates}`\n")
+                parts.append(config['instruction'])
                 parts.append("")
 
     # Schema template instructions
@@ -277,6 +279,7 @@ async def run_all_critics(
     timeout: int,
     budget: float | None,
     dry_run: bool,
+    on_complete: callable = None,
 ) -> dict:
     """Orchestrate parallel critic execution."""
     output_template = critics_data.get('output_template', '')
@@ -313,7 +316,7 @@ async def run_all_critics(
                             output_template, budget)
         tasks.append(run_one_critic(critic, cmd, prompt, timeout, semaphore))
 
-    results = await asyncio.gather(*tasks)
+    results = await gather_with_callback(tasks, on_complete)
 
     succeeded = sum(1 for r in results if r['status'] == 'success')
     failed = len(results) - succeeded
@@ -339,7 +342,15 @@ def main(argv: list[str] | None = None):
         print("ERROR: claude CLI not found in PATH", file=sys.stderr)
         sys.exit(1)
 
-    critics_data = select_critics(change_dir)
+    # Extract sections from spec.yaml if present (chaos-theory-lite schema)
+    if (change_dir / 'spec.yaml').exists():
+        from split_spec import split_spec
+        extracted = split_spec(change_dir)
+        if extracted:
+            print(f"Extracted {len(extracted)} sections from spec.yaml",
+                  file=sys.stderr)
+
+    critics_data = select_critics(change_dir, args.config_type)
     project_dir = resolve_project_dir(change_dir)
 
     result = asyncio.run(run_all_critics(

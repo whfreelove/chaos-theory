@@ -30,7 +30,7 @@ import questionary
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+from rich.progress import Progress, SpinnerColumn, TaskID, TextColumn, TimeElapsedColumn
 from rich.table import Table
 
 from spec_utils import (
@@ -51,6 +51,33 @@ from spec_utils import (
 )
 
 console = Console()
+
+
+# ---------------------------------------------------------------------------
+# Spinner handle for progress tracking
+# ---------------------------------------------------------------------------
+
+@dataclass
+class SpinnerHandle:
+    """Mutable handle yielded by WorkflowTracker.spinner() for live updates."""
+    _progress: Progress
+    _task_id: TaskID
+    _base_desc: str
+    _timeout: int | None
+    _completed: int = 0
+    _total: int | None = None
+
+    def advance(self):
+        """Mark one subprocess as complete and refresh the spinner text."""
+        self._completed += 1
+        self._progress.update(self._task_id, description=self._format())
+
+    def _format(self) -> str:
+        parts = [self._base_desc]
+        if self._total is not None:
+            parts.append(f"{self._completed}/{self._total} done")
+        return " · ".join(parts)
+
 
 SECTION_ORDER = ['D', 'E', 'F', 'G', 'H']
 
@@ -75,6 +102,29 @@ class ResolutionLog:
     resolved: list[tuple[str, str]] = field(default_factory=list)
     implicit_recorded: list[tuple[str, str]] = field(default_factory=list)
     implicit_resolved: list[tuple[str, str]] = field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Fail-fast error types
+# ---------------------------------------------------------------------------
+
+@dataclass
+class SubprocessFailure:
+    """Record of a single failed subprocess within a workflow section."""
+    name: str
+    error: str
+    phase: str = ''
+
+
+class SectionFailedError(Exception):
+    """Raised when one or more subprocesses fail within a workflow section."""
+    def __init__(self, section: str, failures: list[SubprocessFailure]):
+        self.section = section
+        self.failures = failures
+        names = ', '.join(f.name for f in failures[:5])
+        if len(failures) > 5:
+            names += f' (+{len(failures) - 5} more)'
+        super().__init__(f"Section {section}: {len(failures)} subprocess(es) failed [{names}]")
 
 
 # ---------------------------------------------------------------------------
@@ -112,8 +162,28 @@ class WorkflowTracker:
             self.completed.add(self.current)
 
     @contextmanager
-    def spinner(self, description: str):
-        """Context manager that shows a spinner with elapsed time."""
+    def spinner(self, description: str, timeout: int | None = None, total: int | None = None):
+        """Context manager that shows a spinner with elapsed time.
+
+        Args:
+            description: Base spinner text.
+            timeout: Per-subprocess timeout in seconds (from --timeout).
+                     Displayed as ``(timeout: MM:SS/proc)``.  None = omitted.
+            total: Expected number of subprocesses.  Enables ``0/N done``
+                   counter via the yielded ``SpinnerHandle``.
+        """
+        # Build initial description with optional timeout suffix
+        parts = [description]
+        if timeout is not None:
+            mins, secs = divmod(timeout, 60)
+            parts.append(f"(timeout: {mins}:{secs:02d}/proc)")
+        base_desc = " ".join(parts)
+
+        # Append counter if total is known
+        initial_desc = base_desc
+        if total is not None:
+            initial_desc = f"{base_desc} · 0/{total} done"
+
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -121,8 +191,16 @@ class WorkflowTracker:
             console=console,
             transient=True,
         ) as progress:
-            progress.add_task(description, total=None)
-            yield
+            task_id = progress.add_task(initial_desc, total=None)
+            handle = SpinnerHandle(
+                _progress=progress,
+                _task_id=task_id,
+                _base_desc=base_desc,
+                _timeout=timeout,
+                _completed=0,
+                _total=total,
+            )
+            yield handle
 
     def _render_header(self) -> None:
         """Render the workflow progress bar and section header."""
@@ -257,14 +335,25 @@ def run_triage(
     # Path 2: Agent-decided — claude -p
     tracker.step(f"Agent triage — {len(agent_decided)} gaps" if agent_decided else "Agent triage — skipped (0 gaps)")
     if agent_decided:
-        with tracker.spinner("Running agent triage..."):
-            triage_results = _run_agent_triage(
+        with tracker.spinner("Running agent triage...", timeout=timeout, total=1) as handle:
+            triage_results, fallback_gaps = _run_agent_triage(
                 change_dir, agent_decided, policy, max_concurrent, timeout, budget, dry_run
             )
+            handle.advance()
         for gap_id, triage_value in triage_results:
             write_gap_field(change_dir, gap_id, 'Triage', triage_value)
             log.triaged.append((gap_id, triage_value))
             console.print(f"  {gap_id}: {triage_value} (agent)")
+        # Fallback questionary prompts run outside spinner
+        for gap, actions in fallback_gaps:
+            _display_gap_panel(gap)
+            choice = questionary.select(
+                f"Triage for {gap['id']}:", choices=actions
+            ).ask()
+            if choice is None:
+                sys.exit(1)
+            write_gap_field(change_dir, gap['id'], 'Triage', choice)
+            log.triaged.append((gap['id'], choice))
 
     # Path 3: User-decided — questionary
     tracker.step(f"User triage + summary — {len(user_decided)} gaps" if user_decided else "User triage + summary — skipped (0 gaps)")
@@ -294,8 +383,13 @@ def _run_agent_triage(
     timeout: int,
     budget: float | None,
     dry_run: bool,
-) -> list[tuple[str, str]]:
-    """Launch a Sonnet claude -p subprocess to triage agent-decided gaps."""
+) -> tuple[list[tuple[str, str]], list[tuple[dict, list[str]]]]:
+    """Launch a Sonnet claude -p subprocess to triage agent-decided gaps.
+
+    Returns (triage_results, fallback_gaps) where:
+    - triage_results: list of (gap_id, triage_value) for successfully triaged gaps
+    - fallback_gaps: list of (gap, actions) needing user triage via questionary
+    """
     project_dir = resolve_project_dir(change_dir)
     gap_ids = [g['id'] for g in gaps]
     gap_entries = read_gap_entries(change_dir, gap_ids)
@@ -331,49 +425,35 @@ def _run_agent_triage(
     if dry_run:
         console.print(Panel(f"[dim]DRY-RUN: Agent triage for {len(gaps)} gaps[/dim]"))
         console.print(f"CMD: {' '.join(cmd[:6])}...")
-        return [(g['id'], 'check-in') for g in gaps]
+        return [(g['id'], 'check-in') for g in gaps], []
 
     result = asyncio.run(_run_single_subprocess(
         "agent-triage", cmd, prompt, timeout, max_concurrent
     ))
 
     if result['status'] != 'success':
-        console.print(f"[red]Agent triage failed: {result.get('error', 'unknown')}[/red]")
-        console.print("[yellow]Falling back to user triage...[/yellow]")
-        results = []
-        for gap in gaps:
-            _display_gap_panel(gap)
-            severity = (gap.get('severity') or 'medium').lower()
-            actions = policy.get(severity, {}).get('actions', ['check-in'])
-            choice = questionary.select(
-                f"Triage for {gap['id']}:", choices=actions
-            ).ask()
-            if choice is None:
-                sys.exit(1)
-            results.append((gap['id'], choice))
-        return results
+        raise SectionFailedError('D', [SubprocessFailure(
+            name='agent-triage',
+            error=result.get('error', 'unknown'),
+            phase='triage',
+        )])
 
     parsed = result.get('report', [])
     triage_map = {e['id']: e['triage'] for e in parsed if 'id' in e and 'triage' in e}
 
     results = []
+    fallback = []
     for gap in gaps:
         triage_value = triage_map.get(gap['id'])
         if triage_value:
             results.append((gap['id'], triage_value))
         else:
             console.print(f"[yellow]Agent did not triage {gap['id']}, asking user...[/yellow]")
-            _display_gap_panel(gap)
             severity = (gap.get('severity') or 'medium').lower()
             actions = policy.get(severity, {}).get('actions', ['check-in'])
-            choice = questionary.select(
-                f"Triage for {gap['id']}:", choices=actions
-            ).ask()
-            if choice is None:
-                sys.exit(1)
-            results.append((gap['id'], choice))
+            fallback.append((gap, actions))
 
-    return results
+    return results, fallback
 
 
 async def _run_single_subprocess(
@@ -450,22 +530,35 @@ def run_solve(
 
     # Group gaps for parallel solving
     tracker.step("Grouping gaps")
-    with tracker.spinner("Running gap grouper..."):
+    with tracker.spinner("Running gap grouper...", timeout=timeout, total=1) as handle:
         groups_json = _run_gap_grouper(change_dir, actionable, max_concurrent, timeout, budget, dry_run)
+        handle.advance()
 
     # Run solvers (explore + solve)
     tracker.step("Running solvers")
-    with tracker.spinner("Running solvers (explore + solve)..."):
+    solver_total = (len(groups_json) * 2) if groups_json else 2
+    with tracker.spinner("Running solvers (explore + solve)...", timeout=timeout, total=solver_total) as handle:
         solver_result = asyncio.run(run_initial(
             change_dir, groups_json, max_concurrent, timeout, budget, dry_run,
+            on_complete=handle.advance,
         ))
 
     sessions = solver_result.get('sessions', {})
     proposals = solver_result.get('proposals', [])
 
-    # Persist session IDs for crash recovery
+    # Persist session IDs for crash recovery (before fail-fast check
+    # so partial sessions survive for --from E retry)
     sessions_path = change_dir / '.solver-sessions.json'
-    sessions_path.write_text(json.dumps(sessions, indent=2) + '\n')
+    if sessions:
+        sessions_path.write_text(json.dumps(sessions, indent=2) + '\n')
+
+    # Fail-fast on solver failures
+    solver_failures = solver_result.get('failures', [])
+    if solver_failures:
+        raise SectionFailedError('E', [
+            SubprocessFailure(name=f['name'], error=f['error'], phase=f.get('phase', 'solve'))
+            for f in solver_failures
+        ])
 
     if not proposals and not dry_run:
         console.print("[yellow]No proposals returned from solvers.[/yellow]")
@@ -504,12 +597,17 @@ def run_solve(
     tracker.step("Processing proposals")
     if delegate_proposals:
         console.print(f"\n[cyan]Reviewing {len(delegate_proposals)} delegate proposals...[/cyan]")
-        with tracker.spinner("Reviewing delegate proposals..."):
+        with tracker.spinner("Reviewing delegate proposals...", timeout=timeout, total=1) as handle:
+            rework, user_fallback = _process_delegate_proposals(
+                change_dir, delegate_proposals, log,
+                max_concurrent, timeout, budget, dry_run
+            )
+            handle.advance()
+        rework_feedback.update(rework)
+        # Fallback user review runs outside spinner
+        if user_fallback:
             rework_feedback.update(
-                _process_delegate_proposals(
-                    change_dir, delegate_proposals, log,
-                    max_concurrent, timeout, budget, dry_run
-                )
+                _process_user_proposals(change_dir, user_fallback, log, 'delegate')
             )
 
     # Process check-in proposals via user
@@ -537,11 +635,21 @@ def run_solve(
     tracker.step(f"Rework loop — {len(rework_feedback)} proposals" if rework_feedback else "Rework loop — skipped (0 proposals)")
     if rework_feedback:
         feedback_text = {gid: info['feedback'] for gid, info in rework_feedback.items()}
-        with tracker.spinner("Reworking proposals..."):
+        rework_total = len(rework_feedback)
+        with tracker.spinner("Reworking proposals...", timeout=timeout, total=rework_total) as handle:
             rework_result = asyncio.run(run_resume(
                 change_dir, sessions, feedback_text,
                 max_concurrent, timeout, budget, dry_run,
+                on_complete=handle.advance,
             ))
+        # Fail-fast on rework failures
+        rework_failures = rework_result.get('failures', [])
+        if rework_failures:
+            raise SectionFailedError('E', [
+                SubprocessFailure(name=f['name'], error=f['error'], phase=f.get('phase', 'rework'))
+                for f in rework_failures
+            ])
+
         reworked = rework_result.get('proposals', [])
         reworked_map = {p['gap_id']: p for p in reworked if 'gap_id' in p}
 
@@ -640,13 +748,16 @@ def _process_delegate_proposals(
     timeout: int,
     budget: float | None,
     dry_run: bool,
-) -> dict[str, dict]:
+) -> tuple[dict[str, dict], list[tuple[dict, dict]]]:
     """Review delegate proposals via Sonnet claude -p and apply accepted ones.
 
-    Returns rework feedback dict for rejected proposals.
+    Returns (rework_feedback, user_fallback) where:
+    - rework_feedback: dict of gap_id -> {source, feedback} for rejected proposals
+    - user_fallback: list of (gap, proposal) tuples needing user review via questionary
     """
     project_dir = resolve_project_dir(change_dir)
     rework_feedback: dict[str, dict] = {}
+    user_fallback: list[tuple[dict, dict]] = []
 
     # Build prompt for reviewer
     proposals_json = []
@@ -697,18 +808,18 @@ def _process_delegate_proposals(
             decision = sol.get('decision_text', 'Accepted by delegate')
             primary_file = sol.get('primary_file', 'gap-lifecycle')
             log.decided.append((gap['id'], _truncate(decision, 60)))
-        return rework_feedback
+        return rework_feedback, user_fallback
 
     result = asyncio.run(_run_single_subprocess(
         "delegate-reviewer", cmd, prompt, timeout, max_concurrent
     ))
 
     if result['status'] != 'success':
-        console.print("[red]Delegate reviewer failed, falling back to user review.[/red]")
-        rework_feedback.update(
-            _process_user_proposals(change_dir, proposals, log, 'delegate')
-        )
-        return rework_feedback
+        raise SectionFailedError('E', [SubprocessFailure(
+            name='delegate-reviewer',
+            error=result.get('error', 'unknown'),
+            phase='delegate-review',
+        )])
 
     reviews = result.get('report', [])
     review_map = {r['gap_id']: r for r in reviews if 'gap_id' in r}
@@ -732,13 +843,11 @@ def _process_delegate_proposals(
                 'feedback': issues,
             }
         else:
-            # Reviewer didn't return a result for this gap
+            # Reviewer didn't return a result for this gap — needs user fallback
             console.print(f"  [yellow]{gap['id']}: no reviewer result, asking user...[/yellow]")
-            rework_feedback.update(
-                _process_user_proposals(change_dir, [(gap, proposal)], log, 'delegate')
-            )
+            user_fallback.append((gap, proposal))
 
-    return rework_feedback
+    return rework_feedback, user_fallback
 
 
 def _build_dependency_graph(proposals: list[tuple[dict, dict]]) -> dict[str, set[str]]:
@@ -976,9 +1085,11 @@ def run_resolve(
 
     # Run all resolver phases
     tracker.step("Running resolvers")
-    with tracker.spinner("Running resolvers (primary → propagation → collation)..."):
+    resolver_total = len(grouping.get('groups', {}))
+    with tracker.spinner("Running resolvers (primary → propagation → collation)...", timeout=timeout, total=resolver_total) as handle:
         result = asyncio.run(run_all_phases(
             change_dir, max_concurrent, timeout, budget, dry_run,
+            on_complete=handle.advance,
         ))
 
     collation = result.get('collation') or {}
@@ -1002,22 +1113,31 @@ def run_resolve(
         title="Section F Summary",
     ))
 
-    # Check for failures
+    # Fail-fast on resolver failures (primary + propagation)
+    all_failures: list[SubprocessFailure] = []
     failed_resolvers = [
         r for r in primary_results if r.get('status') != 'success'
     ]
-    if failed_resolvers:
-        console.print(Panel(
-            "[red]Failed resolvers:[/red]\n" +
-            '\n'.join(f"  - {r['name']}: {r.get('error', 'unknown')}"
-                      for r in failed_resolvers if r.get('status') != 'success'),
-            title="Failures",
+    for r in failed_resolvers:
+        all_failures.append(SubprocessFailure(
+            name=r.get('name', 'unknown'),
+            error=r.get('error', 'unknown'),
+            phase='primary-resolve',
         ))
-        proceed = questionary.confirm(
-            "Proceed with partial results?", default=True
-        ).ask()
-        if not proceed:
-            sys.exit(1)
+
+    propagation_results = result.get('propagation', {}).get('results', [])
+    failed_propagation = [
+        r for r in propagation_results if r.get('status') != 'success'
+    ]
+    for r in failed_propagation:
+        all_failures.append(SubprocessFailure(
+            name=r.get('name', 'unknown'),
+            error=r.get('error', 'unknown'),
+            phase='propagation',
+        ))
+
+    if all_failures:
+        raise SectionFailedError('F', all_failures)
 
     # Circuit-break check (Issue 3)
     circuit_break_gaps = None
@@ -1060,12 +1180,20 @@ def _check_circuit_breaks(change_dir: Path) -> list[str] | None:
 # ---------------------------------------------------------------------------
 
 CATEGORIZER_SYSTEM_PROMPT = (
-    "You are categorizing gap-detector findings. For each finding, determine "
-    "whether it represents a stale concern (already resolved), a superseded "
-    "concern (replaced by newer gap), or an uncovered concern (new gap needed). "
+    "You are categorizing gap-detector findings using containment analysis. "
+    "For each finding, determine whether an existing open gap logically contains "
+    "the concern — i.e., would resolving that gap necessarily address this finding?\n\n"
+    "Categories:\n"
+    "- **stale**: The concern is already addressed by a resolved gap or current spec content.\n"
+    "- **superseded**: An open gap logically contains this concern — resolving it "
+    "would necessarily address this finding.\n"
+    "- **uncovered**: No existing gap contains this concern; a new resolution is needed.\n\n"
+    "For each finding, output a containment_analysis explaining which open gaps "
+    "were considered and why they do or don't contain the finding.\n\n"
     "Output ONLY a JSON array to stdout.\n\n"
     "Format: [{\"finding_index\": 0, \"category\": \"stale|superseded|uncovered\", "
     "\"recommendation\": \"check-in|delegate|defer-release|defer-resolution\", "
+    "\"containment_analysis\": \"Which gaps were considered, why they do/don't contain this finding\", "
     "\"reasoning\": \"...\"}]"
 )
 
@@ -1085,23 +1213,43 @@ def run_cleanup(
     sys.path.insert(0, str(Path(__file__).parent))
     from run_critics import run_all_critics, select_critics
 
+    # Re-extract sections from spec.yaml (may have changed in Phase F)
+    if (change_dir / 'spec.yaml').exists():
+        from split_spec import split_spec
+        split_spec(change_dir)
+
     # Step 1: Run gap detectors
     tracker.step("Running gap detectors")
     critics_data = select_critics(change_dir, config_type='gap-detectors')
     project_dir = resolve_project_dir(change_dir)
 
-    with tracker.spinner("Running gap detectors..."):
+    detector_total = len(critics_data.get('critics', []))
+    with tracker.spinner("Running gap detectors...", timeout=timeout, total=detector_total) as handle:
         detector_result = asyncio.run(run_all_critics(
             critics_data, change_dir, project_dir,
             max_concurrent, timeout, budget, dry_run,
+            on_complete=handle.advance,
         ))
+
+    # Fail-fast on detector failures
+    failed_detectors = [
+        cr for cr in detector_result.get('results', [])
+        if cr.get('status') != 'success'
+    ]
+    if failed_detectors:
+        raise SectionFailedError('G', [
+            SubprocessFailure(
+                name=cr.get('name', 'unknown'),
+                error=cr.get('error', 'unknown'),
+                phase='gap-detection',
+            )
+            for cr in failed_detectors
+        ])
 
     # Step 2: Record implicit gaps
     tracker.step("Recording implicit gaps")
     all_findings = []
     for cr in detector_result.get('results', []):
-        if cr.get('status') != 'success':
-            continue
         parsed = try_parse_json(cr.get('output', ''))
         for finding in parsed:
             finding['_critic'] = cr.get('name', 'unknown')
@@ -1125,13 +1273,38 @@ def run_cleanup(
 
         console.print(f"[green]Recorded {len(new_gaps)} implicit gaps.[/green]")
 
-        # Step 3: Categorize findings via AI + user validation (Issue 6)
+        # Step 3: Categorize findings via AI + policy-driven routing
         tracker.step("Categorizing findings")
         if new_gaps and not dry_run:
-            with tracker.spinner("Categorizing findings..."):
-                _categorize_findings(
-                    change_dir, new_gaps, log, max_concurrent, timeout, budget
-                )
+            policy = load_triage_policy(change_dir)
+
+            # Group findings by model from categorization policy
+            model_batches: dict[str, list[tuple[int, dict]]] = {}
+            for i, ng in enumerate(new_gaps):
+                severity = (ng.get('severity') or 'medium').lower()
+                policy_entry = policy.get(severity, policy.get('medium', {}))
+                cat_config = policy_entry.get('categorization', {})
+                cat_model = cat_config.get('model', 'sonnet')
+                model_batches.setdefault(cat_model, []).append((i, ng))
+
+            # Run one subprocess per unique model, merge results
+            categorizations: dict[int, dict] = {}
+            batch_count = len(model_batches)
+            with tracker.spinner("Categorizing findings...", timeout=timeout, total=batch_count) as handle:
+                for cat_model, indexed_gaps in model_batches.items():
+                    batch_gaps = [ng for _, ng in indexed_gaps]
+                    original_indices = [i for i, _ in indexed_gaps]
+                    batch_results = _run_categorizer_subprocess(
+                        change_dir, batch_gaps, max_concurrent, timeout, budget,
+                        model=cat_model,
+                    )
+                    # Map batch-local indices back to original indices
+                    for batch_idx, entry in batch_results.items():
+                        if 0 <= batch_idx < len(original_indices):
+                            categorizations[original_indices[batch_idx]] = entry
+                    handle.advance()
+
+            _apply_categorizations(change_dir, new_gaps, log, categorizations, policy)
     else:
         console.print("[dim]No detector findings.[/dim]")
         tracker.step("Categorizing findings — skipped (0 findings)")
@@ -1149,10 +1322,14 @@ def run_cleanup(
         )
         # Reuse Section E flow for these gaps
         subset_ids = [g['id'] for g in remaining_checkin]
-        log = run_solve(
-            change_dir, tracker, log, max_concurrent, timeout, budget, dry_run,
-            gap_subset=subset_ids,
-        )
+        try:
+            log = run_solve(
+                change_dir, tracker, log, max_concurrent, timeout, budget, dry_run,
+                gap_subset=subset_ids,
+            )
+        except SectionFailedError as e:
+            # Re-raise as Section G since we're in the cleanup phase
+            raise SectionFailedError('G', e.failures) from e
 
     # Step 5: Handle defer-release gaps
     gaps_md = (change_dir / 'gaps.md').read_text()
@@ -1180,18 +1357,31 @@ def run_cleanup(
     return log
 
 
-def _categorize_findings(
+def _resolve_current_approach(change_dir: Path, gap_id: str) -> str:
+    """Look up a gap's title/decision for use as a current_approach pointer."""
+    gaps_path = change_dir / 'gaps.md'
+    if gaps_path.exists():
+        for gap in parse_gaps(gaps_path.read_text()):
+            if gap['id'] == gap_id:
+                title = gap.get('title', '')
+                decision = gap.get('decision')
+                if decision:
+                    return f"{gap_id}: {title} — {decision}"
+                return f"{gap_id}: {title}"
+    return f"See {gap_id}"
+
+
+def _run_categorizer_subprocess(
     change_dir: Path,
     new_gaps: list[dict],
-    log: ResolutionLog,
     max_concurrent: int,
     timeout: int,
     budget: float | None,
-) -> None:
-    """AI-assisted categorization of detector findings with user validation."""
+    model: str = 'sonnet',
+) -> dict[int, dict]:
+    """Run AI categorization subprocess. Returns {finding_index: categorization}."""
     project_dir = resolve_project_dir(change_dir)
 
-    # Build prompt for categorizer
     findings_for_prompt = []
     for i, ng in enumerate(new_gaps):
         findings_for_prompt.append({
@@ -1205,29 +1395,51 @@ def _categorize_findings(
     gap_ids = [ng['id'] for ng in new_gaps]
     gap_entries = read_gap_entries(change_dir, gap_ids)
 
+    # Load pre-existing open gaps for containment context (exclude current batch)
+    gaps_path = change_dir / 'gaps.md'
+    all_open_gaps_text = ''
+    new_gap_ids = {ng['id'] for ng in new_gaps}
+    if gaps_path.exists():
+        all_open = parse_gaps(gaps_path.read_text())
+        prior_open = [g for g in all_open if g['id'] not in new_gap_ids]
+        if prior_open:
+            open_ids = [g['id'] for g in prior_open]
+            all_open_gaps_text = read_gap_entries(change_dir, open_ids)
+
     prompt_parts = [
         "## Assignment\n",
-        "Categorize these detector findings. Determine whether each is:\n"
-        "- **stale**: Already resolved by existing gaps/resolutions\n"
-        "- **superseded**: Replaced by a newer, broader gap\n"
-        "- **uncovered**: Genuinely new concern needing resolution\n",
+        "Categorize these detector findings using containment analysis.\n\n"
+        "For each finding, ask: **Would resolving any existing open gap necessarily "
+        "address this finding?**\n\n"
+        "- **stale**: Already addressed by resolved gaps or current spec content\n"
+        "- **superseded**: An open gap logically contains this concern — resolving "
+        "it would necessarily address this finding\n"
+        "- **uncovered**: No existing gap contains this concern; new resolution needed\n",
         "## Findings\n",
         "```json",
         json.dumps(findings_for_prompt, indent=2),
         "```\n",
-        "## Gap Context\n",
+        "## New Gap Entries (these findings recorded as gaps)\n",
         gap_entries,
+    ]
+    if all_open_gaps_text:
+        prompt_parts.extend([
+            "\n## Pre-existing Open Gaps (context for containment checks)\n",
+            all_open_gaps_text,
+        ])
+    prompt_parts.extend([
         "\n## Output Format\n",
         'Output a JSON array with one entry per finding:\n'
         '[{"finding_index": 0, "category": "stale|superseded|uncovered", '
         '"recommendation": "check-in|delegate|defer-release|defer-resolution", '
+        '"containment_analysis": "Which gaps were considered, why they do/don\'t contain this finding", '
         '"reasoning": "Why this categorization"}]',
-    ]
+    ])
     prompt = '\n'.join(prompt_parts)
 
     cmd = build_command(
         change_dir, project_dir,
-        CATEGORIZER_SYSTEM_PROMPT, 'sonnet', budget,
+        CATEGORIZER_SYSTEM_PROMPT, model, budget,
         tools='Read',
     )
 
@@ -1235,69 +1447,209 @@ def _categorize_findings(
         "finding-categorizer", cmd, prompt, timeout, max_concurrent
     ))
 
-    categorizations = {}
-    if result['status'] == 'success':
-        parsed = result.get('report', [])
-        for entry in parsed:
-            idx = entry.get('finding_index', -1)
-            if 0 <= idx < len(new_gaps):
-                categorizations[idx] = entry
+    if result['status'] != 'success':
+        raise SectionFailedError('G', [SubprocessFailure(
+            name=f'finding-categorizer ({model})',
+            error=result.get('error', 'unknown'),
+            phase='categorization',
+        )])
 
-    # Present each finding to user with AI recommendation as default
+    categorizations: dict[int, dict] = {}
+    parsed = result.get('report', [])
+    for entry in parsed:
+        idx = entry.get('finding_index', -1)
+        if 0 <= idx < len(new_gaps):
+            categorizations[idx] = entry
+
+    return categorizations
+
+
+def _apply_categorizations(
+    change_dir: Path,
+    new_gaps: list[dict],
+    log: ResolutionLog,
+    categorizations: dict[int, dict],
+    policy: dict | None = None,
+) -> None:
+    """Route categorizations by authority: agent-decided or user-decided.
+
+    Categorization authority and triage authority are independent:
+    - categorization.authority: who validates the AI's stale/superseded/uncovered call
+    - (triage) authority: who decides what to do with uncovered findings
+
+    When policy is None or a severity entry lacks categorization,
+    defaults to user-decided (current interactive behavior).
+    """
     for i, ng in enumerate(new_gaps):
         ai_cat = categorizations.get(i, {})
         ai_category = ai_cat.get('category', 'uncovered')
         ai_recommendation = ai_cat.get('recommendation', 'check-in')
         ai_reasoning = ai_cat.get('reasoning', '')
+        ai_containment = ai_cat.get('containment_analysis', '')
 
-        console.print(Panel(
-            f"**{ng['id']}**: {ng['title']}\n\n"
-            f"AI categorization: [bold]{ai_category}[/bold]\n"
-            f"AI recommendation: {ai_recommendation}\n"
-            f"Reasoning: {ai_reasoning}",
-            title=f"Finding {i + 1}/{len(new_gaps)}",
-        ))
+        # Resolve categorization authority from policy
+        severity = (ng.get('severity') or 'medium').lower()
+        policy_entry = (policy or {}).get(severity, (policy or {}).get('medium', {}))
+        cat_config = policy_entry.get('categorization', {}) if policy_entry else {}
+        cat_authority = cat_config.get('authority', 'user')
 
-        # User validates or overrides
-        choices = ['stale', 'superseded', 'uncovered']
-        # Put AI recommendation first
-        if ai_category in choices:
-            choices.remove(ai_category)
-            choices.insert(0, ai_category + ' (AI recommended)')
-
-        choice = questionary.select(
-            f"Category for {ng['id']}:", choices=choices,
-        ).ask()
-        if choice is None:
-            sys.exit(1)
-
-        category = choice.replace(' (AI recommended)', '')
-
-        if category == 'stale':
-            # Move to resolved as superseded/deprecated
-            move_gap_to_resolved(
-                change_dir, ng['id'], 'deprecated',
-                f"Stale finding — already covered. {ai_reasoning}"
-            )
-        elif category == 'superseded':
-            move_gap_to_resolved(
-                change_dir, ng['id'], 'superseded',
-                f"Superseded by broader gap. {ai_reasoning}"
+        if cat_authority == 'agent':
+            category = _apply_agent_categorization(
+                change_dir, ng, ai_cat, log, i, len(new_gaps),
             )
         else:
-            # uncovered — assign triage
-            triage_choices = ['check-in', 'delegate', 'defer-release', 'defer-resolution']
-            if ai_recommendation in triage_choices:
-                triage_choices.remove(ai_recommendation)
-                triage_choices.insert(0, ai_recommendation + ' (AI recommended)')
+            category = _apply_user_categorization(
+                change_dir, ng, ai_cat, log, i, len(new_gaps),
+            )
 
-            triage = questionary.select(
-                f"Triage for {ng['id']}:", choices=triage_choices,
-            ).ask()
-            if triage is None:
-                sys.exit(1)
-            triage = triage.replace(' (AI recommended)', '')
-            write_gap_field(change_dir, ng['id'], 'Triage', triage)
+        # For uncovered findings, triage authority is checked independently
+        if category == 'uncovered':
+            triage_authority = policy_entry.get('authority', 'user') if policy_entry else 'user'
+            triage_actions = policy_entry.get('actions', ['check-in']) if policy_entry else ['check-in']
+            _assign_triage_for_uncovered(
+                change_dir, ng, ai_recommendation, triage_authority, triage_actions,
+            )
+
+
+def _apply_agent_categorization(
+    change_dir: Path,
+    ng: dict,
+    ai_cat: dict,
+    log: ResolutionLog,
+    index: int,
+    total: int,
+) -> str:
+    """Agent-decided path: accept AI category directly, print summary."""
+    ai_category = ai_cat.get('category', 'uncovered')
+    ai_reasoning = ai_cat.get('reasoning', '')
+    ai_containment = ai_cat.get('containment_analysis', '')
+
+    console.print(
+        f"  [{index + 1}/{total}] {ng['id']}: "
+        f"[bold]{ai_category}[/bold] (auto-accepted)"
+    )
+    if ai_containment:
+        console.print(f"    [dim]Containment: {ai_containment}[/dim]")
+
+    if ai_category == 'stale':
+        move_gap_to_resolved(
+            change_dir, ng['id'], 'deprecated',
+            f"Stale finding — already covered. {ai_reasoning}"
+        )
+        log.implicit_resolved.append((ng['id'], 'stale (auto)'))
+    elif ai_category == 'superseded':
+        raw_finding = ng['finding']
+        sup_by = None
+        cur_approach = None
+        if 'valid' in raw_finding:
+            sup_by = f"GAP-{raw_finding['valid']}"
+            cur_approach = _resolve_current_approach(change_dir, sup_by)
+        move_gap_to_resolved(
+            change_dir, ng['id'], 'superseded',
+            f"Superseded by broader gap. {ai_reasoning}",
+            superseded_by=sup_by,
+            current_approach=cur_approach,
+        )
+        log.implicit_resolved.append((ng['id'], 'superseded (auto)'))
+    # uncovered: category returned, triage handled by caller
+
+    return ai_category
+
+
+def _apply_user_categorization(
+    change_dir: Path,
+    ng: dict,
+    ai_cat: dict,
+    log: ResolutionLog,
+    index: int,
+    total: int,
+) -> str:
+    """User-decided path: interactive validation with containment analysis display."""
+    ai_category = ai_cat.get('category', 'uncovered')
+    ai_recommendation = ai_cat.get('recommendation', 'check-in')
+    ai_reasoning = ai_cat.get('reasoning', '')
+    ai_containment = ai_cat.get('containment_analysis', '')
+
+    panel_content = (
+        f"**{ng['id']}**: {ng['title']}\n\n"
+        f"AI categorization: [bold]{ai_category}[/bold]\n"
+        f"AI recommendation: {ai_recommendation}\n"
+        f"Reasoning: {ai_reasoning}"
+    )
+    if ai_containment:
+        panel_content += f"\n\nContainment analysis: {ai_containment}"
+
+    console.print(Panel(
+        panel_content,
+        title=f"Finding {index + 1}/{total}",
+    ))
+
+    # User validates or overrides
+    choices = ['stale', 'superseded', 'uncovered']
+    if ai_category in choices:
+        choices.remove(ai_category)
+        choices.insert(0, ai_category + ' (AI recommended)')
+
+    choice = questionary.select(
+        f"Category for {ng['id']}:", choices=choices,
+    ).ask()
+    if choice is None:
+        sys.exit(1)
+
+    category = choice.replace(' (AI recommended)', '')
+
+    if category == 'stale':
+        move_gap_to_resolved(
+            change_dir, ng['id'], 'deprecated',
+            f"Stale finding — already covered. {ai_reasoning}"
+        )
+        log.implicit_resolved.append((ng['id'], 'stale'))
+    elif category == 'superseded':
+        raw_finding = ng['finding']
+        sup_by = None
+        cur_approach = None
+        if 'valid' in raw_finding:
+            sup_by = f"GAP-{raw_finding['valid']}"
+            cur_approach = _resolve_current_approach(change_dir, sup_by)
+        move_gap_to_resolved(
+            change_dir, ng['id'], 'superseded',
+            f"Superseded by broader gap. {ai_reasoning}",
+            superseded_by=sup_by,
+            current_approach=cur_approach,
+        )
+        log.implicit_resolved.append((ng['id'], 'superseded'))
+    # uncovered: category returned, triage handled by caller
+
+    return category
+
+
+def _assign_triage_for_uncovered(
+    change_dir: Path,
+    ng: dict,
+    ai_recommendation: str,
+    triage_authority: str,
+    triage_actions: list[str],
+) -> None:
+    """Assign triage for an uncovered finding, respecting triage authority independently."""
+    if triage_authority == 'agent':
+        # Agent picks triage — use AI recommendation if it's a valid action
+        triage = ai_recommendation if ai_recommendation in triage_actions else triage_actions[0]
+        write_gap_field(change_dir, ng['id'], 'Triage', triage)
+        console.print(f"    Triage: {triage} (auto)")
+    else:
+        # User picks triage
+        triage_choices = list(triage_actions)
+        if ai_recommendation in triage_choices:
+            triage_choices.remove(ai_recommendation)
+            triage_choices.insert(0, ai_recommendation + ' (AI recommended)')
+
+        triage = questionary.select(
+            f"Triage for {ng['id']}:", choices=triage_choices,
+        ).ask()
+        if triage is None:
+            sys.exit(1)
+        triage = triage.replace(' (AI recommended)', '')
+        write_gap_field(change_dir, ng['id'], 'Triage', triage)
 
 
 # ---------------------------------------------------------------------------
@@ -1408,12 +1760,37 @@ def run_report(
         )
         console.print("[green]Committed successfully.[/green]")
     except subprocess.CalledProcessError as e:
-        console.print(f"[red]Git error: {e.stderr}[/red]")
+        raise SectionFailedError('H', [SubprocessFailure(
+            name='git-commit',
+            error=e.stderr.strip() or str(e),
+            phase='commit',
+        )]) from e
 
 
 # ---------------------------------------------------------------------------
 # Display helpers
 # ---------------------------------------------------------------------------
+
+def _render_failure_panel(error: SectionFailedError, change_dir: Path) -> None:
+    """Render a rich table of failed subprocesses with retry guidance."""
+    table = Table(title=f"Section {error.section} Failures")
+    table.add_column("Subprocess", style="bold red")
+    table.add_column("Phase", style="dim")
+    table.add_column("Error")
+
+    for f in error.failures:
+        table.add_row(f.name, f.phase or '—', f.error)
+
+    console.print()
+    console.print(table)
+    console.print(Panel(
+        f"[bold red]{len(error.failures)} subprocess(es) failed in Section {error.section}.[/bold red]\n\n"
+        f"Retry from this section:\n"
+        f"  [cyan]python run_resolve_gaps.py {change_dir} --from {error.section}[/cyan]",
+        title="Workflow Stopped",
+        border_style="red",
+    ))
+
 
 def _display_gap_panel(gap: dict) -> None:
     """Display a gap summary in a rich panel."""
@@ -1558,72 +1935,77 @@ def main(argv: list[str] | None = None):
         title="Resolve Gaps Workflow",
     ))
 
-    # Section D: Triage
-    if start_idx <= SECTION_ORDER.index('D'):
-        log = run_triage(
-            change_dir, tracker, log,
-            args.max_concurrent, args.timeout, args.budget, args.dry_run,
-        )
-        tracker.complete_section()
-
-    # Section E: Solve + Decide
-    if start_idx <= SECTION_ORDER.index('E'):
-        # Check for cached sessions on resume
-        sessions_path = change_dir / '.solver-sessions.json'
-        if start_section == 'E' and sessions_path.exists():
-            console.print("[yellow]Found cached solver sessions from previous run.[/yellow]")
-            use_cached = questionary.confirm(
-                "Resume from cached sessions?", default=True
-            ).ask()
-            if not use_cached:
-                _cleanup_sessions(sessions_path)
-
-        log = run_solve(
-            change_dir, tracker, log,
-            args.max_concurrent, args.timeout, args.budget, args.dry_run,
-        )
-        tracker.complete_section()
-
-    # Section F: Resolve (with circuit-break re-entry)
-    if start_idx <= SECTION_ORDER.index('F'):
-        log, circuit_break_ids = run_resolve(
-            change_dir, tracker, log,
-            args.max_concurrent, args.timeout, args.budget, args.dry_run,
-        )
-        tracker.complete_section()
-
-        if circuit_break_ids:
-            console.print(
-                f"\n[magenta]Re-entering Section E for {len(circuit_break_ids)} "
-                f"circuit-broken gaps...[/magenta]"
+    try:
+        # Section D: Triage
+        if start_idx <= SECTION_ORDER.index('D'):
+            log = run_triage(
+                change_dir, tracker, log,
+                args.max_concurrent, args.timeout, args.budget, args.dry_run,
             )
+            tracker.complete_section()
+
+        # Section E: Solve + Decide
+        if start_idx <= SECTION_ORDER.index('E'):
+            # Check for cached sessions on resume
+            sessions_path = change_dir / '.solver-sessions.json'
+            if start_section == 'E' and sessions_path.exists():
+                console.print("[yellow]Found cached solver sessions from previous run.[/yellow]")
+                use_cached = questionary.confirm(
+                    "Resume from cached sessions?", default=True
+                ).ask()
+                if not use_cached:
+                    _cleanup_sessions(sessions_path)
+
             log = run_solve(
                 change_dir, tracker, log,
                 args.max_concurrent, args.timeout, args.budget, args.dry_run,
-                gap_subset=circuit_break_ids,
             )
-            # Re-run resolve for the subset
-            log, still_broken = run_resolve(
+            tracker.complete_section()
+
+        # Section F: Resolve (with circuit-break re-entry)
+        if start_idx <= SECTION_ORDER.index('F'):
+            log, circuit_break_ids = run_resolve(
                 change_dir, tracker, log,
                 args.max_concurrent, args.timeout, args.budget, args.dry_run,
             )
-            if still_broken:
-                console.print("[red]Circuit break persists after re-entry. Manual intervention needed.[/red]")
+            tracker.complete_section()
 
-    # Section G: Cleanup
-    if start_idx <= SECTION_ORDER.index('G'):
-        log = run_cleanup(
-            change_dir, tracker, log,
-            args.max_concurrent, args.timeout, args.budget, args.dry_run,
-        )
-        tracker.complete_section()
+            if circuit_break_ids:
+                console.print(
+                    f"\n[magenta]Re-entering Section E for {len(circuit_break_ids)} "
+                    f"circuit-broken gaps...[/magenta]"
+                )
+                log = run_solve(
+                    change_dir, tracker, log,
+                    args.max_concurrent, args.timeout, args.budget, args.dry_run,
+                    gap_subset=circuit_break_ids,
+                )
+                # Re-run resolve for the subset
+                log, still_broken = run_resolve(
+                    change_dir, tracker, log,
+                    args.max_concurrent, args.timeout, args.budget, args.dry_run,
+                )
+                if still_broken:
+                    console.print("[red]Circuit break persists after re-entry. Manual intervention needed.[/red]")
 
-    # Section H: Report + Commit
-    if start_idx <= SECTION_ORDER.index('H'):
-        run_report(change_dir, tracker, log, args.dry_run)
-        tracker.complete_section()
+        # Section G: Cleanup
+        if start_idx <= SECTION_ORDER.index('G'):
+            log = run_cleanup(
+                change_dir, tracker, log,
+                args.max_concurrent, args.timeout, args.budget, args.dry_run,
+            )
+            tracker.complete_section()
 
-    console.print("\n[bold green]Workflow complete.[/bold green]")
+        # Section H: Report + Commit
+        if start_idx <= SECTION_ORDER.index('H'):
+            run_report(change_dir, tracker, log, args.dry_run)
+            tracker.complete_section()
+
+        console.print("\n[bold green]Workflow complete.[/bold green]")
+
+    except SectionFailedError as e:
+        _render_failure_panel(e, change_dir)
+        sys.exit(1)
 
 
 if __name__ == '__main__':

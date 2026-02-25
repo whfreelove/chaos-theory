@@ -21,6 +21,7 @@ from pathlib import Path
 
 VALID_ACTIONS = {"check-in", "delegate", "defer-release", "defer-resolution"}
 VALID_AUTHORITIES = {"user", "agent"}
+VALID_CATEGORIZATION_MODELS = {"opus", "sonnet", "haiku"}
 SEVERITY_LEVELS = ["high", "medium", "low"]
 
 PROFILE_DESCRIPTIONS = {
@@ -76,6 +77,26 @@ def validate_policy(policy: dict) -> list[str]:
                     f"Valid: {', '.join(sorted(VALID_ACTIONS))}"
                 )
 
+        # Validate optional categorization sub-object
+        cat = entry.get("categorization")
+        if cat is not None:
+            if not isinstance(cat, dict):
+                errors.append(f"{level}: categorization must be an object")
+            else:
+                cat_auth = cat.get("authority")
+                if cat_auth is not None and cat_auth not in VALID_AUTHORITIES:
+                    errors.append(
+                        f"{level}: categorization.authority must be 'user' or 'agent', "
+                        f"got '{cat_auth}'"
+                    )
+                cat_model = cat.get("model")
+                if cat_model is not None and cat_model not in VALID_CATEGORIZATION_MODELS:
+                    errors.append(
+                        f"{level}: categorization.model must be one of "
+                        f"{', '.join(sorted(VALID_CATEGORIZATION_MODELS))}, "
+                        f"got '{cat_model}'"
+                    )
+
     return errors
 
 
@@ -102,6 +123,26 @@ def format_prose(policy: dict) -> str:
             lines.append(
                 f"- **{level.upper()} severity**: Agent triages autonomously. Options: {actions_str}."
             )
+
+    # Categorization policy section (only if any severity has categorization)
+    has_categorization = any(
+        "categorization" in policy.get(level, {}) for level in SEVERITY_LEVELS
+    )
+    if has_categorization:
+        lines.extend(["", "## Categorization Policy", ""])
+        for level in SEVERITY_LEVELS:
+            entry = policy[level]
+            cat = entry.get("categorization", {})
+            cat_authority = cat.get("authority", "user")
+            cat_model = cat.get("model", "sonnet")
+            if cat_authority == "user":
+                lines.append(
+                    f"- **{level.upper()} severity**: User validates AI categorizations (model: {cat_model})."
+                )
+            else:
+                lines.append(
+                    f"- **{level.upper()} severity**: Agent auto-accepts AI categorizations (model: {cat_model})."
+                )
 
     return "\n".join(lines)
 

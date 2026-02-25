@@ -41,6 +41,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 from spec_utils import (
     build_command,
     clear_gap_field,
+    gather_with_callback,
     load_schema_artifacts,
     lookup_artifact,
     move_gap_to_resolved,
@@ -312,6 +313,7 @@ async def run_primary_phase(
     timeout: int,
     budget: float | None,
     dry_run: bool,
+    on_complete: callable = None,
 ) -> list[dict]:
     """Phase 1: Primary resolution — one resolver per file group."""
     groups = grouping.get('groups', {})
@@ -360,7 +362,7 @@ async def run_primary_phase(
             f"resolve:{assigned_file}", cmd, prompt, timeout, semaphore,
         ))
 
-    results = await asyncio.gather(*tasks)
+    results = await gather_with_callback(tasks, on_complete)
 
     # Attach file info to results
     file_list = list(groups.keys())
@@ -388,6 +390,7 @@ async def run_propagation_phase(
     timeout: int,
     budget: float | None,
     dry_run: bool,
+    on_complete: callable = None,
 ) -> list[dict]:
     """Phase 2: Propagation — each file checks for cross-file updates."""
     # Only propagate to files that had successful primary resolvers
@@ -438,7 +441,7 @@ async def run_propagation_phase(
             f"propagate:{result['file']}", cmd, prompt, timeout, semaphore,
         ))
 
-    results = await asyncio.gather(*tasks)
+    results = await gather_with_callback(tasks, on_complete)
 
     for i, result in enumerate(results):
         result['file'] = successful[i]['file']
@@ -632,6 +635,7 @@ async def run_all_phases(
     timeout: int,
     budget: float | None,
     dry_run: bool,
+    on_complete: callable = None,
 ) -> dict:
     """Orchestrate all three resolution phases."""
     # Get gap grouping
@@ -653,6 +657,7 @@ async def run_all_phases(
     primary_results = await run_primary_phase(
         grouping, change_dir, artifact_files, project_dir,
         max_concurrent, timeout, budget, dry_run,
+        on_complete=on_complete,
     )
 
     # Phase 2: Propagation
