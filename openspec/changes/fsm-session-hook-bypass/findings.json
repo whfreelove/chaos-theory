@@ -239,10 +239,5 @@
         "match_reason": "Semantically identical to Finding 7. No existing gap covers hookEventName value check omission."
       }
     ]
-  },
-  {
-    "round": 4,
-    "timestamp": "2026-02-26T00:02:03Z",
-    "findings": []
   }
 ]
