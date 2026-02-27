@@ -685,7 +685,13 @@ async def run_one_subprocess(
                     'report': report,
                 }
             else:
-                error_msg = stderr.decode().strip() or f"exit code {proc.returncode}"
+                stderr_text = stderr.decode().strip()
+                stdout_text = stdout.decode().strip()
+                if stderr_text:
+                    error_msg = stderr_text
+                else:
+                    # claude CLI often writes errors to stdout, not stderr
+                    error_msg = stdout_text[:500] or f"exit code {proc.returncode}"
                 print(f"[FAILED] {name}: {error_msg}", file=sys.stderr)
                 return {
                     'name': name,
