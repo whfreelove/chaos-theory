@@ -29,7 +29,11 @@ sys.modules['spec_utils'].resolve_skill_content = mock.MagicMock()
 sys.modules['spec_utils'].run_one_subprocess = mock.MagicMock()
 sys.modules['spec_utils'].try_parse_json = mock.MagicMock()
 
-from run_critique_specs import _check_clean_change_dir  # noqa: E402
+from run_critique_specs import (  # noqa: E402
+    CritiqueLog,
+    _check_clean_change_dir,
+    _save_cached_state,
+)
 
 
 @pytest.fixture
@@ -105,3 +109,40 @@ class TestCheckCleanChangeDir:
         outside.write_text("not in change dir")
         # Should not raise
         _check_clean_change_dir(change_dir)
+
+
+class TestFindingsMetadata:
+    """findings.json round entries include commit hash and critic selection report."""
+
+    def test_critique_log_has_metadata_fields(self):
+        """CritiqueLog dataclass includes selection_report and commit fields."""
+        log = CritiqueLog()
+        assert hasattr(log, 'selection_report')
+        assert hasattr(log, 'commit')
+        assert log.selection_report == []
+        assert log.commit == ''
+
+    def test_critique_log_metadata_assignable(self):
+        """CritiqueLog fields can be set with real data."""
+        log = CritiqueLog()
+        log.selection_report = [
+            {'name': 'Functional', 'selected': True, 'reason': 'forced'},
+            {'name': 'Technical', 'selected': False, 'reason': 'missing files: technical.md'},
+        ]
+        log.commit = 'abc123' * 7 + 'ab'  # 44 chars, realistic git hash
+        assert len(log.selection_report) == 2
+        assert log.commit.startswith('abc123')
+
+    def test_cached_state_includes_metadata(self, tmp_path):
+        """_save_cached_state persists selection_report and commit."""
+        import json
+        log = CritiqueLog()
+        log.selection_report = [
+            {'name': 'Consistency', 'selected': True, 'reason': 'changed: functional.md'},
+        ]
+        log.commit = 'deadbeef' * 5
+        _save_cached_state(tmp_path, log, 'critique')
+
+        state = json.loads((tmp_path / '.critique-state.json').read_text())
+        assert state['selection_report'] == log.selection_report
+        assert state['commit'] == log.commit

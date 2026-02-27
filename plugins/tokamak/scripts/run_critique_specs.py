@@ -131,6 +131,8 @@ class CritiqueLog:
     gaps_recorded: list[tuple[str, str]] = field(default_factory=list)
     gaps_updated: list[tuple[str, str]] = field(default_factory=list)
     validation_results: list[dict] = field(default_factory=list)
+    selection_report: list[dict] = field(default_factory=list)
+    commit: str = ''
 
 
 # ---------------------------------------------------------------------------
@@ -397,6 +399,8 @@ def _save_cached_state(change_dir: Path, log: CritiqueLog, section: str) -> None
         'critics_failed': log.critics_failed,
         'findings_text': log.findings_text,
         'validation_results': [v for v in log.validation_results],
+        'selection_report': log.selection_report,
+        'commit': log.commit,
     }
     with open(cache_path, 'w') as f:
         json.dump(state, f, indent=2)
@@ -627,6 +631,18 @@ def run_critique(
     tracker.step("Running parallel critics")
     config_type = log.config_type
     critics_data = select_critics(change_dir, config_type)
+    log.selection_report = critics_data.get('selection_report', [])
+
+    # Resolve git commit hash
+    try:
+        log.commit = subprocess.run(
+            ['git', 'rev-parse', 'HEAD'],
+            capture_output=True, text=True, check=True,
+            cwd=str(change_dir),
+        ).stdout.strip()
+    except subprocess.CalledProcessError:
+        log.commit = ''
+
     project_dir = resolve_project_dir(change_dir)
 
     critic_count = len(critics_data.get('critics', []))
@@ -838,11 +854,16 @@ def run_validate(
             'match_reason': entry.get('match_reason', ''),
         })
 
-    rounds.append({
+    round_entry = {
         'round': round_num,
         'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'findings': findings_entries,
-    })
+    }
+    if log.commit:
+        round_entry['commit'] = log.commit
+    if log.selection_report:
+        round_entry['critics'] = log.selection_report
+    rounds.append(round_entry)
 
     with open(findings_path, 'w') as f:
         json.dump(rounds, f, indent=2)
@@ -1188,6 +1209,8 @@ def main(argv: list[str] | None = None):
         log.critics_failed = state.get('critics_failed', 0)
         log.findings_text = state.get('findings_text', '')
         log.validation_results = state.get('validation_results', [])
+        log.selection_report = state.get('selection_report', [])
+        log.commit = state.get('commit', '')
 
     tracker = WorkflowTracker(start_section=start_section)
 
