@@ -134,6 +134,39 @@ class CritiqueLog:
 
 
 # ---------------------------------------------------------------------------
+# Pre-flight checks
+# ---------------------------------------------------------------------------
+
+def _check_clean_change_dir(change_dir: Path) -> None:
+    """Block if the change directory has uncommitted git changes."""
+    resolved = change_dir.resolve()
+    try:
+        repo_root = subprocess.run(
+            ['git', 'rev-parse', '--show-toplevel'],
+            capture_output=True, text=True, check=True,
+            cwd=str(resolved),
+        ).stdout.strip()
+        rel_path = str(resolved.relative_to(repo_root))
+    except (subprocess.CalledProcessError, ValueError):
+        return  # Not in a git repo — skip check
+
+    result = subprocess.run(
+        ['git', 'status', '--porcelain', '--', rel_path],
+        capture_output=True, text=True,
+        cwd=repo_root,
+    )
+    dirty_lines = result.stdout.strip()
+    if dirty_lines:
+        console.print("[red]ERROR: Change directory has uncommitted changes:[/red]")
+        for line in dirty_lines.splitlines():
+            console.print(f"  {line}")
+        console.print(
+            "\n[yellow]Commit or stash changes before running critique.[/yellow]"
+        )
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
 # Fail-fast error types
 # ---------------------------------------------------------------------------
 
@@ -1132,6 +1165,9 @@ def main(argv: list[str] | None = None):
     if not args.dry_run and not shutil.which('claude'):
         console.print("[red]ERROR: claude CLI not found in PATH[/red]")
         sys.exit(1)
+
+    if not args.dry_run:
+        _check_clean_change_dir(change_dir)
 
     start_section = args.from_section
     start_idx = SECTION_ORDER.index(start_section)
