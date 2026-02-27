@@ -1,5 +1,5 @@
 schema: chaos-theory-lite
 created: 2026-02-19
-specs-status: reviewing
-code-status: waiting
+specs-status: merged
+code-status: implemented
 project: finite-skill-machine
