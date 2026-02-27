@@ -10,9 +10,21 @@ Usage:
 
 import json
 import re
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+def _get_git_commit() -> str:
+    """Get current git HEAD commit hash, or empty string if unavailable."""
+    try:
+        return subprocess.run(
+            ['git', 'rev-parse', 'HEAD'],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return ''
 
 
 def parse_critic_name(finding_text: str) -> str:
@@ -88,6 +100,7 @@ def main():
     rounds.append({
         'round': round_num,
         'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'commit': _get_git_commit(),
         'findings': findings,
     })
 
