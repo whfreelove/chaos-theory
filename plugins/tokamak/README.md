@@ -4,7 +4,7 @@ OpenSpec change management plugin for Claude Code. Manages the lifecycle of spec
 
 ## Workflows
 
-### Change Workflow (Greenfield)
+### Change Workflow
 
 For new features, fixes, or modifications where specs are designed before implementation.
 
@@ -82,6 +82,7 @@ For existing codebases where documentation is reverse-engineered from code.
 | `writing-functional-specs` | Guidance for writing functional specifications |
 | `writing-technical-design` | Creating technical design documents and architecture documentation |
 | `writing-markdown-gherkin` | Writing BDD specs in Given-When-Then format |
+| `writing-infra-specs` | Conceptual guidance for writing infrastructure specifications |
 | `writing-system-documentation` | Task-oriented technical documentation with progressive disclosure |
 | `writing-yaml-adr` | Writing architectural decision records |
 | `writing-y-statements` | Low-overhead decision documentation during feature development |
@@ -97,15 +98,37 @@ For existing codebases where documentation is reverse-engineered from code.
 
 ## Scripts
 
+### Workflow CLIs
+
+| Script | Purpose |
+|---|---|
+| `run_critique_specs.py` | Standalone CLI for the critique-specs workflow |
+| `run_resolve_gaps.py` | Standalone CLI for the resolve-gaps workflow |
+
+### Orchestration
+
+| Script | Purpose |
+|---|---|
+| `run_critics.py` | Execute critic suite against change artifacts |
+| `run_resolvers.py` | Parallel resolver orchestrator (per-file gap resolution) |
+| `run_solvers.py` | Parallel solver orchestrator (explore → solve phases) |
+| `select_critics.py` | Select applicable critics for a given schema and stage |
+
+### Utilities
+
 | Script | Purpose |
 |---|---|
 | `change_dashboard.sh` | Display lifecycle status table for all changes |
 | `change_status.sh` | Read, write, and check fields in `.openspec.yaml` |
+| `group_gaps.py` | Group gaps by primary file for parallel resolution |
 | `init_schemas.sh` | Copy bundled schemas into project |
+| `list_skills.py` | List spec-writing skills needed for a change's artifact types |
 | `next_gap.sh` | Find the next unresolved gap for processing |
+| `record_findings.py` | Persist validation output to `findings.json` |
+| `resolve_artifacts.py` | Schema-agnostic artifact resolver for resolve-gaps and ratify-specs |
 | `resolve_triage_policy.py` | Initialize or query triage policy for a change |
-| `run_critics.py` | Execute critic suite against change artifacts |
-| `select_critics.py` | Select applicable critics for a given schema and stage |
+| `spec_utils.py` | Shared utilities library |
+| `split_spec.py` | Section extractor for `chaos-theory-lite` single-file specs |
 
 ## Schemas
 
@@ -114,3 +137,4 @@ For existing codebases where documentation is reverse-engineered from code.
 | `chaos-theory` | Default schema for greenfield and general changes |
 | `chaos-theory-brownfield` | Brownfield documentation workflow for existing codebases |
 | `chaos-theory-greenfield` | Explicit greenfield workflow for new projects |
+| `chaos-theory-lite` | Lightweight single-file spec workflow |
