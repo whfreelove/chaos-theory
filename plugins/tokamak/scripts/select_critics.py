@@ -264,6 +264,7 @@ def main():
         return
 
     selected = []
+    selection_report = []
     for critic in config['critics']:
         name = critic.get('name', '<unnamed>')
         files = critic.get('files', [])
@@ -271,12 +272,15 @@ def main():
         # Skip requires_project critics when project dir is unavailable
         if critic.get('requires_project', False) and project_dir is None:
             log_selection(name, False, "project docs not available")
+            selection_report.append({'name': name, 'selected': False, 'reason': 'project docs not available'})
             continue
 
         # Check file existence
         missing = [f for f in files if not current_state['exists'].get(f, False)]
         if missing:
-            log_selection(name, False, f"missing files: {', '.join(missing)}")
+            reason = f"missing files: {', '.join(missing)}"
+            log_selection(name, False, reason)
+            selection_report.append({'name': name, 'selected': False, 'reason': reason})
             continue
 
         # Build combined tracked keys (change files + prefixed project files)
@@ -288,18 +292,36 @@ def main():
         if args.force:
             log_selection(name, True, "forced")
             selected.append(critic)
+            selection_report.append({'name': name, 'selected': True, 'reason': 'forced'})
         elif any_hash_changed(all_tracked, current_hashes, stored_hashes):
             changed = [f for f in all_tracked if current_hashes.get(f) != stored_hashes.get(f)]
-            log_selection(name, True, f"changed: {', '.join(changed)}")
+            reason = f"changed: {', '.join(changed)}"
+            log_selection(name, True, reason)
             selected.append(critic)
+            selection_report.append({'name': name, 'selected': True, 'reason': reason})
         else:
             log_selection(name, False, "no changes detected")
+            selection_report.append({'name': name, 'selected': False, 'reason': 'no changes detected'})
 
     # Apply scope filter
     if args.scope == 'single':
-        selected = [c for c in selected if len(c.get('files', [])) == 1]
+        filtered = [c for c in selected if len(c.get('files', [])) == 1]
+        for c in selected:
+            if c not in filtered:
+                for entry in selection_report:
+                    if entry['name'] == c['name'] and entry['selected']:
+                        entry['selected'] = False
+                        entry['reason'] = 'filtered by scope: single'
+        selected = filtered
     elif args.scope == 'cross':
-        selected = [c for c in selected if len(c.get('files', [])) >= 2]
+        filtered = [c for c in selected if len(c.get('files', [])) >= 2]
+        for c in selected:
+            if c not in filtered:
+                for entry in selection_report:
+                    if entry['name'] == c['name'] and entry['selected']:
+                        entry['selected'] = False
+                        entry['reason'] = 'filtered by scope: cross'
+        selected = filtered
 
     # Summary
     print(f"--- {len(selected)}/{len(config['critics'])} critics selected ---", file=sys.stderr)
@@ -341,7 +363,8 @@ def main():
     else:
         result = {
             'output_template': config.get('output_template', ''),
-            'critics': output
+            'critics': output,
+            'selection_report': selection_report,
         }
         print(json.dumps(result, indent=2))
 

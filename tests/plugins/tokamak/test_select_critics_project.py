@@ -426,6 +426,71 @@ class TestListMode:
         assert "Technical Consistency" not in names
 
 
+class TestSelectionReport:
+    """Output includes selection_report with all critics and selection status."""
+
+    def test_report_includes_all_critics(self, change_dir, config_with_project_critics):
+        """selection_report lists every critic, selected or not."""
+        (change_dir / ".openspec.yaml").write_text("schema: chaos-theory\n")
+        # Only create functional.md — Technical Consistency will be skipped (missing files)
+        (change_dir / "functional.md").write_text("# Functional\n")
+
+        exit_code, stdout, stderr = run_select_critics(
+            change_dir, ["--force"], config=config_with_project_critics
+        )
+
+        assert exit_code == 0
+        result = json.loads(stdout)
+
+        # selection_report should be present
+        assert "selection_report" in result
+        report = result["selection_report"]
+
+        # Should have an entry for every critic in the config (3 total)
+        assert len(report) == 3
+
+        # Each entry should have name, selected, and reason
+        for entry in report:
+            assert "name" in entry
+            assert "selected" in entry
+            assert isinstance(entry["selected"], bool)
+            assert "reason" in entry
+
+    def test_report_reflects_selection_status(self, change_dir, config_with_project_critics):
+        """Selected critics have selected=True, skipped ones have selected=False."""
+        (change_dir / ".openspec.yaml").write_text("schema: chaos-theory\n")
+        (change_dir / "functional.md").write_text("# Functional\n")
+
+        exit_code, stdout, _ = run_select_critics(
+            change_dir, ["--force"], config=config_with_project_critics
+        )
+
+        assert exit_code == 0
+        result = json.loads(stdout)
+        report = {e["name"]: e for e in result["selection_report"]}
+
+        # Functional should be selected (file exists, --force)
+        assert report["Functional"]["selected"] is True
+
+        # Project critics should be skipped (no project field)
+        assert report["Functional Consistency"]["selected"] is False
+        assert report["Technical Consistency"]["selected"] is False
+
+    def test_report_absent_in_list_mode(self, change_dir, config_with_project_critics):
+        """--list mode outputs just names, no selection_report."""
+        (change_dir / ".openspec.yaml").write_text("schema: chaos-theory\n")
+        (change_dir / "functional.md").write_text("# Functional\n")
+
+        exit_code, stdout, _ = run_select_critics(
+            change_dir, ["--force", "--list"], config=config_with_project_critics
+        )
+
+        assert exit_code == 0
+        # --list mode outputs a plain JSON list of names
+        result = json.loads(stdout)
+        assert isinstance(result, list)
+
+
 class TestTemplateResolution:
     """Schema templates are resolved and included in critic output."""
 
