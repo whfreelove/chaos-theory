@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Standalone CLI for the resolve-gaps workflow (Sections D→H).
+Standalone CLI for the resolve-gaps workflow (Triage → Solve → Resolve → Cleanup → Report).
 
 Replaces SKILL.md agent orchestration with a Python process that:
 - Uses `claude -p` subprocesses for AI work
@@ -10,7 +10,7 @@ Replaces SKILL.md agent orchestration with a Python process that:
 
 Usage:
     python run_resolve_gaps.py openspec/changes/my-change
-    python run_resolve_gaps.py openspec/changes/my-change --from E
+    python run_resolve_gaps.py openspec/changes/my-change --from sol
     python run_resolve_gaps.py openspec/changes/my-change --dry-run
     python run_resolve_gaps.py openspec/changes/my-change --max-concurrent 4 --budget 0.50
 """
@@ -79,19 +79,19 @@ class SpinnerHandle:
         return " · ".join(parts)
 
 
-SECTION_ORDER = ['D', 'E', 'F', 'G', 'H']
+SECTION_ORDER = ['triage', 'solve', 'resolve', 'cleanup', 'report']
 
 SECTION_LABELS = {
-    'D': 'Triage',
-    'E': 'Solve',
-    'F': 'Resolve',
-    'G': 'Cleanup',
-    'H': 'Report',
+    'triage': 'Triage',
+    'solve': 'Solve',
+    'resolve': 'Resolve',
+    'cleanup': 'Cleanup',
+    'report': 'Report',
 }
 
 
 # ---------------------------------------------------------------------------
-# Resolution log — accumulates metadata across sections D→H
+# Resolution log — accumulates metadata across Triage → Report
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -124,7 +124,8 @@ class SectionFailedError(Exception):
         names = ', '.join(f.name for f in failures[:5])
         if len(failures) > 5:
             names += f' (+{len(failures) - 5} more)'
-        super().__init__(f"Section {section}: {len(failures)} subprocess(es) failed [{names}]")
+        label = SECTION_LABELS.get(section, section)
+        super().__init__(f"{label}: {len(failures)} subprocess(es) failed [{names}]")
 
 
 # ---------------------------------------------------------------------------
@@ -133,8 +134,8 @@ class SectionFailedError(Exception):
 
 @dataclass
 class WorkflowTracker:
-    """Tracks workflow progress across sections D→H."""
-    start_section: str = 'D'
+    """Tracks workflow progress across resolve-gaps sections."""
+    start_section: str = 'triage'
     completed: set[str] = field(default_factory=set)
     current: str | None = None
     current_step: int = 0
@@ -210,13 +211,13 @@ class WorkflowTracker:
             label = SECTION_LABELS[s]
             idx = SECTION_ORDER.index(s)
             if idx < start_idx:
-                parts.append(f"[dim]– {s}[/dim]")
+                parts.append(f"[dim]– {label}[/dim]")
             elif s in self.completed:
-                parts.append(f"[green]✓ {s}:{label}[/green]")
+                parts.append(f"[green]✓ {label}[/green]")
             elif s == self.current:
-                parts.append(f"[bold cyan]● {s}:{label}[/bold cyan]")
+                parts.append(f"[bold cyan]● {label}[/bold cyan]")
             else:
-                parts.append(f"[dim]○ {s}:{label}[/dim]")
+                parts.append(f"[dim]○ {label}[/dim]")
         console.print()
         console.rule("  ".join(parts))
 
@@ -225,15 +226,37 @@ class WorkflowTracker:
 # CLI argument parsing
 # ---------------------------------------------------------------------------
 
+def _resolve_from_section(value: str) -> str:
+    """Resolve a --from prefix (>=3 chars) to a full section name."""
+    value = value.lower()
+    # Exact match first
+    if value in SECTION_ORDER:
+        return value
+    if len(value) < 3:
+        raise argparse.ArgumentTypeError(
+            f"Section prefix must be at least 3 characters, got '{value}'"
+        )
+    matches = [s for s in SECTION_ORDER if s.startswith(value)]
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        raise argparse.ArgumentTypeError(
+            f"Ambiguous section prefix '{value}': matches {', '.join(matches)}"
+        )
+    raise argparse.ArgumentTypeError(
+        f"Unknown section '{value}'. Valid: {', '.join(SECTION_ORDER)} (or 3+ char prefix)"
+    )
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description='Standalone resolve-gaps workflow (Sections D→H)'
+        description='Standalone resolve-gaps workflow (Triage → Solve → Resolve → Cleanup → Report)'
     )
     parser.add_argument('change_dir', type=Path,
                         help='Path to OpenSpec change directory')
-    parser.add_argument('--from', dest='from_section', default='D',
-                        choices=SECTION_ORDER,
-                        help='Resume from a specific section (default: D)')
+    parser.add_argument('--from', dest='from_section', default='triage',
+                        type=_resolve_from_section,
+                        help='Resume from section (default: triage). Accepts 3+ char prefix: tri, sol, res, cle, rep')
     parser.add_argument('--dry-run', action='store_true',
                         help='Print prompts/commands without executing claude -p')
     parser.add_argument('--max-concurrent', type=int, default=6,
@@ -263,7 +286,7 @@ def load_triage_policy(change_dir: Path) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Section D: Triage
+# Triage
 # ---------------------------------------------------------------------------
 
 TRIAGE_SYSTEM_PROMPT = (
@@ -283,8 +306,8 @@ def run_triage(
     budget: float | None,
     dry_run: bool,
 ) -> ResolutionLog:
-    """Section D: Triage gap resolution method."""
-    tracker.enter_section('D', 4)
+    """Triage gap resolution method."""
+    tracker.enter_section('triage', 4)
 
     tracker.step("Loading triage policy and finding untriaged gaps")
     policy = load_triage_policy(change_dir)
@@ -432,7 +455,7 @@ def _run_agent_triage(
     ))
 
     if result['status'] != 'success':
-        raise SectionFailedError('D', [SubprocessFailure(
+        raise SectionFailedError('triage', [SubprocessFailure(
             name='agent-triage',
             error=result.get('error', 'unknown'),
             phase='triage',
@@ -465,7 +488,7 @@ async def _run_single_subprocess(
 
 
 # ---------------------------------------------------------------------------
-# Section E: Solve + Apply Decisions
+# Solve + Apply Decisions
 # ---------------------------------------------------------------------------
 
 DELEGATE_REVIEWER_SYSTEM_PROMPT = (
@@ -496,8 +519,8 @@ def run_solve(
     dry_run: bool,
     gap_subset: list[str] | None = None,
 ) -> ResolutionLog:
-    """Section E: Solve + apply decisions."""
-    tracker.enter_section('E', 5)
+    """Solve + apply decisions."""
+    tracker.enter_section('solve', 5)
 
     # Import solver functions
     sys.path.insert(0, str(Path(__file__).parent))
@@ -510,7 +533,7 @@ def run_solve(
         actionable = [g for g in actionable if g['id'] in gap_subset]
 
     if not actionable:
-        console.print("[dim]No actionable gaps for Section E.[/dim]")
+        console.print("[dim]No actionable gaps for Solve section.[/dim]")
         return log
 
     console.print(f"Found [bold]{len(actionable)}[/bold] actionable gaps.")
@@ -547,7 +570,7 @@ def run_solve(
     proposals = solver_result.get('proposals', [])
 
     # Persist session IDs for crash recovery (before fail-fast check
-    # so partial sessions survive for --from E retry)
+    # so partial sessions survive for --from sol retry)
     sessions_path = change_dir / '.solver-sessions.json'
     if sessions:
         sessions_path.write_text(json.dumps(sessions, indent=2) + '\n')
@@ -555,7 +578,7 @@ def run_solve(
     # Fail-fast on solver failures
     solver_failures = solver_result.get('failures', [])
     if solver_failures:
-        raise SectionFailedError('E', [
+        raise SectionFailedError('solve', [
             SubprocessFailure(name=f['name'], error=f['error'], phase=f.get('phase', 'solve'))
             for f in solver_failures
         ])
@@ -645,7 +668,7 @@ def run_solve(
         # Fail-fast on rework failures
         rework_failures = rework_result.get('failures', [])
         if rework_failures:
-            raise SectionFailedError('E', [
+            raise SectionFailedError('solve', [
                 SubprocessFailure(name=f['name'], error=f['error'], phase=f.get('phase', 'rework'))
                 for f in rework_failures
             ])
@@ -672,8 +695,8 @@ def run_solve(
 
     # Summary
     console.print(Panel(
-        f"[green]Section E complete: {len(log.decided)} decisions recorded[/green]",
-        title="Section E Summary",
+        f"[green]Solve complete: {len(log.decided)} decisions recorded[/green]",
+        title="Solve Summary",
     ))
     return log
 
@@ -815,7 +838,7 @@ def _process_delegate_proposals(
     ))
 
     if result['status'] != 'success':
-        raise SectionFailedError('E', [SubprocessFailure(
+        raise SectionFailedError('solve', [SubprocessFailure(
             name='delegate-reviewer',
             error=result.get('error', 'unknown'),
             phase='delegate-review',
@@ -1026,7 +1049,7 @@ def _ask_user_proposal_decision(proposal: dict) -> tuple[str | None, str]:
 
 
 # ---------------------------------------------------------------------------
-# Section F: Resolve
+# Resolve
 # ---------------------------------------------------------------------------
 
 def run_resolve(
@@ -1038,8 +1061,8 @@ def run_resolve(
     budget: float | None,
     dry_run: bool,
 ) -> tuple[ResolutionLog, list[str] | None]:
-    """Section F: Resolve per-file."""
-    tracker.enter_section('F', 3)
+    """Resolve per-file."""
+    tracker.enter_section('resolve', 3)
 
     sys.path.insert(0, str(Path(__file__).parent))
     from group_gaps import group_gaps
@@ -1110,7 +1133,7 @@ def run_resolve(
         f"[green]Resolved: {resolved_count}[/green]\n"
         f"Placement rejected: {placement_rejected}\n"
         f"Conflicts: {len(collation.get('conflicts', []))}",
-        title="Section F Summary",
+        title="Resolve Summary",
     ))
 
     # Fail-fast on resolver failures (primary + propagation)
@@ -1137,7 +1160,7 @@ def run_resolve(
         ))
 
     if all_failures:
-        raise SectionFailedError('F', all_failures)
+        raise SectionFailedError('resolve', all_failures)
 
     # Circuit-break check (Issue 3)
     circuit_break_gaps = None
@@ -1150,7 +1173,7 @@ def run_resolve(
 def _check_circuit_breaks(change_dir: Path) -> list[str] | None:
     """Check for circuit-broken gaps after collation.
 
-    Returns list of gap IDs that need re-entry to Section E, or None.
+    Returns list of gap IDs that need re-entry to the Solve section, or None.
     """
     gaps_md = (change_dir / 'gaps.md').read_text()
     all_gaps = parse_gaps(gaps_md)
@@ -1168,7 +1191,7 @@ def _check_circuit_breaks(change_dir: Path) -> list[str] | None:
         "The following gaps were rejected from placement twice and escalated "
         "to user check-in:\n\n" +
         '\n'.join(f"  - {g['id']}: {g.get('title', '')}" for g in circuit_broken) +
-        "\n\nThese gaps will be sent back to Section E for re-solving.",
+        "\n\nThese gaps will be sent back to the Solve section for re-solving.",
         title="Circuit Break",
     ))
 
@@ -1176,7 +1199,7 @@ def _check_circuit_breaks(change_dir: Path) -> list[str] | None:
 
 
 # ---------------------------------------------------------------------------
-# Section G: Cleanup
+# Cleanup
 # ---------------------------------------------------------------------------
 
 CATEGORIZER_SYSTEM_PROMPT = (
@@ -1207,8 +1230,8 @@ def run_cleanup(
     budget: float | None,
     dry_run: bool,
 ) -> ResolutionLog:
-    """Section G: Gap cleanup."""
-    tracker.enter_section('G', 4)
+    """Gap cleanup."""
+    tracker.enter_section('cleanup', 4)
 
     sys.path.insert(0, str(Path(__file__).parent))
     from run_critics import run_all_critics, select_critics
@@ -1237,7 +1260,7 @@ def run_cleanup(
         if cr.get('status') != 'success'
     ]
     if failed_detectors:
-        raise SectionFailedError('G', [
+        raise SectionFailedError('cleanup', [
             SubprocessFailure(
                 name=cr.get('name', 'unknown'),
                 error=cr.get('error', 'unknown'),
@@ -1320,7 +1343,7 @@ def run_cleanup(
             f"\n[yellow]{len(remaining_checkin)} remaining check-in/delegate gaps "
             f"from cleanup need solving.[/yellow]"
         )
-        # Reuse Section E flow for these gaps
+        # Reuse Solve flow for these gaps
         subset_ids = [g['id'] for g in remaining_checkin]
         try:
             log = run_solve(
@@ -1328,8 +1351,8 @@ def run_cleanup(
                 gap_subset=subset_ids,
             )
         except SectionFailedError as e:
-            # Re-raise as Section G since we're in the cleanup phase
-            raise SectionFailedError('G', e.failures) from e
+            # Re-raise as Cleanup since we're in the cleanup phase
+            raise SectionFailedError('cleanup', e.failures) from e
 
     # Step 5: Handle defer-release gaps
     gaps_md = (change_dir / 'gaps.md').read_text()
@@ -1352,7 +1375,7 @@ def run_cleanup(
 
     console.print(Panel(
         f"[green]Implicit gaps recorded: {len(log.implicit_recorded)}[/green]",
-        title="Section G Summary",
+        title="Cleanup Summary",
     ))
     return log
 
@@ -1448,7 +1471,7 @@ def _run_categorizer_subprocess(
     ))
 
     if result['status'] != 'success':
-        raise SectionFailedError('G', [SubprocessFailure(
+        raise SectionFailedError('cleanup', [SubprocessFailure(
             name=f'finding-categorizer ({model})',
             error=result.get('error', 'unknown'),
             phase='categorization',
@@ -1653,7 +1676,7 @@ def _assign_triage_for_uncovered(
 
 
 # ---------------------------------------------------------------------------
-# Section H: Report
+# Report
 # ---------------------------------------------------------------------------
 
 def run_report(
@@ -1662,8 +1685,8 @@ def run_report(
     log: ResolutionLog,
     dry_run: bool,
 ) -> None:
-    """Section H: Report and commit."""
-    tracker.enter_section('H', 3)
+    """Report and commit."""
+    tracker.enter_section('report', 3)
 
     change_name = change_dir.name
 
@@ -1760,7 +1783,7 @@ def run_report(
         )
         console.print("[green]Committed successfully.[/green]")
     except subprocess.CalledProcessError as e:
-        raise SectionFailedError('H', [SubprocessFailure(
+        raise SectionFailedError('report', [SubprocessFailure(
             name='git-commit',
             error=e.stderr.strip() or str(e),
             phase='commit',
@@ -1773,7 +1796,7 @@ def run_report(
 
 def _render_failure_panel(error: SectionFailedError, change_dir: Path) -> None:
     """Render a rich table of failed subprocesses with retry guidance."""
-    table = Table(title=f"Section {error.section} Failures")
+    table = Table(title=f"{SECTION_LABELS.get(error.section, error.section)} Failures")
     table.add_column("Subprocess", style="bold red")
     table.add_column("Phase", style="dim")
     table.add_column("Error")
@@ -1784,7 +1807,7 @@ def _render_failure_panel(error: SectionFailedError, change_dir: Path) -> None:
     console.print()
     console.print(table)
     console.print(Panel(
-        f"[bold red]{len(error.failures)} subprocess(es) failed in Section {error.section}.[/bold red]\n\n"
+        f"[bold red]{len(error.failures)} subprocess(es) failed in {SECTION_LABELS.get(error.section, error.section)}.[/bold red]\n\n"
         f"Retry from this section:\n"
         f"  [cyan]python run_resolve_gaps.py {change_dir} --from {error.section}[/cyan]",
         title="Workflow Stopped",
@@ -1928,7 +1951,7 @@ def main(argv: list[str] | None = None):
 
     console.print(Panel(
         f"Change: [bold]{change_dir.name}[/bold]\n"
-        f"Starting from: Section {start_section}\n"
+        f"Starting from: {SECTION_LABELS.get(start_section, start_section)}\n"
         f"Dry run: {args.dry_run}\n"
         f"Max concurrent: {args.max_concurrent}\n"
         f"Budget: {args.budget or 'unlimited'}",
@@ -1936,19 +1959,19 @@ def main(argv: list[str] | None = None):
     ))
 
     try:
-        # Section D: Triage
-        if start_idx <= SECTION_ORDER.index('D'):
+        # Triage
+        if start_idx <= SECTION_ORDER.index('triage'):
             log = run_triage(
                 change_dir, tracker, log,
                 args.max_concurrent, args.timeout, args.budget, args.dry_run,
             )
             tracker.complete_section()
 
-        # Section E: Solve + Decide
-        if start_idx <= SECTION_ORDER.index('E'):
+        # Solve + Decide
+        if start_idx <= SECTION_ORDER.index('solve'):
             # Check for cached sessions on resume
             sessions_path = change_dir / '.solver-sessions.json'
-            if start_section == 'E' and sessions_path.exists():
+            if start_section == 'solve' and sessions_path.exists():
                 console.print("[yellow]Found cached solver sessions from previous run.[/yellow]")
                 use_cached = questionary.confirm(
                     "Resume from cached sessions?", default=True
@@ -1962,8 +1985,8 @@ def main(argv: list[str] | None = None):
             )
             tracker.complete_section()
 
-        # Section F: Resolve (with circuit-break re-entry)
-        if start_idx <= SECTION_ORDER.index('F'):
+        # Resolve (with circuit-break re-entry)
+        if start_idx <= SECTION_ORDER.index('resolve'):
             log, circuit_break_ids = run_resolve(
                 change_dir, tracker, log,
                 args.max_concurrent, args.timeout, args.budget, args.dry_run,
@@ -1972,7 +1995,7 @@ def main(argv: list[str] | None = None):
 
             if circuit_break_ids:
                 console.print(
-                    f"\n[magenta]Re-entering Section E for {len(circuit_break_ids)} "
+                    f"\n[magenta]Re-entering Solve for {len(circuit_break_ids)} "
                     f"circuit-broken gaps...[/magenta]"
                 )
                 log = run_solve(
@@ -1988,16 +2011,16 @@ def main(argv: list[str] | None = None):
                 if still_broken:
                     console.print("[red]Circuit break persists after re-entry. Manual intervention needed.[/red]")
 
-        # Section G: Cleanup
-        if start_idx <= SECTION_ORDER.index('G'):
+        # Cleanup
+        if start_idx <= SECTION_ORDER.index('cleanup'):
             log = run_cleanup(
                 change_dir, tracker, log,
                 args.max_concurrent, args.timeout, args.budget, args.dry_run,
             )
             tracker.complete_section()
 
-        # Section H: Report + Commit
-        if start_idx <= SECTION_ORDER.index('H'):
+        # Report + Commit
+        if start_idx <= SECTION_ORDER.index('report'):
             run_report(change_dir, tracker, log, args.dry_run)
             tracker.complete_section()
 

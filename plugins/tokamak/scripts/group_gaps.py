@@ -47,7 +47,7 @@ def group_gaps(change_dir: Path) -> dict:
     ungrouped: list[str] = []
 
     for gap in all_gaps:
-        # Skip gaps without triage or decision (not yet processed by Section E)
+        # Skip gaps without triage or decision (not yet processed by the Solve section)
         if not gap['triage'] or not gap['decision']:
             continue
 
