@@ -9,6 +9,8 @@ Skills can define multi-step workflows, but getting tasks into the TaskList requ
 - `v1-registry-deprecation`: FSM still reads the legacy array-based registry format but emits a deprecation notice advising the user to update
 - `scoped-task-management`: Skill authors can invoke multiple skills in the same session without cross-contamination — each skill's tasks are managed independently
 - `active-work-protection`: Agents receive an explicit abort when re-invocation would destroy a partially-completed workflow, instead of silent data loss
+- `CAP-session-bypass`: Developer can temporarily allow skill file access for the current shell session without disabling the plugin.
+- `CAP-actionable-denial`: Developer sees how to allow skill file access directly in the denial message instead of being told to disable the whole plugin.
 
 Cross-cutting test infrastructure capabilities (`contributor-reproduces-environment`, `ci-validates-pr`) are defined in `openspec/common/`.
 
@@ -23,6 +25,7 @@ Cross-cutting test infrastructure capabilities (`contributor-reproduces-environm
 - Users on the legacy registry format see a deprecation notice on each plugin skill invocation but experience no breakage
 - Multi-skill sessions become safe: invoking skill-b no longer destroys skill-a's task workflow
 - Re-invocation of a skill with a partially-completed workflow produces an explicit abort message instead of silent data loss
+- Developers working on skill files (SKILL.md, fsm.json, hooks.json) who hit the deny wall during plugin or skill development can temporarily allow access for the current shell session without disabling the plugin.
 
 ### Out of Scope
 
@@ -34,6 +37,8 @@ Cross-cutting test infrastructure capabilities (`contributor-reproduces-environm
 - Merge/reconciliation strategies for re-invoked skills (abort is the chosen behavior)
 - Manual task management or task archival
 - Concurrent skill invocations (parallel hook execution against the same session's task directory)
+- Persistent bypass configuration changes
+- Plugin-level enable/disable
 
 ### Current Limitations
 
@@ -58,6 +63,8 @@ Cross-cutting test infrastructure capabilities (`contributor-reproduces-environm
 - Exhaustive abort message forbidden-term test coverage
 - Write failure recovery test strategies (transient vs persistent I/O failures)
 - Exhaustive allowlist reject-by-default test coverage
+- Changes to which file patterns are blocked
+- Individual denial message field coverage beyond the primary developer-visible text
 
 ### Planned Future Work
 
@@ -68,6 +75,7 @@ Cross-cutting test infrastructure capabilities (`contributor-reproduces-environm
 - **Deprecation notice noise**: users who cannot control their registry format (e.g., pinned Claude Code version) will see the notice on every invocation with no way to act on it
 - **Abort may frustrate rapid iteration**: developers re-invoking a skill during development will hit the guard if the workflow is partially complete; they'll need to resolve all tasks first. Re-invocation is allowed when the workflow has fully completed or hasn't started yet
 - **Orphaned tasks from removed skills**: if a skill is uninstalled, its FSM tasks remain with no skill to clean them up (existing behavior, not introduced by this change)
+- **Session bypass forgotten**: a developer who sets the bypass env var and forgets may have reduced protection for the rest of the session. This is acceptable because the access gate is a development guardrail, not a security boundary.
 
 Test infrastructure risks (monorepo cross-contamination, version file validation, CI failure disambiguation, missing venv activation, exit code chain assumption, empty test discovery) are documented in `openspec/common/functional.md` Known Risks.
 
@@ -76,7 +84,8 @@ Test infrastructure risks (monorepo cross-contamination, version file validation
 - PostToolUse hook on the Skill tool reads a companion `fsm.json` file and hydrates the TaskList automatically
 - Skills include `fsm.json` alongside `SKILL.md` to define task workflows
 - Task dependencies use local numeric IDs in fsm.json, translated to actual string IDs at hydration time
-- PreToolUse guard prevents the agent from reading SKILL.md/fsm.json directly
+- PreToolUse guard prevents the agent from reading SKILL.md/fsm.json directly; when access is denied, the message tells the developer how to set the bypass environment variable to allow access for the current session
+- Setting a shell environment variable allows skill file access for the current session without disabling the plugin
 - Plugin skill invocations (`plugin:skill`) resolve correctly against the current registry format instead of erroring out
 - The legacy array-based registry format continues to work but now produces a deprecation notice on each use
 - Error messages for genuinely missing or malformed registry files remain unchanged

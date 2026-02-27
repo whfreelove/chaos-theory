@@ -1,6 +1,8 @@
 ## Context
 
-Claude Code plugin system supports PostToolUse and PreToolUse hooks that execute as child processes. Hooks receive JSON via stdin and communicate via stdout/stderr. The task system stores tasks as individual JSON files in `~/.claude/tasks/{session_id}/`. The plugin targets Python 3 stdlib-only (no external dependencies beyond pytest for testing).
+Claude Code plugin system supports PostToolUse and PreToolUse hooks that execute as child processes. Hooks receive JSON via stdin and communicate via stdout/stderr. Claude Code hooks execute as child processes following the standard Unix subprocess model, where environment variables are inherited by default. The task system stores tasks as individual JSON files in `~/.claude/tasks/{session_id}/`. The plugin targets Python 3 stdlib-only (no external dependencies beyond pytest for testing).
+
+`block-skill-internals.sh` is a PreToolUse hook that runs on every Read, Glob, and Grep invocation. It pattern-matches the tool input path against SKILL.md, fsm.json, and hooks.json. The hook receives tool input as JSON on stdin and outputs a deny JSON object to block access. The hook's stdin/stdout communication confirms standard subprocess behavior. The hook checks the `FSM_BYPASS` environment variable: if non-empty, it exits immediately (allowing access); otherwise it proceeds to path-matching and, on a match, emits a deny response with bypass instructions.
 
 The FSM hook (`hydrate-tasks.py`) resolves plugin install paths from `~/.claude/plugins/installed_plugins.json` via scope precedence (local > project > user). The registry file supports two formats: v1 (flat array) and v2 (versioned object with nested `plugins` dict). Format detection uses root JSON type checking to distinguish between versions.
 
@@ -36,13 +38,17 @@ graph LR
     V2 --> S
     S -->|installPath| F[fsm.json]
     B -->|writes| T["~/.claude/tasks/{session_id}/"]
-    G[PreToolUse Guard] -.->|blocks read of| F
-    G -.->|blocks read of| H[SKILL.md]
+    AG[Agent: Read/Glob/Grep] --> G[block-skill-internals.sh]
+    G -->|FSM_BYPASS non-empty| AL[Allow: exit 0]
+    G -->|FSM_BYPASS empty/unset| PM{Path matches?}
+    PM -->|yes| DN[Deny with bypass instructions]
+    PM -->|no| AL2[Allow: exit 0]
 
     style D fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#fef3c7
     style V1 fill:#374151,stroke:#9ca3af,stroke-width:2px,color:#e5e7eb
     style V2 fill:#065f46,stroke:#10b981,stroke-width:2px,color:#d1fae5
     style ERR fill:#7f1d1d,stroke:#ef4444,stroke-width:2px,color:#fee2e2
+    style DN fill:#7f1d1d,stroke:#ef4444,stroke-width:2px,color:#fee2e2
 ```
 
 #### Component Interactions
@@ -91,8 +97,11 @@ Build/test infrastructure (pyproject.toml, Makefile, .python-version, GitHub Act
 - **Dependencies**: Claude Code hook stdin format, installed_plugins.json, task file system at `~/.claude/tasks/`
 
 `CMP-block-skill-internals`: block-skill-internals.sh
-- **Description**: PreToolUse guard script that prevents the agent from reading SKILL.md or fsm.json directly
-- **Responsibilities**: Intercept Read tool calls targeting skill internal files, return block response
+- **Description**: Shell script PreToolUse hook that gates agent access to skill internals (SKILL.md, fsm.json, hooks.json). Supports a session-scoped bypass via the `FSM_BYPASS` environment variable.
+- **Responsibilities**:
+  - Check `FSM_BYPASS` env var non-empty — early-exit (allow) if set
+  - Determine tool type via tool_input key presence (not tool_name) and extract the target path from the matched field (`file_path` for Read, `pattern` for Glob, `path` for Grep); pattern-match against protected file names
+  - Emit deny JSON with `hookSpecificOutput` wrapper and actionable bypass instructions in `systemMessage` when a protected path is matched
 - **Dependencies**: Claude Code PreToolUse hook mechanism
 
 `CMP-fsm-json`: fsm.json companion file
@@ -199,6 +208,25 @@ Repo-level components (CMP-pyproject, CMP-makefile, CMP-python-version, CMP-ci-w
   ```
 - **Key constraints**: `id` is a **string** (not number); `blocks`/`blockedBy` always present as arrays of strings; `metadata` always includes `{"fsm": "skill-name"}`
 
+`INT-deny-response`: Deny response emitted by block-skill-internals.sh
+- **Output**: JSON object emitted to stdout when the hook denies access to a skill-internal file
+- **Fields**:
+  - `systemMessage`: Developer-visible text explaining the denial and how to set `FSM_BYPASS=1` to allow access for the session. MUST contain `"export FSM_BYPASS=1"`. MUST NOT contain `"Disable finite-skill-machine"`.
+  - `hookSpecificOutput.hookEventName`: Always `"PreToolUse"`. Identifies the hook event type.
+  - `hookSpecificOutput.permissionDecision`: Always `"deny"`. Signals to Claude Code that the tool use is blocked.
+  - `hookSpecificOutput.permissionDecisionReason`: Brief denial reason referencing the bypass mechanism rather than plugin disablement.
+- **Example**:
+  ```json
+  {
+    "systemMessage": "Access to skill internals is blocked. To allow access for this session, run: export FSM_BYPASS=1",
+    "hookSpecificOutput": {
+      "hookEventName": "PreToolUse",
+      "permissionDecision": "deny",
+      "permissionDecisionReason": "Skill-internal file is protected. Set FSM_BYPASS=1 to bypass."
+    }
+  }
+  ```
+
 ## Decisions
 
 In the context of multi-skill task interaction, facing the risk of one skill deleting another skill's tasks, we decided on a hybrid FSM tag approach (`{"fsm": "skill-name"}` metadata with key-only deletion), to achieve coexistence of FSM and manual tasks, accepting that all FSM-tagged tasks are reset when any skill with fsm.json is invoked. `[finite-skill-machine]`
@@ -241,6 +269,8 @@ In the context of naming the modified functions, we decided to rename `find_fsm_
 
 Test infrastructure decisions (dependency management, build targets, CI strategy, Python version pinning, test directory structure) are documented in `openspec/common/technical.md` under `[common-test-infra]`.
 
+In the context of the skill-internals access gate, facing the need for a session-scoped bypass that requires no setup or cleanup, we decided on a shell environment variable (`FSM_BYPASS`) and neglected a temporary file flag and a plugin config flag, to achieve zero-configuration bypass that is session-scoped by default and follows standard shell conventions, accepting that the bypass is inherited by child processes and that environment inspection is the only discovery method. `[fsm-session-hook-bypass]`
+
 ## Risks
 
 - `installed_plugins.json` format may change without notice — requires hook updates
@@ -248,4 +278,5 @@ Test infrastructure decisions (dependency management, build targets, CI strategy
 - [v2 format may change again] → The v2 format is an internal Claude Code file with no stability guarantee. The format detection logic is structured to fail-closed on unknown formats with an actionable error message, so future format changes produce a clear diagnostic rather than silent failure.
 - [Multiple marketplace keys matching the same plugin name] → If a user has `my-plugin@marketplace-a` and `my-plugin@marketplace-b` in their v2 registry, the `@`-split matching will match both keys and use the first found (dict iteration order). This scenario is unlikely given current Claude Code behavior (one marketplace per plugin name), and scope-precedence logic within matched entries provides deterministic selection.
 - [Active guard creates a hard stop for skill development iteration] → The abort message will include specific task IDs, giving the agent a clear resolution path. The guard triggers when the skill's tasks have mixed statuses or any status outside the allowlist `{"completed", "pending"}` (indicating the workflow is partially complete or in an unrecognized state). Re-invocation is allowed when all tasks are uniformly completed (workflow done) or uniformly pending (nothing started). Rapid re-invocation before the agent touches any tasks works fine since all tasks remain uniformly pending.
+- `RSK-forgotten-bypass`: Developer exports `FSM_BYPASS` and forgets, leaving the hook bypassed for the rest of the shell session. Mitigation: The hook is a development guardrail, not a security boundary. Session scope naturally limits blast radius. The env var name is explicit enough to be noticeable in env inspection.
 Test infrastructure risks (monorepo cross-contamination) are documented in `openspec/common/functional.md` Known Risks.

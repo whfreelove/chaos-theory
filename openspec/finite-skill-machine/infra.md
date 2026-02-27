@@ -8,6 +8,7 @@ Claude Code plugin installed locally via `.claude-plugin/plugin.json`. No server
 - `OBJ-local-deploy`: Plugin installable via standard Claude Code plugin mechanism with no additional setup
 - `OBJ-backward-compat`: Existing v1 tests continue to pass — no regression in base functionality
 
+
 ## Deployment
 
 ### Plugin Installation
@@ -61,6 +62,16 @@ Contributor setup and general verification approach are documented in `openspec/
 | `active-task-guard` | TestActiveTaskGuard | @active-task-guard:1 (uniform-status proceed/mixed-status abort logic) |
 | `active-task-guard` | TestActiveTaskGuardMessage | @active-task-guard:2 (JSON abort format, message content constraints) |
 | `active-task-guard` | TestActiveTaskGuardScope | @active-task-guard:3 (cross-skill isolation of guard checks) |
+| `session-bypass` | TestBypassGuard | @CAP-session-bypass:1.1 (Read SKILL.md allowed with bypass) |
+| `session-bypass` | TestBypassGuard | @CAP-session-bypass:1.2 (Read SKILL.md denied without bypass) |
+| `session-bypass` | TestBypassGuard | @CAP-session-bypass:1.3 (Glob allowed with bypass) |
+| `session-bypass` | TestBypassGuard | @CAP-session-bypass:1.4 (Grep allowed with bypass) |
+| `session-bypass` | TestBypassGuard | @CAP-session-bypass:1.5 (Read hooks.json allowed with bypass) |
+| `session-bypass` | TestBypassGuard | @CAP-session-bypass:1.6 (Read fsm.json allowed with bypass) |
+| `session-bypass` | TestDenialResponse | @CAP-session-bypass:1.7 (empty string bypass denied) |
+| `session-bypass` | TestDenialResponse | @CAP-session-bypass:1.8 (Grep denied without bypass) |
+| `actionable-denial` | TestDenialResponse | @CAP-actionable-denial:1.1 (denial contains bypass instructions) |
+| `actionable-denial` | TestDenialResponse | @CAP-actionable-denial:1.2 (denial removes plugin advice) |
 
 Coverage for `contributor-reproduces-environment` and `ci-validates-pr` is documented in `openspec/common/infra.md`.
 
