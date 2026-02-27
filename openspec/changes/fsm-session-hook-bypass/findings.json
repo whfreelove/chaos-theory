@@ -239,5 +239,69 @@
         "match_reason": "Semantically identical to Finding 7. No existing gap covers hookEventName value check omission."
       }
     ]
+  },
+  {
+    "round": 4,
+    "timestamp": "2026-02-26T19:22:56Z",
+    "findings": [
+      {
+        "critic": "technical-critic",
+        "finding": "technical-1: Context vocabulary \"tool input path\" conflicts with CMP multi-field extraction",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "No existing gap addresses the context section establishing 'tool input path' as a single, unified concept while the CMP specifies three distinct input fields. GAP-37 outcome says 'Changed responsibility from Pattern-match tool input paths against protected file names to Extract target path from tool-specific input fields' \u2014 it updated the CMP responsibility but left the context vocabulary unchanged. GAP-57 and GAP-69 similarly expanded the CMP routing description without revisiting the context abstraction."
+      },
+      {
+        "critic": "technical-critic",
+        "finding": "technical-2: CMP responsibility prescribes routing detection mechanism, constraining implementation",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "No existing gap questions whether the '(not tool_name)' parenthetical belongs at the responsibility level rather than the decisions section. GAP-57 deliberately introduced this language: its decision says 'Expand the CMP-block-skill-internals extraction responsibility to integrate the routing mechanism: Determine tool type via tool_input key presence (not tool_name).' The finding argues 'the assignable statement is route to the correct input field based on tool type; the mechanism for detecting tool type is a developer decision' \u2014 a placement critique that was never raised before GAP-57's resolution."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "technical-critic-1: `CMP-block-skill-internals` claims no dependencies while the routing mechanism requires JSON parsing",
+        "status": "COVERED",
+        "matched_gaps": [],
+        "match_reason": "Covered by DEPENDENCY-1 (same batch); DEPENDENCY-1 is more comprehensive. This finding says 'The component lists `dependencies: []`, leaving no documentation of how this is technically feasible' and 'GAP-51 already acknowledged jq as a documented project dependency, yet the component dependency list was never updated.' DEPENDENCY-1 says 'declares `dependencies: []` (line 38) but its core responsibility requires JSON parsing' and additionally raises the missing Y-statement angle ('no Y-statement documents the decision to use jq for JSON parsing over alternatives') and cites the writing-technical-design dependency guideline. DEPENDENCY-1 subsumes this finding entirely."
+      },
+      {
+        "critic": "dependency-critic",
+        "finding": "DEPENDENCY-1: CMP-block-skill-internals declares empty dependencies despite requiring `jq` for JSON parsing",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "No existing gap addresses the empty `dependencies: []` in the component definition. GAP-51 decision says 'Name jq as the JSON inspection tool in the manual-test-procedure verification instructions' \u2014 its outcome 'Named jq as the JSON inspection tool in manual-test-procedure verification instructions,' adding jq only to the infra testing procedure. No gap raises the concern that the component dependency list itself should list jq, nor that a Y-statement for the jq-over-alternatives choice is missing from the Decisions section."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "technical-critic-1: `CAP-actionable-denial` has no corresponding technical objective",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "No existing gap addresses the asymmetry between the two functional capabilities and the two technical objectives. GAP-6 outcome says 'Renamed OBJ-zero-state to OBJ-session-bypass and OBJ-minimal-diff to OBJ-self-contained' \u2014 it renamed existing objectives but did not add one for CAP-actionable-denial. The finding notes 'GAP-6 renamed existing objectives, not added one for this capability' and identifies that 'CAP-actionable-denial... is addressed only through INT-deny-response MUST/MUST NOT constraints and a CMP responsibility line. It has no OBJ-* slug.'"
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "requirements-coverage-1: Denial message content verified for Glob only; Read and Grep denials unverified",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "No existing gap addresses per-tool-type scenario coverage of denial message content. GAP-19 deferred 'individual deny JSON field coverage beyond systemMessage' (i.e., permissionDecisionReason content) \u2014 a different axis. GAP-35 outcome says 'Updated CHG-denial-message from When a skill file read is denied to When skill file access is denied,' making the wording tool-agnostic but not addressing scenario coverage across tool paths. The finding says 'A tool-specific regression in the denial message \u2014 e.g., the Read code path retaining stale plugin-disable advice \u2014 would pass all scenarios undetected,' a coverage concern unraised in any prior gap."
+      },
+      {
+        "critic": "infra-critic",
+        "finding": "infra-1: jq example commands cover only two of four required denial assertions",
+        "status": "UNCOVERED",
+        "matched_gaps": [],
+        "match_reason": "No existing gap addresses the infra jq example commands being incomplete relative to the four prose-listed assertions. GAP-51 outcome says 'Named jq as the JSON inspection tool in manual-test-procedure verification instructions,' establishing the two example commands (permissionDecision and systemMessage fields). GAP-59 outcome says 'Extended the deny verification preamble in TSK-verify-bypass to assert hookSpecificOutput.hookEventName equals PreToolUse' \u2014 updating the task section only. The finding says 'GAP-59 added the hookEventName assertion to TSK-verify-bypass but the infra jq examples were not updated,' a divergence no gap tracks."
+      },
+      {
+        "critic": "unknown-critic",
+        "finding": "tasks-critic-1: No content verification for permissionDecisionReason",
+        "status": "COVERED",
+        "matched_gaps": [
+          "GAP-19"
+        ],
+        "match_reason": "GAP-19 description says 'REQ-updated-denial-message only asserts on systemMessage content \u2014 it has no rule or then-step verifying the permissionDecisionReason field is also updated'; GAP-19 decision says 'Record as out-of-scope: individual deny JSON field coverage beyond systemMessage is deferred.' The finding says 'TSK-verify-bypass verifies that hookSpecificOutput.permissionDecisionReason is present but has no scenario checking its content' and 'An implementer could copy an old value... and pass all ten scenarios while violating both the task requirement and the interface spec.' The core concern \u2014 no content assertion for permissionDecisionReason \u2014 was explicitly raised and deferred by GAP-19, with GAP-36 reinforcing: 'No MUST constraints added \u2014 aligns with GAP-19s established deferral of field-level normative coverage beyond systemMessage.'"
+      }
+    ]
   }
 ]
