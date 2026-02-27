@@ -8,7 +8,10 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 # Import module under test
+import sys
 sys_path_script = Path(__file__).resolve().parents[3] / "plugins" / "tokamak" / "scripts"
+if str(sys_path_script) not in sys.path:
+    sys.path.insert(0, str(sys_path_script))
 import importlib.util
 spec = importlib.util.spec_from_file_location(
     "run_critics", sys_path_script / "run_critics.py"
@@ -289,8 +292,8 @@ class TestParseArgs:
 
     def test_defaults(self, tmp_path):
         args = run_critics.parse_args([str(tmp_path)])
-        assert args.max_concurrent == 5
-        assert args.timeout == 300
+        assert args.max_concurrent == 6
+        assert args.timeout == 600
         assert args.dry_run is False
         assert args.budget is None
 
@@ -312,6 +315,7 @@ class TestParseArgs:
 
 class TestResultAggregation:
 
+    @pytest.mark.asyncio
     async def test_empty_critics(self):
         result = await run_critics.run_all_critics(
             {'output_template': '', 'critics': []},
@@ -322,6 +326,7 @@ class TestResultAggregation:
         assert result['critics_failed'] == 0
         assert result['results'] == []
 
+    @pytest.mark.asyncio
     async def test_dry_run_returns_empty(self, standard_critic, change_dir):
         result = await run_critics.run_all_critics(
             {'output_template': '', 'critics': [standard_critic]},
@@ -361,6 +366,7 @@ class TestResolveProjectDir:
 class TestEnvBypass:
     """Verify CLAUDECODE is removed from subprocess environment."""
 
+    @pytest.mark.asyncio
     @patch('shutil.which', return_value='/usr/local/bin/claude')
     async def test_claudecode_removed(self, mock_which, standard_critic, change_dir):
         """The run_one_critic function should strip CLAUDECODE from env."""
