@@ -14,8 +14,11 @@ Output:
 import argparse
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
+
+from spec_utils import resolve_schema_name
 
 
 def compute_file_hash(filepath: Path) -> str:
@@ -162,25 +165,22 @@ def main():
     plugin_root = script_dir.parent
 
     # Read .openspec.yaml for schema name and project path
+    schema_name = resolve_schema_name(change_dir)
     project_path = None
-    schema_name = None
     openspec_path = change_dir / '.openspec.yaml'
     if args.config:
         config_path = args.config
     else:
         config_path = change_dir / '.critique.json'
 
+    if schema_name and not args.config:
+        schema_config = plugin_root / f'{args.config_type}.{schema_name}.json'
+        if schema_config.exists():
+            config_path = schema_config
+
     if openspec_path.exists():
-        import re
         with open(openspec_path) as f:
             for line in f:
-                m = re.match(r'^schema:\s*(.+)', line)
-                if m:
-                    schema_name = m.group(1).strip()
-                    if not args.config:
-                        schema_config = plugin_root / f'{args.config_type}.{schema_name}.json'
-                        if schema_config.exists():
-                            config_path = schema_config
                 m = re.match(r'^project:\s*(.+)', line)
                 if m:
                     project_path = m.group(1).strip()

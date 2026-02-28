@@ -40,6 +40,19 @@ def resolve_skill_content(skill_name: str) -> str | None:
     return None
 
 
+def resolve_schema_name(change_dir: Path) -> str | None:
+    """Read schema name from .openspec.yaml."""
+    openspec_path = change_dir / '.openspec.yaml'
+    if not openspec_path.exists():
+        return None
+    with open(openspec_path) as f:
+        for line in f:
+            m = re.match(r'^schema:\s*(.+)', line)
+            if m:
+                return m.group(1).strip()
+    return None
+
+
 def resolve_project_dir(change_dir: Path) -> Path | None:
     """Resolve project directory from .openspec.yaml project field."""
     openspec_path = change_dir / '.openspec.yaml'
@@ -187,19 +200,7 @@ def load_schema_artifacts(change_dir: Path) -> dict[str, dict]:
             print(config["instruction"])
             print(config["skills"])
     """
-    # Read schema name from .openspec.yaml
-    openspec_path = change_dir / '.openspec.yaml'
-    if not openspec_path.exists():
-        return {}
-
-    schema_name = None
-    with open(openspec_path) as f:
-        for line in f:
-            m = re.match(r'^schema:\s*(.+)', line)
-            if m:
-                schema_name = m.group(1).strip()
-                break
-
+    schema_name = resolve_schema_name(change_dir)
     if not schema_name:
         return {}
 

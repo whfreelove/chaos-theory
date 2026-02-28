@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "artifacts": [
+    {
+      "name": "functional",
+      "change_source": ".sections/functional.yaml",
+      "project_target": "functional.md",
+      "rules": "- **Capabilities**: New capabilities from the change → append to project Capabilities list\n- **Scope**: Change scope additions → append to project Scope section\n- **Out of Scope**: Flag each item with confidence \"check-in\" — orchestrator triages with user:\n  - Permanent boundary → add to project Out of Scope\n  - Temporary gap → add to project Current Limitations\n  - Future intent → add to project Planned Future Work\n- **Known Risks**: Change risks → append to project Known Risks. Remove risks that the change resolved.\n- **Overview**: Integrate change \"What Changes\" content into project Overview. The project Overview describes the full system, not just the latest change.\n- **Current Limitations**: Review change for resolved limitations → remove from project Current Limitations"
+    },
+    {
+      "name": "requirements",
+      "change_source": ".sections/requirements.yaml",
+      "project_target": "requirements",
+      "rules": "- **ADDED rules/scenarios**: Append to project's Requirements section under the matching Feature\n- **MODIFIED rules/scenarios**: Replace the matching @slug block in the project file with the updated version from the change\n- **REMOVED rules**: Delete the matching @slug block from the project file\n- **RENAMED rules**: Update @slug tags throughout the project file\n- Strip delta headers (ADDED/MODIFIED/REMOVED/RENAMED) — project files use flat Requirements structure.\n- If the change adds a new capability (new file), create the project file from the template and populate with the ADDED content."
+    },
+    {
+      "name": "technical",
+      "change_source": ".sections/technical.yaml",
+      "project_target": "technical.md",
+      "rules": "- **Context**: Merge relevant context additions. Remove outdated context.\n- **Objectives**: Change objectives may not be project objectives. Only add if they represent permanent system goals. Most change objectives are transient. Flag as \"check-in\" when uncertain.\n- **Architecture diagrams**: Update to reflect the new system state. Diagrams show current architecture, not change diffs.\n- **Components**: New components → append. Modified components → update in place.\n- **Interfaces**: New interfaces → append. Modified interfaces → update in place.\n- **Decisions**: Append new decisions with [change-slug] provenance tag. Do not modify existing decisions — they are historical records. Flag as \"check-in\" if a decision's scope may be change-specific rather than project-level.\n- **Risks**: Append new risks. Remove risks that the change mitigated."
+    },
+    {
+      "name": "infra",
+      "change_source": ".sections/infra.yaml",
+      "project_target": "infra.md",
+      "rules": "- **Deployment**: Merge deployment changes into project Deployment section. Update environment configs, rollout strategy to reflect current state.\n- **Testing Strategy**: Add new test patterns and coverage mappings. Update the requirements coverage table with new @slug entries. Flag as \"check-in\" if a testing procedure may be superseded by implementation.\n- **Observability**: Append new logging, metrics, and alert definitions.\n- **Migration**: Do NOT merge migration content — it is change-specific, not project-level. If content appears migration-related, skip it."
+    },
+    {
+      "name": "integration",
+      "change_source": ".sections/integration.yaml",
+      "project_target": "integration.feature.md",
+      "rules": "- **ADDED scenarios**: Append to project's Integration Scenarios section\n- **MODIFIED scenarios**: Replace matching @integration block\n- **REMOVED scenarios**: Delete matching block\n- Strip delta headers. Project file uses flat Integration Scenarios structure."
+    }
+  ]
+}
