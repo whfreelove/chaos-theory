@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Detect normative language issues introduced by recent gap resolutions:\n1. Read `resolved.md` for resolved gaps with Outcome fields describing requirement changes\n2. For each, check whether added/modified requirement text contains:\n   a. Weak normative language (should, may, might, can, will) where SHALL/MUST is needed\n   b. Implementation mechanism language in Then clauses (internal state, triggers, loops)\n   c. Requirements on actors other than the skill (author SHALL, system SHALL)\n3. If none found: []\n4. For each: {\"id\": <next_gap_id>, \"change\": \"new\", \"title\": \"short title\", \"description\": \"Resolution of GAP-XX introduced normative issue: <text> in <file>\"}\n5. Source: resolution-normative-detection",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from gap-detectors.chaos-theory-lite.json",
+    "critic": "Resolution Normative Detection"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

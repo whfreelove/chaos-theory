@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "As an experienced software technical writer, detect implicit gaps in documentation:\n1. Search `functional.md`, `technical.md`, `infra.md`, and `requirements/*/requirements.feature.md`\n2. Find verbiage that indicates uncertainties and ambiguity\n3. If none found, respond with empty JSON list: []\n4. For each finding, respond with: {\"id\": <next_gap_id>, \"change\": \"new\", \"title\": \"short title\", \"description\": \"what you found\"}\n5. Use `Source: implicit-detection` for any new gaps\n\nMATERIALITY THRESHOLD: Only flag ambiguities where an implementor could reasonably make a WRONG decision. Do NOT flag:\n- Terms where context provides sufficient meaning for correct implementation\n- Boundaries that implementation would naturally resolve with a reasonable default\n- Definitions that only matter if someone is reading the spec in isolation without implementation context",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from gap-detectors.chaos-theory.json",
+    "critic": "Implicit Gap Detection"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

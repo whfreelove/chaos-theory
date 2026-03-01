@@ -669,6 +669,7 @@ def run_critique(
             critics_data, change_dir, project_dir,
             max_concurrent, timeout, budget, dry_run,
             on_complete=handle.advance,
+            config_type=config_type,
         ))
 
     log.critics_run = result.get('critics_run', 0)
@@ -723,6 +724,35 @@ def run_critique(
         f"  Collected findings from {len(successes)} critic(s) "
         f"({len(log.findings_text)} chars)"
     )
+
+    # Save per-critic results for offline ACE learning
+    schema = critics_data.get('schema') or 'chaos-theory'
+    results_path = change_dir / '.critique-results.json'
+    MAX_CRITIQUE_RUNS = 10
+    existing_runs = []
+    if results_path.exists():
+        try:
+            with open(results_path) as f:
+                existing_runs = json.load(f)
+        except (json.JSONDecodeError, ValueError):
+            existing_runs = []
+    existing_runs.append({
+        'timestamp': datetime.now(timezone.utc).isoformat(),
+        'config_type': config_type,
+        'schema': schema,
+        'commit': log.commit,
+        'results': [
+            {'name': r['name'], 'status': r['status'],
+             'output': r.get('output', ''), 'model': r.get('model', '')}
+            for r in results
+        ],
+    })
+    existing_runs = existing_runs[-MAX_CRITIQUE_RUNS:]
+    try:
+        with open(results_path, 'w') as f:
+            json.dump(existing_runs, f, indent=2)
+    except OSError as e:
+        print(f"WARNING: Could not save critique results: {e}", file=sys.stderr)
 
     # Save state
     _save_cached_state(change_dir, log, 'critique')

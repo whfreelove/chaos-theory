@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Evaluate the `integration` section for quality and legitimacy:\n\n- **Cross-Capability Focus**: Flag scenarios that test single-capability behavior (these belong in `requirements`). Integration scenarios MUST involve 2+ capabilities interacting.\n- **Capability Tagging**: Flag scenarios missing capability references or referencing only one capability\n- **Testability**: Flag scenarios describing internal state rather than observable behavior\n- **Normative Language**: Flag weak language (should, may, might, can, will) \u2014 integration scenarios use SHALL/MUST\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple when-then pairs belong in separate scenarios)\n\nWhen citing issues, quote the specific violating text.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from critics.chaos-theory-lite.json",
+    "critic": "Integration"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Each requirement scenario is verifiable with the test infrastructure defined in `infra.md`; flag scenarios that cannot be tested with available environments, tooling, or data\n\nDo NOT flag infrastructure gaps \u2014 focus on whether scenarios describe testable outcomes. Infrastructure completeness is checked by the design-for-test critic.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from critics.chaos-theory.json",
+    "critic": "Verification"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

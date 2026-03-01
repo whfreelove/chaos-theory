@@ -48,7 +48,6 @@ def standard_critic():
         'files': ['functional.md'],
         'project_files': [],
         'skills': ['tokamak:writing-functional-specs'],
-        'evaluate': 'Evaluate functional.md for implementation leakage.',
     }
 
 
@@ -60,7 +59,6 @@ def accuracy_critic():
         'files': ['functional.md'],
         'project_files': [],
         'skills': [],
-        'evaluate': 'Cross-reference functional.md against actual codebase.',
     }
 
 
@@ -72,7 +70,6 @@ def consistency_critic():
         'files': ['functional.md'],
         'project_files': ['functional.md'],
         'skills': [],
-        'evaluate': 'Cross-reference change vs project functional.md.',
     }
 
 
@@ -81,6 +78,7 @@ def critics_data(standard_critic, accuracy_critic):
     return {
         'output_template': '## CRITIC OUTPUT FORMAT\nFor each issue...',
         'critics': [standard_critic, accuracy_critic],
+        'schema': 'chaos-theory',
     }
 
 
@@ -109,62 +107,176 @@ class TestAccuracyCriticDetection:
         assert run_critics.is_accuracy_critic(name) is False
 
 
+# --- Skillbook loading ---
+
+class TestLoadSkillbook:
+
+    def test_load_skillbook_valid(self, tmp_path):
+        sb_path = tmp_path / "test.json"
+        sb_path.write_text(json.dumps({
+            'skills': {
+                'eval-1': {'id': 'eval-1', 'section': 'evaluation-criteria',
+                           'content': 'Check for leakage.'},
+                'eval-2': {'id': 'eval-2', 'section': 'evaluation-criteria',
+                           'content': 'Check for consistency.'},
+            },
+            'sections': {'evaluation-criteria': ['eval-1', 'eval-2']},
+            'next_id': 2,
+            'metadata': {'version': '0.1.0'},
+        }))
+        result = run_critics._load_skillbook(sb_path)
+        assert 'Check for leakage.' in result
+        assert 'Check for consistency.' in result
+
+    def test_load_skillbook_missing(self, tmp_path):
+        sb_path = tmp_path / "nonexistent.json"
+        result = run_critics._load_skillbook(sb_path)
+        assert result == ''
+
+    def test_load_skillbook_empty_skills(self, tmp_path):
+        for empty in ([], {}):
+            sb_path = tmp_path / "empty.json"
+            sb_path.write_text(json.dumps({
+                'skills': empty, 'metadata': {'version': '0.1.0'},
+            }))
+            result = run_critics._load_skillbook(sb_path)
+            assert result == ''
+
+    def test_load_skillbook_corrupt_json(self, tmp_path):
+        sb_path = tmp_path / "corrupt.json"
+        sb_path.write_text("{invalid json")
+        result = run_critics._load_skillbook(sb_path)
+        assert result == ''
+
+    def test_load_skillbook_legacy_list_format(self, tmp_path):
+        sb_path = tmp_path / "legacy.json"
+        sb_path.write_text(json.dumps({
+            'skills': [{'id': 'eval-1', 'content': 'Check for leakage.'}],
+            'metadata': {'version': '0.1.0'},
+        }))
+        result = run_critics._load_skillbook(sb_path)
+        assert 'Check for leakage.' in result
+
+
 # --- Prompt construction ---
 
 class TestBuildPrompt:
 
-    def test_includes_evaluate_criteria(self, standard_critic, change_dir):
-        prompt = run_critics.build_prompt(standard_critic, change_dir, None)
+    def test_includes_skillbook_context(self, standard_critic, change_dir):
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Evaluate functional.md for implementation leakage.',
+        )
         assert "## Evaluation Criteria" in prompt
         assert "implementation leakage" in prompt
 
+    def test_includes_team_context(self, standard_critic, change_dir):
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Check quality.',
+            team_context='Avoid duplicating findings across critics.',
+        )
+        assert "## Team Coordination Guidance" in prompt
+        assert "Avoid duplicating" in prompt
+
+    def test_no_team_section_when_empty(self, standard_critic, change_dir):
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
+        assert "Team Coordination Guidance" not in prompt
+
+    def test_empty_skillbook_produces_valid_prompt(self, standard_critic, change_dir):
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='',
+        )
+        assert "## Evaluation Criteria" in prompt
+        assert "## Files to evaluate" in prompt
+
+    def test_file_purpose_sentinel(self, standard_critic, change_dir):
+        """FILE PURPOSE in skillbook_context triggers schema artifacts (no KeyError)."""
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Use the FILE PURPOSE INSTRUCTIONS provided above.',
+        )
+        assert "## Evaluation Criteria" in prompt
+        assert "FILE PURPOSE" in prompt
+
     def test_includes_file_paths(self, standard_critic, change_dir):
-        prompt = run_critics.build_prompt(standard_critic, change_dir, None)
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
         assert f"`{change_dir}/functional.md`" in prompt
 
     def test_includes_gaps_paths(self, standard_critic, change_dir):
-        prompt = run_critics.build_prompt(standard_critic, change_dir, None)
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
         assert f"`{change_dir}/gaps.md`" in prompt
         assert f"`{change_dir}/resolved.md`" in prompt
         assert "do not duplicate" in prompt.lower()
 
     def test_no_project_section_when_no_project_files(self, standard_critic, change_dir):
-        prompt = run_critics.build_prompt(standard_critic, change_dir, None)
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
         assert "Project Reference Files" not in prompt
 
     def test_includes_project_section(self, consistency_critic, change_dir, project_dir):
-        prompt = run_critics.build_prompt(consistency_critic, change_dir, project_dir)
+        prompt = run_critics.build_prompt(
+            consistency_critic, change_dir, project_dir,
+            skillbook_context='Check quality.',
+        )
         assert "## Project Reference Files" in prompt
         assert "living project documentation" in prompt
         assert f"`{project_dir}/functional.md`" in prompt
 
     def test_no_project_section_when_project_dir_none(self, consistency_critic, change_dir):
-        prompt = run_critics.build_prompt(consistency_critic, change_dir, None)
+        prompt = run_critics.build_prompt(
+            consistency_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
         assert "Project Reference Files" not in prompt
 
     def test_accuracy_critic_gets_exploration_section(self, accuracy_critic, change_dir):
-        prompt = run_critics.build_prompt(accuracy_critic, change_dir, None)
+        prompt = run_critics.build_prompt(
+            accuracy_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
         assert "## Codebase Exploration" in prompt
         assert "Read, Glob, and Grep" in prompt
         project_root = change_dir.parent.parent.parent
         assert str(project_root) in prompt
 
     def test_standard_critic_no_exploration_section(self, standard_critic, change_dir):
-        prompt = run_critics.build_prompt(standard_critic, change_dir, None)
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
         assert "Codebase Exploration" not in prompt
 
     def test_includes_template_context(self, standard_critic, change_dir):
         standard_critic['templates'] = {
             'functional.md': '<!-- Template instructions for functional -->'
         }
-        prompt = run_critics.build_prompt(standard_critic, change_dir, None)
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
         assert "## Schema Template Instructions" in prompt
         assert "Do NOT flag behaviors that comply with template guidance" in prompt
         assert "<!-- Template instructions for functional -->" in prompt
 
     def test_no_template_section_when_empty(self, standard_critic, change_dir):
         standard_critic['templates'] = {}
-        prompt = run_critics.build_prompt(standard_critic, change_dir, None)
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
         assert "Schema Template Instructions" not in prompt
 
     def test_template_labeled_per_file(self, standard_critic, change_dir):
@@ -172,7 +284,10 @@ class TestBuildPrompt:
             'functional.md': '<!-- func template -->',
             'requirements': '<!-- req template -->',
         }
-        prompt = run_critics.build_prompt(standard_critic, change_dir, None)
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
         assert "### Template: `functional.md`" in prompt
         assert "### Template: `requirements`" in prompt
         assert "<!-- func template -->" in prompt
@@ -329,7 +444,8 @@ class TestResultAggregation:
     @pytest.mark.asyncio
     async def test_dry_run_returns_empty(self, standard_critic, change_dir):
         result = await run_critics.run_all_critics(
-            {'output_template': '', 'critics': [standard_critic]},
+            {'output_template': '', 'critics': [standard_critic],
+             'schema': 'chaos-theory'},
             change_dir, None, 5, 300, None, dry_run=True,
         )
         assert result.get('dry_run') is True

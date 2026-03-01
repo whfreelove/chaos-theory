@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Verify `technical.md` decisions (Y-Statements) against code evidence.\n\nUsing Glob, Grep, and Read tools, examine the codebase from the project root:\n1. Read each `[initial-docs]` decision in `technical.md`\n2. Find code evidence that supports or contradicts each decision\n\nFlag:\n- **Contradicted decisions**: Y-statements claiming choices the code doesn't reflect (e.g., \"we chose REST\" but code uses GraphQL)\n- **Missing decisions**: Significant architectural choices visible in code but not documented as decisions\n- **Unsupported rationale**: Decision rationale that doesn't hold given actual code structure\n\nScope: Focus on configuration files, dependency manifests, and architectural boundaries visible in imports/exports.\n\nWhen citing issues, quote the specific decision AND reference code evidence.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from critics.chaos-theory-brownfield.json",
+    "critic": "Decision Plausibility"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Apply supersession rules from tokamak:managing-spec-gaps.\nAs an experienced software technical writer, detect superseded gaps:\n1. Search `gaps.md`\n2. Determine if any valid gaps appear to supersede others\n3. If none found, respond with empty JSON list: []\n4. One valid gap A that supersedes multiple gaps B, C should create two entries: A > B, A > C\n5. Multiple valid gaps A, B that, combined, supersede one gap C should create two entries: A > C, B > C\n6. Any new gaps recorded from supersession concerns should use `Source: supersession-detection`\n7. Respond with gap comparison summary JSON list, e.g. [{\"valid\": 42, \"superseded\": 13, \"rationale\": \"why\"}]",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from gap-detectors.chaos-theory.json",
+    "critic": "Gap Supersession Detection"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

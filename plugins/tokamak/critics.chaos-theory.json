@@ -3,133 +3,210 @@
   "critics": [
     {
       "name": "Functional",
-      "files": ["functional.md"],
+      "files": [
+        "functional.md"
+      ],
       "model": "opus",
-      "skills": ["tokamak:writing-functional-specs"],
-      "evaluate": "Evaluate `functional.md` for implementation leakage:\n\n- **Why**: Flag if it describes technical gaps (missing APIs, no hooks) instead of human burden (wasted effort, variability, rework)\n- **What Changes**: Flag if it describes internal mechanisms rather than artifacts/behaviors users interact with\n- **Capabilities**: Flag if framed by component/feature names rather than by actor (\"Users can...\", \"Skill authors can...\")\n- **User Impact**: Flag if it describes technical footprint (files, APIs, registrations) rather than experience changes\n\nVerbosity often signals implementation leakage - functional specs should be under 1 page.\n\nWhen citing issues, quote the specific violating text so it can be fixed directly."
+      "skills": [
+        "tokamak:writing-functional-specs"
+      ]
     },
     {
       "name": "Design",
-      "files": ["technical.md"],
+      "files": [
+        "technical.md"
+      ],
       "model": "sonnet",
-      "skills": ["tokamak:writing-technical-design"],
-      "evaluate": "`technical.md` internal consistency: thorough architecture, non-conflicting technical decisions that reinforce architecture, specificity doesn't constrain coding, objectives with context"
+      "skills": [
+        "tokamak:writing-technical-design"
+      ]
     },
     {
       "name": "Technical",
-      "files": ["technical.md"],
+      "files": [
+        "technical.md"
+      ],
       "model": "sonnet",
-      "skills": ["tokamak:writing-technical-design"],
-      "evaluate": "verify that decisions in `technical.md` which require non-obvious, novel, or complex implementation document how they are technically feasible and testable"
+      "skills": [
+        "tokamak:writing-technical-design"
+      ]
     },
     {
       "name": "Dependency",
-      "files": ["technical.md"],
+      "files": [
+        "technical.md"
+      ],
       "model": "opus",
-      "skills": ["tokamak:writing-technical-design"],
-      "evaluate": "Hunt for unjustified dependencies in `technical.md`:\n\n- **External dependencies**: Flag if lacking Y-statement justification, poorly documented, or unviable (inactive, obscure, expensive, complex)\n- **Complex internal solutions**: Flag if a viable external alternative exists but wasn't considered\n\nEach dependency decision (add external OR build internal) should have a Y-statement documenting what was neglected and why."
+      "skills": [
+        "tokamak:writing-technical-design"
+      ]
     },
     {
       "name": "Implementation",
-      "files": ["functional.md", "technical.md"],
+      "files": [
+        "functional.md",
+        "technical.md"
+      ],
       "model": "sonnet",
-      "skills": ["tokamak:writing-technical-design"],
-      "evaluate": "`technical.md` addresses all functional.md capabilities and \"What Changes\" with technical design"
+      "skills": [
+        "tokamak:writing-technical-design"
+      ]
     },
     {
       "name": "Requirements",
-      "files": ["requirements"],
+      "files": [
+        "requirements"
+      ],
       "model": "sonnet",
-      "skills": ["tokamak:writing-markdown-gherkin"],
-      "evaluate": "Evaluate requirements for testability and normative clarity:\n\n- **Testability**: Flag scenarios that describe internal state (Then the x variable equals 5) rather than observable behavior (Then 5 requests are created). Do NOT flag scenarios for lacking verification details - focus on whether the outcome is externally visible vs internal.\n- **Normative Language**: Flag weak language (should, may, might, can, will) - requirements use SHALL/MUST\n- **Scenario Titles**: Flag titles containing \"verify\", \"assert\", \"should\", or conjunctions (\"and\", \"or\", \"because\") suggesting multiple behaviors\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple When-Then pairs belong in separate scenarios; And to extend Given/When/Then is fine)\n\nThe skill handles MDG structure. Focus on whether requirements are implementable and verifiable.\n\nWhen citing issues, quote the specific violating text."
+      "skills": [
+        "tokamak:writing-markdown-gherkin"
+      ]
     },
     {
       "name": "Requirements Coverage",
-      "files": ["functional.md", "requirements", "integration.feature.md"],
+      "files": [
+        "functional.md",
+        "requirements",
+        "integration.feature.md"
+      ],
       "model": "opus",
-      "skills": ["tokamak:writing-markdown-gherkin"],
-      "evaluate": "Identify missing single-capability requirement scenarios that would meaningfully increase coverage:\n\n- **User Behaviors**: Flag expected user interactions not captured by any requirement scenario (e.g., edge cases, error paths, common workflows)\n- **Boundary Conditions**: Flag missing scenarios for limits, empty states, or invalid inputs that users would realistically encounter\n\nUse `integration.feature.md` as deduplication context — do NOT suggest requirement scenarios for behaviors already covered as integration scenarios.\n\nDo NOT:\n- Duplicate scenarios that already exist (check existing requirements AND integration scenarios carefully)\n- Nitpick minor variations that don't change behavior\n- Suggest scenarios that break Gherkin rules (one When-Then per scenario, observable outcomes only)\n- Flag hypothetical edge cases users would never encounter\n\nMATERIALITY: Only flag missing scenarios that would catch bugs in a REAL implementation — not theoretical completeness gaps. Ask: \"Would a competent developer who reads the existing scenarios misimplement this?\" If no, don't flag it.\n\nDo NOT flag:\n- Edge cases that require unlikely user behavior (empty inputs, single-item lists, format boundary cases)\n- Scenarios that duplicate coverage from a different angle\n- Scenarios whose absence would not cause incorrect implementation\n\nFor each gap, describe the missing behavior concisely. Only flag gaps that would catch real bugs."
+      "skills": [
+        "tokamak:writing-markdown-gherkin"
+      ]
     },
     {
       "name": "Validation",
-      "files": ["functional.md", "requirements", "integration.feature.md"],
+      "files": [
+        "functional.md",
+        "requirements",
+        "integration.feature.md"
+      ],
       "model": "sonnet",
-      "skills": ["tokamak:writing-markdown-gherkin"],
-      "evaluate": "Evaluate requirements coverage against functional spec:\n\n- **Capability Coverage**: Flag if any functional.md capability lacks a corresponding `requirements/<slug>/requirements.feature.md` file\n- **Rule Coverage**: Flag if capability behaviors described in functional.md lack corresponding Rules in requirements\n- **Scenario Coverage**: Flag if functional.md describes user interactions not covered by any scenario\n\nWhen citing gaps, name the specific capability/behavior missing."
+      "skills": [
+        "tokamak:writing-markdown-gherkin"
+      ]
     },
     {
       "name": "Verification",
-      "files": ["infra.md", "requirements", "integration.feature.md"],
+      "files": [
+        "infra.md",
+        "requirements",
+        "integration.feature.md"
+      ],
       "model": "sonnet",
-      "skills": ["tokamak:writing-markdown-gherkin"],
-      "evaluate": "Each requirement scenario is verifiable with the test infrastructure defined in `infra.md`; flag scenarios that cannot be tested with available environments, tooling, or data\n\nDo NOT flag infrastructure gaps — focus on whether scenarios describe testable outcomes. Infrastructure completeness is checked by the design-for-test critic."
+      "skills": [
+        "tokamak:writing-markdown-gherkin"
+      ]
     },
     {
       "name": "Design for Test",
-      "files": ["infra.md", "requirements", "integration.feature.md"],
+      "files": [
+        "infra.md",
+        "requirements",
+        "integration.feature.md"
+      ],
       "model": "sonnet",
-      "skills": ["writing-infra-specs"],
-      "evaluate": "`infra.md` defines test environments, tooling, and data management needed to execute requirement scenarios; flag missing infrastructure\n\nDo NOT flag scenario testability — focus on whether infra.md provides the environments, tooling, and data needed. Scenario quality is checked by the verification critic."
+      "skills": [
+        "writing-infra-specs"
+      ]
     },
     {
       "name": "Logic",
-      "files": ["technical.md", "requirements"],
+      "files": [
+        "technical.md",
+        "requirements"
+      ],
       "model": "sonnet",
-      "skills": ["tokamak:writing-technical-design"],
-      "evaluate": "Technical design components and interfaces adequately support implementation of requirement scenarios"
+      "skills": [
+        "tokamak:writing-technical-design"
+      ]
     },
     {
       "name": "Code Tasks",
-      "files": ["tasks.yaml", "technical.md"],
+      "files": [
+        "tasks.yaml",
+        "technical.md"
+      ],
       "model": "sonnet",
-      "skills": [],
-      "evaluate": "Tasks in `tasks.yaml` implement changes from `technical.md`; each task is small, verifiable (clear done state), and groups are ordered by dependency\n\nDo NOT flag:\n- Task groupings that don't mirror technical.md component boundaries — tasks group by implementation dependency, not spec structure\n- Missing implementation details obvious from the technical.md reference — tasks are guidance, not a spec mirror\n- Undefined references like \"the skill\" when the actor is clear from context"
+      "skills": []
     },
     {
       "name": "Test Tasks",
-      "files": ["tasks.yaml", "requirements", "infra.md", "integration.feature.md"],
+      "files": [
+        "tasks.yaml",
+        "requirements",
+        "infra.md",
+        "integration.feature.md"
+      ],
       "model": "sonnet",
-      "skills": ["tokamak:writing-markdown-gherkin", "writing-infra-specs"],
-      "evaluate": "Tasks implement requirement scenarios as E2E/integration tests, following `infra.md` Testing Strategy\n\nDo NOT flag:\n- Missing per-scenario granularity — tasks describe verification STRATEGY, not per-assertion checklists\n- Tasks covering scenario groups rather than individual scenarios\n- Missing explicit scenario ID references when the task's scope clearly covers them"
+      "skills": [
+        "tokamak:writing-markdown-gherkin",
+        "writing-infra-specs"
+      ]
     },
     {
       "name": "Test Infra",
-      "files": ["tasks.yaml", "infra.md"],
+      "files": [
+        "tasks.yaml",
+        "infra.md"
+      ],
       "model": "sonnet",
-      "skills": [],
-      "evaluate": "Tasks implement test infrastructure defined in `infra.md` (environments, tooling, test data)"
+      "skills": []
     },
     {
       "name": "Integration",
-      "files": ["integration.feature.md"],
+      "files": [
+        "integration.feature.md"
+      ],
       "model": "sonnet",
-      "skills": ["tokamak:writing-markdown-gherkin"],
-      "evaluate": "Evaluate `integration.feature.md` for quality and legitimacy:\n\n- **Cross-Capability Focus**: Flag scenarios that test single-capability behavior (these belong in `requirements/`). Integration scenarios MUST involve 2+ capabilities interacting.\n- **@capability Tagging**: Flag scenarios missing @capability tags or tagged with only one capability\n- **Testability**: Flag scenarios describing internal state rather than observable behavior\n- **Normative Language**: Flag weak language (should, may, might, can, will) — integration scenarios use SHALL/MUST\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple When-Then pairs belong in separate scenarios)\n\nWhen citing issues, quote the specific violating text."
+      "skills": [
+        "tokamak:writing-markdown-gherkin"
+      ]
     },
     {
       "name": "Integration Coverage",
-      "files": ["functional.md", "requirements", "integration.feature.md"],
+      "files": [
+        "functional.md",
+        "requirements",
+        "integration.feature.md"
+      ],
       "model": "opus",
-      "skills": ["tokamak:writing-markdown-gherkin"],
-      "evaluate": "Identify missing cross-capability integration scenarios by analyzing capability interactions in `functional.md`:\n\n- **Capability Interactions**: Flag multi-capability interactions that produce emergent behavior but lack integration scenario coverage\n- **Integration Boundaries**: Flag cases where capabilities share data, trigger each other, or have ordering dependencies without integration tests\n\nUse `requirements/` for deduplication — do NOT suggest integration scenarios for behaviors already covered by single-capability requirement scenarios.\n\nDo NOT:\n- Duplicate scenarios that already exist in `integration.feature.md` or `requirements/`\n- Suggest scenarios for capabilities that don't actually interact\n- Flag hypothetical interactions users would never encounter\n\nFor each gap, name the interacting capabilities and describe the missing integration behavior."
+      "skills": [
+        "tokamak:writing-markdown-gherkin"
+      ]
     },
     {
       "name": "Functional Consistency",
-      "files": ["functional.md"],
-      "project_files": ["functional.md"],
+      "files": [
+        "functional.md"
+      ],
+      "project_files": [
+        "functional.md"
+      ],
       "requires_project": true,
       "model": "opus",
-      "skills": ["tokamak:writing-functional-specs"],
-      "evaluate": "Cross-reference the change's functional.md against the project's functional.md:\n\n- **Scope conflicts**: Flag change capabilities that fall within project Out of Scope boundaries\n- **Capability duplicates**: Flag change capabilities that duplicate existing project capabilities or use colliding names\n- **Limitation conflicts**: Flag change capabilities that conflict with documented Current Limitations or Planned Future Work items\n- **Risk contradictions**: Flag change Known Risks that contradict existing project risk mitigations, or new capabilities that reintroduce risks the project already mitigated\n\nOnly flag genuine conflicts. Expanding scope beyond current boundaries is valid if deliberate — flag it as LOW so it gets documented, not blocked."
+      "skills": [
+        "tokamak:writing-functional-specs"
+      ]
     },
     {
       "name": "Technical Consistency",
-      "files": ["technical.md", "requirements", "integration.feature.md"],
-      "project_files": ["technical.md", "requirements", "integration.feature.md"],
+      "files": [
+        "technical.md",
+        "requirements",
+        "integration.feature.md"
+      ],
+      "project_files": [
+        "technical.md",
+        "requirements",
+        "integration.feature.md"
+      ],
       "requires_project": true,
       "model": "opus",
-      "skills": ["tokamak:writing-technical-design", "tokamak:writing-markdown-gherkin"],
-      "evaluate": "Cross-reference the change's technical artifacts against the project's technical artifacts:\n\n- **Decision contradictions**: Flag change Y-statements that contradict or reverse existing project decisions without acknowledging them\n- **Requirement collisions**: Flag requirement slug or @capability tag collisions between change and project\n- **Scenario duplicates**: Flag change requirement or integration scenarios that duplicate existing project scenarios\n- **Architecture conflicts**: Flag change components or interfaces that conflict with established project architecture\n\nDo NOT flag decisions that extend or refine existing ones — only genuine contradictions or unacknowledged reversals."
+      "skills": [
+        "tokamak:writing-technical-design",
+        "tokamak:writing-markdown-gherkin"
+      ]
     }
   ]
 }

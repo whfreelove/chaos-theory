@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "As an experienced software technical writer, detect stale gaps:\n1. For each open gap in `gaps.md`, compare its concern against `functional.md`, `technical.md`, `infra.md`, and `requirements/*/requirements.feature.md`\n2. A gap is STALE only when specification artifact text has been updated to address the gap's concern \u2014 the description no longer identifies a genuine deficiency in the current spec text\n3. Do NOT flag record-keeping or metadata issues (missing fields, incomplete pointers, formatting) \u2014 those are validation concerns, not staleness\n4. Do NOT examine `resolved.md` entries \u2014 resolved gaps reference old spec versions by design\n5. If none found, respond with empty JSON list: []\n6. Use `Source: stale-detection` for any new gaps\n7. Each finding MUST include a description citing the specific spec text that now covers the concern\n8. Respond with stale gap JSON list, e.g. [{\"id\": 42, \"rationale\": \"why\", \"description\": \"The concern is now addressed by functional.md Section X which states...\"}]",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from gap-detectors.chaos-theory-greenfield.json",
+    "critic": "Stale Gap Detection"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

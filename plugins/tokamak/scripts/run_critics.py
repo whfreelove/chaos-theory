@@ -37,6 +37,43 @@ ACCURACY_CRITICS = frozenset({
 })
 
 
+def _load_skillbook(sb_path: Path) -> str:
+    """Read skillbook JSON, return skills content as formatted text.
+
+    Uses ACE's canonical formatter when available; falls back to simple
+    concatenation for environments without ace-framework.
+    Handles both dict (ACE-native) and list (legacy) skill formats.
+    """
+    if not sb_path.exists():
+        return ''
+    try:
+        from ace import Skillbook, wrap_skillbook_context
+        sb = Skillbook.load_from_file(str(sb_path))
+        result = wrap_skillbook_context(sb)
+        if result:
+            return result
+        # ACE returned empty — fall through to manual reader
+    except ImportError:
+        pass
+    except Exception:
+        pass  # ACE load/format error — fall through
+    # Manual reader: handles both dict and list formats
+    try:
+        with open(sb_path) as f:
+            sb_data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return ''
+    skills = sb_data.get('skills', {})
+    if isinstance(skills, dict):
+        return '\n\n'.join(
+            s['content'] for s in skills.values()
+            if isinstance(s, dict) and 'content' in s
+        ) or ''
+    elif isinstance(skills, list):
+        return '\n\n'.join(s['content'] for s in skills if 'content' in s) or ''
+    return ''
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Run OpenSpec critics in parallel via claude -p'
@@ -81,12 +118,19 @@ def is_accuracy_critic(name: str) -> bool:
 
 
 def build_prompt(critic: dict, change_dir: Path,
-                 project_dir: Path | None) -> str:
+                 project_dir: Path | None,
+                 skillbook_context: str = '',
+                 team_context: str = '') -> str:
     """Construct the evaluation prompt for a single critic."""
     parts = []
 
+    if team_context:
+        parts.append("## Team Coordination Guidance\n")
+        parts.append(team_context)
+        parts.append("")
+
     parts.append("## Evaluation Criteria\n")
-    parts.append(critic['evaluate'])
+    parts.append(skillbook_context)
     parts.append("")
 
     # Files to evaluate (relative to change_dir)
@@ -108,7 +152,7 @@ def build_prompt(critic: dict, change_dir: Path,
                 parts.append("")
 
     # Schema artifact instructions (for critics that reference FILE PURPOSE)
-    if 'FILE PURPOSE' in critic['evaluate']:
+    if 'FILE PURPOSE' in skillbook_context:
         schema_artifacts = load_schema_artifacts(change_dir)
         if schema_artifacts:
             parts.append("## File Purpose Instructions\n")
@@ -286,10 +330,20 @@ async def run_all_critics(
     budget: float | None,
     dry_run: bool,
     on_complete: callable = None,
+    config_type: str = 'critics',
 ) -> dict:
     """Orchestrate parallel critic execution."""
     output_template = critics_data.get('output_template', '')
     critics = critics_data.get('critics', [])
+
+    # Resolve skillbook paths
+    schema_slug = critics_data.get('schema') or 'chaos-theory'
+    kind = 'gap-detectors' if 'gap-detector' in config_type else 'critics'
+    ace_dir = Path(__file__).parent.parent / '.ace' / kind / schema_slug
+
+    # Load team skillbook once (shared across all critics)
+    team_path = Path(__file__).parent.parent / '.ace' / 'team' / 'critique.json'
+    team_context = _load_skillbook(team_path)
 
     if not critics:
         return {
@@ -299,7 +353,11 @@ async def run_all_critics(
 
     if dry_run:
         for critic in critics:
-            prompt = build_prompt(critic, change_dir, project_dir)
+            slug = critic['name'].lower().replace(' ', '-')
+            sb_path = ace_dir / f'{slug}.json'
+            skillbook_context = _load_skillbook(sb_path)
+            prompt = build_prompt(critic, change_dir, project_dir,
+                                  skillbook_context, team_context)
             cmd = build_command(critic, change_dir, project_dir,
                                 output_template, budget)
             print(f"\n{'=' * 60}", file=sys.stderr)
@@ -317,7 +375,11 @@ async def run_all_critics(
     semaphore = asyncio.Semaphore(max_concurrent)
     tasks = []
     for critic in critics:
-        prompt = build_prompt(critic, change_dir, project_dir)
+        slug = critic['name'].lower().replace(' ', '-')
+        sb_path = ace_dir / f'{slug}.json'
+        skillbook_context = _load_skillbook(sb_path)
+        prompt = build_prompt(critic, change_dir, project_dir,
+                              skillbook_context, team_context)
         cmd = build_command(critic, change_dir, project_dir,
                             output_template, budget)
         tasks.append(run_one_critic(critic, cmd, prompt, timeout, semaphore))
@@ -362,6 +424,7 @@ def main(argv: list[str] | None = None):
     result = asyncio.run(run_all_critics(
         critics_data, change_dir, project_dir,
         args.max_concurrent, args.timeout, args.budget, args.dry_run,
+        config_type=args.config_type,
     ))
 
     print(json.dumps(result, indent=2))

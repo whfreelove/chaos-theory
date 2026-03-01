@@ -354,7 +354,6 @@ def main():
             'files': expanded_files,
             'project_files': expanded_project_files,
             'skills': c.get('skills', []),
-            'evaluate': c['evaluate'],
             'templates': resolve_templates(c.get('files', []), templates_dir),
         })
 
@@ -365,6 +364,7 @@ def main():
             'output_template': config.get('output_template', ''),
             'critics': output,
             'selection_report': selection_report,
+            'schema': schema_name or 'chaos-theory',
         }
         print(json.dumps(result, indent=2))
 

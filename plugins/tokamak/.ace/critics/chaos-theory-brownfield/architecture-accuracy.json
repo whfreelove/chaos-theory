@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Cross-reference `technical.md` architecture against the actual codebase structure.\n\nUsing Glob, Grep, and Read tools, explore the project structure from the project root:\n1. Map file structure, directory layout, and module organization\n2. Trace imports and dependencies between modules\n3. Read key interfaces and function signatures\n\nFlag:\n- **Phantom components**: `technical.md` describes components that don't map to real modules/files\n- **Incorrect dependencies**: Documented dependency relationships that don't match actual imports\n- **Interface mismatch**: Documented interfaces/signatures that don't match actual code\n- **Missing components**: Significant modules not represented in the architecture\n\nScope: Focus on top-level directory structure and primary source modules. Limit to 3 levels deep.\n\nWhen citing issues, quote specific technical.md text AND reference the actual file/module structure that contradicts it.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from critics.chaos-theory-brownfield.json",
+    "critic": "Architecture Accuracy"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

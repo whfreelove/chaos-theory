@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Evaluate `functional.md` for implementation leakage:\n\n- **Why**: Flag if it describes technical gaps (missing APIs, no hooks) instead of human burden (wasted effort, variability, rework)\n- **What Changes**: Flag if it describes internal mechanisms rather than artifacts/behaviors users interact with\n- **Capabilities**: Flag if framed by component/feature names rather than by actor (\"Users can...\", \"Skill authors can...\")\n- **User Impact**: Flag if it describes technical footprint (files, APIs, registrations) rather than experience changes\n\nVerbosity often signals implementation leakage - functional specs should be under 1 page.\n\nWhen citing issues, quote the specific violating text so it can be fixed directly.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from critics.chaos-theory-brownfield.json",
+    "critic": "Functional"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

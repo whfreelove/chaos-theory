@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Evaluate requirements for testability and normative clarity:\n\n- **Testability**: Flag scenarios that describe internal state (Then the x variable equals 5) rather than observable behavior (Then 5 requests are created). Do NOT flag scenarios for lacking verification details - focus on whether the outcome is externally visible vs internal.\n- **Normative Language**: Flag weak language (should, may, might, can, will) - requirements use SHALL/MUST\n- **Scenario Titles**: Flag titles containing \"verify\", \"assert\", \"should\", or conjunctions (\"and\", \"or\", \"because\") suggesting multiple behaviors\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple When-Then pairs belong in separate scenarios; And to extend Given/When/Then is fine)\n\nThe skill handles MDG structure. Focus on whether requirements are implementable and verifiable.\n\nWhen citing issues, quote the specific violating text.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from critics.chaos-theory-greenfield.json",
+    "critic": "Requirements"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

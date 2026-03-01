@@ -1252,6 +1252,7 @@ def run_cleanup(
             critics_data, change_dir, project_dir,
             max_concurrent, timeout, budget, dry_run,
             on_complete=handle.advance,
+            config_type='gap-detectors',
         ))
 
     # Fail-fast on detector failures

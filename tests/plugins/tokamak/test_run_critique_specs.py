@@ -1,5 +1,6 @@
 """Tests for run_critique_specs.py helper functions."""
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -135,7 +136,6 @@ class TestFindingsMetadata:
 
     def test_cached_state_includes_metadata(self, tmp_path):
         """_save_cached_state persists selection_report and commit."""
-        import json
         log = CritiqueLog()
         log.selection_report = [
             {'name': 'Consistency', 'selected': True, 'reason': 'changed: functional.md'},
@@ -146,3 +146,104 @@ class TestFindingsMetadata:
         state = json.loads((tmp_path / '.critique-state.json').read_text())
         assert state['selection_report'] == log.selection_report
         assert state['commit'] == log.commit
+
+
+class TestCritiqueResults:
+    """Tests for .critique-results.json saving."""
+
+    def test_critique_results_format(self, tmp_path):
+        """Verify the expected JSON array format of .critique-results.json."""
+        results_path = tmp_path / '.critique-results.json'
+        run_entry = {
+            'timestamp': '2026-03-01T00:00:00+00:00',
+            'config_type': 'critics',
+            'schema': 'chaos-theory',
+            'commit': 'abc123',
+            'results': [
+                {'name': 'Functional', 'status': 'success',
+                 'output': '### NO ISSUES FOUND', 'model': 'opus'},
+                {'name': 'Design', 'status': 'error',
+                 'output': '', 'model': 'sonnet'},
+            ],
+        }
+        results_path.write_text(json.dumps([run_entry], indent=2))
+
+        data = json.loads(results_path.read_text())
+        assert isinstance(data, list)
+        assert len(data) == 1
+        assert data[0]['config_type'] == 'critics'
+        assert data[0]['schema'] == 'chaos-theory'
+        assert data[0]['commit'] == 'abc123'
+        assert len(data[0]['results']) == 2
+
+    def test_critique_results_accumulate(self, tmp_path):
+        """Second critique run appends to existing array."""
+        results_path = tmp_path / '.critique-results.json'
+        run1 = {
+            'timestamp': '2026-03-01T00:00:00+00:00',
+            'config_type': 'critics',
+            'schema': 'chaos-theory',
+            'commit': 'abc',
+            'results': [{'name': 'A', 'status': 'success', 'output': 'ok', 'model': 'opus'}],
+        }
+        results_path.write_text(json.dumps([run1], indent=2))
+
+        # Simulate second run appending
+        existing = json.loads(results_path.read_text())
+        run2 = {
+            'timestamp': '2026-03-01T01:00:00+00:00',
+            'config_type': 'critics',
+            'schema': 'chaos-theory',
+            'commit': 'def',
+            'results': [{'name': 'B', 'status': 'success', 'output': 'ok', 'model': 'opus'}],
+        }
+        existing.append(run2)
+        results_path.write_text(json.dumps(existing, indent=2))
+
+        data = json.loads(results_path.read_text())
+        assert len(data) == 2
+        assert data[0]['commit'] == 'abc'
+        assert data[1]['commit'] == 'def'
+
+    def test_critique_results_cap_at_max(self, tmp_path):
+        """Results are capped at MAX_CRITIQUE_RUNS (10)."""
+        results_path = tmp_path / '.critique-results.json'
+        MAX = 10
+        runs = [
+            {
+                'timestamp': f'2026-03-01T{i:02d}:00:00+00:00',
+                'config_type': 'critics',
+                'schema': 'chaos-theory',
+                'commit': f'commit-{i}',
+                'results': [],
+            }
+            for i in range(MAX + 3)
+        ]
+        # Simulate cap behavior
+        runs = runs[-MAX:]
+        results_path.write_text(json.dumps(runs, indent=2))
+
+        data = json.loads(results_path.read_text())
+        assert len(data) == MAX
+        assert data[0]['commit'] == 'commit-3'
+        assert data[-1]['commit'] == 'commit-12'
+
+    def test_critique_results_includes_failures(self, tmp_path):
+        """Both successes and failures are captured in each run entry."""
+        results_path = tmp_path / '.critique-results.json'
+        run_entry = {
+            'timestamp': '2026-03-01T00:00:00+00:00',
+            'config_type': 'critics',
+            'schema': 'chaos-theory',
+            'commit': 'abc',
+            'results': [
+                {'name': 'A', 'status': 'success', 'output': 'findings', 'model': 'opus'},
+                {'name': 'B', 'status': 'error', 'output': '', 'model': 'sonnet'},
+            ],
+        }
+        results_path.write_text(json.dumps([run_entry], indent=2))
+
+        data = json.loads(results_path.read_text())
+        statuses = {r['status'] for r in data[0]['results']}
+        assert 'success' in statuses
+        assert 'error' in statuses

@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Cross-reference requirement scenarios against the actual codebase to verify accuracy.\n\nUsing Glob, Grep, and Read tools, explore test suites and code paths from the project root:\n1. Find test files, test fixtures, and tested code paths\n2. Trace scenario Given/When/Then steps to actual code behavior\n\nFlag:\n- **Phantom scenarios**: Scenarios describing behavior the code doesn't exhibit\n- **Missing scenarios**: Untested code paths that should have requirement scenarios\n- **Step mismatch**: Given/When/Then steps that don't match actual code flow\n\nScope: Limit exploration to test directories and the code modules they exercise. Do not explore infrastructure or configuration.\n\nWhen citing issues, quote the specific scenario AND reference the code location that contradicts or is missing.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from critics.chaos-theory-brownfield.json",
+    "critic": "Requirement Accuracy"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

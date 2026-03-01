@@ -2,6 +2,7 @@
 openspec/changes/archive
 .sections/
 .solver-sessions.json
+.critique-results.json
 
 # Planning files (session-specific)
 future-work.md

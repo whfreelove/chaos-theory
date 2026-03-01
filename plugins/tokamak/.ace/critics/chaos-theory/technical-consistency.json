@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Cross-reference the change's technical artifacts against the project's technical artifacts:\n\n- **Decision contradictions**: Flag change Y-statements that contradict or reverse existing project decisions without acknowledging them\n- **Requirement collisions**: Flag requirement slug or @capability tag collisions between change and project\n- **Scenario duplicates**: Flag change requirement or integration scenarios that duplicate existing project scenarios\n- **Architecture conflicts**: Flag change components or interfaces that conflict with established project architecture\n\nDo NOT flag decisions that extend or refine existing ones \u2014 only genuine contradictions or unacknowledged reversals.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from critics.chaos-theory.json",
+    "critic": "Technical Consistency"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

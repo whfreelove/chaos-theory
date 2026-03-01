@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Detect resolution content that ended up in the wrong artifact.\nUse the FILE PURPOSE INSTRUCTIONS provided above (injected from schema.yaml) to understand what belongs in each file.\n1. Read `resolved.md` for recently resolved gaps with Outcome fields\n2. For each resolved gap, check whether the Outcome content matches the assigned file's purpose per the schema instruction\n3. If none found: []\n4. For each: {\"id\": <next_gap_id>, \"change\": \"new\", \"title\": \"short title\", \"description\": \"Resolution of GAP-XX placed <content type> in <file> \u2014 belongs in <correct file>\"}\n5. Source: placement-drift-detection",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from gap-detectors.chaos-theory.json",
+    "critic": "Placement Drift Detection"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

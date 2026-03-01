@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Cross-reference `functional.md` against the actual codebase to verify accuracy.\n\nUsing Glob, Grep, and Read tools, explore the project source starting from the project root (not the change directory):\n1. Find code modules, entry points, and public interfaces\n2. Compare documented capabilities against what the code actually does\n\nFlag:\n- **Undocumented capabilities**: Code functionality not described in `functional.md`\n- **Overclaimed capabilities**: `functional.md` describes functionality that doesn't exist in code\n- **Behavior mismatch**: Descriptions that don't match actual code behavior\n\nScope: Limit exploration to 3 directory levels deep from project root. Focus on source code directories, entry points, and exported interfaces.\n\nWhen citing issues, quote specific functional.md text AND reference the code location (file:line) that contradicts it.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from critics.chaos-theory-brownfield.json",
+    "critic": "Capability Accuracy"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

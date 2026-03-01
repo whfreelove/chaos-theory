@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Detect cross-artifact propagation gaps from recent resolutions:\n1. Read `resolved.md` for resolved gaps with Outcome fields\n2. For each resolution that added/modified a requirement scenario:\n   a. Check if the infra section coverage table has a corresponding verification entry\n   b. Check if tasks.yaml behavioral-verification checklists include the scenario\n3. For each resolution that added a new Rule:\n   a. Check if the infra section has a coverage row for the new Rule\n   b. Check if tasks.yaml behavioral-verification has a checklist item for the Rule\n4. If complete: []\n5. For each: {\"id\": <next_gap_id>, \"change\": \"new\", \"title\": \"short title\", \"description\": \"Resolution of GAP-XX added <what> but <artifact> was not updated\"}\n6. Source: propagation-detection",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from gap-detectors.chaos-theory-lite.json",
+    "critic": "Cross-Artifact Propagation Detection"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Cross-reference the change's functional section against the project's functional.md:\n\n- **Scope conflicts**: Flag change capabilities that fall within project Out of Scope boundaries\n- **Capability duplicates**: Flag change capabilities that duplicate existing project capabilities or use colliding names\n- **Limitation conflicts**: Flag change capabilities that conflict with documented Current Limitations or Planned Future Work items\n- **Risk contradictions**: Flag change Known Risks that contradict existing project risk mitigations, or new capabilities that reintroduce risks the project already mitigated\n\nOnly flag genuine conflicts. Expanding scope beyond current boundaries is valid if deliberate \u2014 flag it as LOW so it gets documented, not blocked.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from critics.chaos-theory-lite.json",
+    "critic": "Functional Consistency"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}

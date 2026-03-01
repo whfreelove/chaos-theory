@@ -1,0 +1,31 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Apply resolution completeness principles from tokamak:managing-spec-gaps.\nAs an experienced software technical writer, detect defer-release gaps lacking artifact coverage:\n1. Extract all gaps marked \"defer-release\" or \"DEFERRED TO FUTURE RELEASE\" from `gaps.md`\n2. For each defer-release gap:\n   a. Check if the gap's concern is semantically addressed in `functional.md` Out of Scope section\n   b. Check if the gap's concern is semantically addressed in `technical.md` Decisions section (Y-Statements)\n   c. \"Covered\" means the artifact explicitly acknowledges the limitation/deferral, not just tangentially mentions the topic\n3. If all defer-release gaps are covered, respond with empty JSON list: []\n4. Any new gaps recorded from coverage concerns should use `Source: defer-release-coverage-detection`\n5. Respond with uncovered gap JSON list, e.g. [{\"gap_id\": 108, \"title\": \"short title\", \"description\": \"gap description\", \"rationale\": \"why not covered by Out of Scope or Decisions\"}]",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": null,
+      "evidence": null,
+      "sources": []
+    }
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from gap-detectors.chaos-theory-greenfield.json",
+    "critic": "Defer-Release Coverage Detection"
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ]
+  },
+  "next_id": 1
+}
