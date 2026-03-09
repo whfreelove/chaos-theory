@@ -66,7 +66,7 @@ EOF
 
   mkdir -p "$CWD/$TARGET_DIR"
   for schema in "$PLUGIN_ROOT/openspec/schemas"/*/; do
-    [ -d "$schema" ] && cp -r "$schema" "$CWD/$TARGET_DIR/"
+    [ -d "$schema" ] && cp -r "${schema%/}" "$CWD/$TARGET_DIR/"
   done
 
   SCHEMA_NAMES=$(ls -1 "$CWD/$TARGET_DIR" | tr '\n' ', ' | sed 's/,$//')
@@ -96,7 +96,7 @@ fi
 # Copy all schemas
 mkdir -p "$TARGET_DIR"
 for schema in "$PLUGIN_ROOT/openspec/schemas"/*/; do
-  [ -d "$schema" ] && cp -r "$schema" "$TARGET_DIR/"
+  [ -d "$schema" ] && cp -r "${schema%/}" "$TARGET_DIR/"
 done
 
 # Report results
