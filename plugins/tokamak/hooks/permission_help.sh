@@ -1,5 +1,5 @@
 #!/bin/bash
-# PermissionRequest hook: Auto-allow ct plugin scripts
+# PreToolUse hook: Auto-allow ct plugin scripts
 # Verifies scripts are actually within the plugin directory before allowing
 
 # Read JSON input from stdin
@@ -22,10 +22,7 @@ if [[ -n "$SCRIPT_PATH" ]]; then
     cat << 'EOF'
 {
   "hookSpecificOutput": {
-    "hookEventName": "PermissionRequest",
-    "decision": {
-      "behavior": "allow"
-    }
+    "permissionDecision": "allow"
   }
 }
 EOF
