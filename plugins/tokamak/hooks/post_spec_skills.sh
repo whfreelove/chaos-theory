@@ -70,11 +70,6 @@ if [[ -n "$args" ]]; then
           echo "Status: specs-status transitioned new → draft" >&2
         fi
         ;;
-      critique-specs|tokamak:critique-specs|\
-      critique-specs-brownfield|tokamak:critique-specs-brownfield)
-        # No auto-transition: critique requires reviewing (enforced by pre-hook).
-        # Promotion from draft → reviewing is handled by sculpt-specs.
-        ;;
       implement-change|tokamak:implement-change)
         # code-status: ready -> in-progress (only if currently ready)
         current=$("$status_script" read "$change_dir" code-status)

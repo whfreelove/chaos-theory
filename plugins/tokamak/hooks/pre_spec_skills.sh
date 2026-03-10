@@ -48,13 +48,30 @@ case "$skill" in
       "${skill} blocked: archive changes individually via tokamak:archive-change."
     ;;
   # --- Gated skill types ---
-  critique-specs|tokamak:critique-specs|\
-  critique-specs-brownfield|tokamak:critique-specs-brownfield)
-    skill_type="critique"
+  critique-specs|tokamak:critique-specs)
+    deny \
+      "critique-specs skill is retired. The user runs critique via CLI: python run_critique_specs.py <change-dir>" \
+      "${skill} blocked: retired skill. Critique is now a user-invoked CLI tool."
     ;;
-  resolve-gaps|tokamak:resolve-gaps|\
+  critique-specs-brownfield|tokamak:critique-specs-brownfield)
+    deny \
+      "critique-specs-brownfield is retired. Brownfield critique uses the same CLI: python run_critique_specs.py <change-dir> (schema auto-detected)" \
+      "${skill} blocked: retired skill. Critique is now a user-invoked CLI tool."
+    ;;
+  resolve-gaps|tokamak:resolve-gaps)
+    deny \
+      "resolve-gaps skill is retired. The user runs resolve via CLI: python run_resolve_gaps.py <change-dir>" \
+      "${skill} blocked: retired skill. Resolve is now a user-invoked CLI tool."
+    ;;
   resolve-gaps-brownfield|tokamak:resolve-gaps-brownfield)
-    skill_type="resolve"
+    deny \
+      "resolve-gaps-brownfield is retired. Brownfield resolve uses the same CLI: python run_resolve_gaps.py <change-dir> (schema auto-detected)" \
+      "${skill} blocked: retired skill. Resolve is now a user-invoked CLI tool."
+    ;;
+  validate-brownfield|tokamak:validate-brownfield)
+    deny \
+      "validate-brownfield is retired. Run critique then resolve via CLI: python run_critique_specs.py <change-dir> && python run_resolve_gaps.py <change-dir>" \
+      "${skill} blocked: retired skill. Validation is now user-invoked CLI tools."
     ;;
   sculpt-specs|tokamak:sculpt-specs)
     skill_type="sculpt"
