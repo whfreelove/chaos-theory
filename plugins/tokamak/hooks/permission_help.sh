@@ -9,7 +9,7 @@ INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('tool_input', {}).get('command', ''))" 2>/dev/null)
 
 # Extract script path from command (handles both python3 and direct execution)
-SCRIPT_PATH=$(echo "$COMMAND" | grep -oE '[^ ]+(select_critics\.py|next_gap\.sh|init_schemas\.sh|change_status\.sh)' | head -1)
+SCRIPT_PATH=$(echo "$COMMAND" | grep -oE '[^ ]+(select_critics\.py|run_critics\.py|run_resolvers\.py|run_solvers\.py|resolve_triage_policy\.py|resolve_artifacts\.py|record_findings\.py|group_gaps\.py|change_dashboard\.sh|change_status\.sh|next_gap\.sh|init_schemas\.sh)' | head -1)
 
 if [[ -n "$SCRIPT_PATH" ]]; then
   # Resolve to absolute path
