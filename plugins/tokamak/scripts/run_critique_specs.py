@@ -2,8 +2,9 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "rich>=13.0",
 #     "questionary>=2.0",
+#     "rich>=13.0",
+#     "ruamel.yaml>=0.18",
 # ]
 # ///
 """
