@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "rich>=13.0",
+#     "questionary>=2.0",
+# ]
+# ///
 """
 Standalone CLI for the resolve-gaps workflow (Triage → Solve → Resolve → Cleanup → Report).
 

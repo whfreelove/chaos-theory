@@ -19,7 +19,7 @@ What to look for:
 - Scope ambiguity between what's in/out of the deliverable
 - Misplaced content located in inappropriate places
 
-What NOT to look for (leave these for critique-specs/resolve-gaps):
+What NOT to look for (critique/resolve happens outside this session via CLI):
 - Gherkin normative violations, scenario coverage, wording polish
 
 Present findings as design questions to the user via AskUserQuestion. Frame each tension as a choice between coherent alternatives, not a defect to fix. Batch related tensions into minimal AskUserQuestion calls.
@@ -58,6 +58,16 @@ When the user is satisfied the design is coherent, promote the change out of `dr
 "${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" write "openspec/changes/$0" specs-status reviewing
 ```
 
-Then confirm the transition: "specs-status promoted to reviewing. You can now run critique-specs."
+Then tell the user:
+
+> specs-status promoted to reviewing. Critique and resolve are CLI tools you run outside this session:
+>
+> ```
+> python plugins/tokamak/scripts/run_critique_specs.py openspec/changes/$0
+> python plugins/tokamak/scripts/run_resolve_gaps.py openspec/changes/$0
+> ```
+>
+> After critique/resolve, return to ratify with `Skill(tokamak:ratify-specs, args: "$0")`.
 
 Do NOT auto-promote — only promote when the user explicitly approves.
+Do NOT attempt to run critique or resolve yourself — these are user-invoked CLI tools.

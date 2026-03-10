@@ -1,6 +1,6 @@
 ---
 name: ratify-specs
-description: Ratify reviewed specs to unlock implementation. Use after critique/resolve cycles are complete and specs are ready.
+description: Ratify reviewed specs to unlock implementation. Use after the user has run critique/resolve CLI tools and specs are ready.
 ---
 
 # Ratify Specs
@@ -44,7 +44,7 @@ Include in the description:
 
 Options:
 - **Ratify** — Mark specs as ratified, unlock implementation
-- **Not ready** — Run another critique/resolve round first
+- **Not ready** — User needs to run another critique/resolve round via CLI first
 
 ## Step 4: Apply ratification
 
@@ -70,7 +70,16 @@ Check the `has_tasks` field from the JSON output:
   "${CLAUDE_PLUGIN_ROOT}/scripts/change_status.sh" write "openspec/changes/$0" code-status ready
   ```
 
-If the user chooses "Not ready", suggest running `Skill(tokamak:critique-specs, args: "$0")`.
+If the user chooses "Not ready", tell the user to run critique/resolve outside this session:
+
+> Run another critique/resolve round via CLI:
+>
+> ```
+> python plugins/tokamak/scripts/run_critique_specs.py openspec/changes/$0
+> python plugins/tokamak/scripts/run_resolve_gaps.py openspec/changes/$0
+> ```
+>
+> Then return here to ratify.
 
 ## Step 5: Report status
 
