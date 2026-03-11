@@ -11,6 +11,11 @@ Usage:
     python tools/ace_learn.py openspec/changes/my-change --model opus
     python tools/ace_learn.py openspec/changes/my-change --dry-run
     python tools/ace_learn.py openspec/changes/my-change --propagate
+
+Cross-repo usage (learn from another product's critique results):
+    python tools/ace_learn.py /tmp/collected/feature-x \\
+        --repo-root /path/to/other-product \\
+        --change-path openspec/changes/feature-x
 """
 
 import argparse
@@ -50,29 +55,42 @@ def _git_show(commit: str, filepath: str, cwd: str) -> str:
         return ''
 
 
-def _evaluate_quality(change_dir: Path, run_data: dict, llm) -> dict[str, str]:
+def _evaluate_quality(
+    change_dir: Path, run_data: dict, llm,
+    repo_root: Path | None = None,
+    change_path: str | None = None,
+) -> dict[str, str]:
     """Evaluate per-critic finding quality using LLM + spec context.
 
     Returns {critic_name: quality_context_string}.
     Uses commit hash from run_data to reconstruct specs at critique time.
+
+    For cross-repo use, pass repo_root to point git commands at the
+    source repo, and change_path for the relative path within it.
     """
     commit = run_data.get('commit', '')
     if not commit:
         return {}
 
-    cwd = str(change_dir)
-    rel_dir = str(change_dir.relative_to(
-        subprocess.run(
-            ['git', 'rev-parse', '--show-toplevel'],
-            capture_output=True, text=True, check=True, cwd=cwd,
-        ).stdout.strip()
-    ))
+    git_cwd = str(repo_root) if repo_root else str(change_dir)
+
+    if change_path:
+        rel_dir = change_path
+    else:
+        try:
+            toplevel = subprocess.run(
+                ['git', 'rev-parse', '--show-toplevel'],
+                capture_output=True, text=True, check=True, cwd=git_cwd,
+            ).stdout.strip()
+            rel_dir = str(change_dir.relative_to(toplevel))
+        except (subprocess.CalledProcessError, ValueError, OSError):
+            return {}
 
     # Reconstruct spec files at critique time
     spec_files = ['functional.md', 'technical.md', 'infra.md', 'gaps.md']
     specs_content = ''
     for sf in spec_files:
-        content = _git_show(commit, f'{rel_dir}/{sf}', cwd)
+        content = _git_show(commit, f'{rel_dir}/{sf}', git_cwd)
         if content:
             specs_content += f'\n## {sf}\n{content[:3000]}\n'
 
@@ -122,7 +140,10 @@ def _evaluate_quality(change_dir: Path, run_data: dict, llm) -> dict[str, str]:
     return quality
 
 
-def learn(change_dir: Path, model: str = 'sonnet', dry_run: bool = False):
+def learn(
+    change_dir: Path, model: str = 'sonnet', dry_run: bool = False,
+    repo_root: Path | None = None, change_path: str | None = None,
+):
     """Run ACE learning on the latest critique results."""
     results_path = change_dir / '.critique-results.json'
     if not results_path.exists():
@@ -154,8 +175,12 @@ def learn(change_dir: Path, model: str = 'sonnet', dry_run: bool = False):
         sys.exit(1)
 
     # Evaluate finding quality
+    if repo_root:
+        print(f"Using repo root: {repo_root}")
+        if change_path:
+            print(f"Change path in repo: {change_path}")
     print("Evaluating finding quality...")
-    quality = _evaluate_quality(change_dir, data, llm)
+    quality = _evaluate_quality(change_dir, data, llm, repo_root, change_path)
 
     # Individual learning per critic
     print(f"\nLearning from {len(successes)} critic(s):")
@@ -304,9 +329,17 @@ if __name__ == '__main__':
                         help='Show proposed changes without applying')
     parser.add_argument('--propagate', action='store_true',
                         help='Copy learned skills across schemas for matching critics')
+    parser.add_argument('--repo-root', type=Path, default=None,
+                        help='Git repo root for cross-repo quality evaluation '
+                             '(default: auto-detect from change_dir)')
+    parser.add_argument('--change-path', default=None,
+                        help='Relative path of the change dir within --repo-root '
+                             '(required when change_dir is outside the target repo)')
     args = parser.parse_args()
 
-    learn(args.change_dir.resolve(), args.model, args.dry_run)
+    repo_root = args.repo_root.resolve() if args.repo_root else None
+    learn(args.change_dir.resolve(), args.model, args.dry_run,
+          repo_root, args.change_path)
 
     if args.propagate and not args.dry_run:
         results_path = args.change_dir.resolve() / '.critique-results.json'
