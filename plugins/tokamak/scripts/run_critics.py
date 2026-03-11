@@ -7,6 +7,7 @@ Replaces unreliable "launch N Task calls in a single message" approach.
 
 Usage:
     python run_critics.py <change_dir> [--max-concurrent N] [--timeout S] [--dry-run]
+    python run_critics.py <change_dir> --show-prompt [--critic Name]
 """
 
 import argparse
@@ -24,7 +25,6 @@ from spec_utils import (
     gather_with_callback,
     load_schema_artifacts,
     resolve_project_dir,
-    resolve_skill_content,
 )
 
 
@@ -91,6 +91,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument('--type', default='critics', dest='config_type',
                         help='Config type to load (default: critics). '
                              'Resolves <type>.<schema>.json')
+    parser.add_argument('--show-prompt', action='store_true',
+                        help='Print assembled prompts to stdout and exit')
+    parser.add_argument('--critic', default=None,
+                        help='Filter to a single critic by name '
+                             '(use with --show-prompt or --dry-run)')
     return parser.parse_args(argv)
 
 
@@ -129,6 +134,20 @@ def build_prompt(critic: dict, change_dir: Path,
         parts.append(team_context)
         parts.append("")
 
+    # Artifact evaluation guidance (shared per file type)
+    seen_artifacts = set()
+    for f in critic['files']:
+        stem = Path(f.replace('.feature', '')).stem  # integration.feature.md → integration
+        if stem in seen_artifacts:
+            continue
+        seen_artifacts.add(stem)
+        artifact_sb = ACE_DIR / 'artifacts' / f'{stem}.json'
+        artifact_ctx = _load_skillbook(artifact_sb)
+        if artifact_ctx:
+            parts.append(f"## Artifact Guidance: {stem}\n")
+            parts.append(artifact_ctx)
+            parts.append("")
+
     parts.append("## Evaluation Criteria\n")
     parts.append(skillbook_context)
     parts.append("")
@@ -139,17 +158,6 @@ def build_prompt(critic: dict, change_dir: Path,
     for f in critic['files']:
         parts.append(f"- `{change_dir}/{f}`")
     parts.append("")
-
-    # Skills guidance
-    skills = critic.get('skills', [])
-    if skills:
-        parts.append("## Skills Guidance\n")
-        for skill_name in skills:
-            content = resolve_skill_content(skill_name)
-            if content:
-                parts.append(f"### {skill_name}\n")
-                parts.append(content)
-                parts.append("")
 
     # Schema artifact instructions (for critics that reference FILE PURPOSE)
     if 'FILE PURPOSE' in skillbook_context:
@@ -164,21 +172,6 @@ def build_prompt(critic: dict, change_dir: Path,
                 parts.append(f"### `{generates}`\n")
                 parts.append(config['instruction'])
                 parts.append("")
-
-    # Schema template instructions
-    templates = critic.get('templates', {})
-    if templates:
-        parts.append("## Schema Template Instructions (read-only context)\n")
-        parts.append(
-            "The following are authoring instructions from the schema templates "
-            "that guided artifact creation. Use these to understand intentional "
-            "structural choices in the evaluated files. Do NOT flag behaviors "
-            "that comply with template guidance.\n"
-        )
-        for filename, content in templates.items():
-            parts.append(f"### Template: `{filename}`\n")
-            parts.append(content)
-        parts.append("")
 
     # Project reference files
     if critic.get('project_files') and project_dir:
@@ -397,6 +390,49 @@ async def run_all_critics(
     }
 
 
+ACE_DIR = Path(__file__).resolve().parent.parent / '.ace'
+
+
+def _show_prompts(
+    critics_data: dict, change_dir: Path, project_dir: Path | None,
+    config_type: str = 'critics', critic_filter: str | None = None,
+):
+    """Print assembled prompts to stdout for inspection."""
+    critics = critics_data.get('critics', [])
+    output_template = critics_data.get('output_template', '')
+    schema = critics_data.get('schema') or 'chaos-theory'
+    kind = 'gap-detectors' if 'gap-detector' in config_type else 'critics'
+    ace_dir = ACE_DIR / kind / schema
+    team_context = _load_skillbook(ACE_DIR / 'team' / 'critique.json')
+
+    if critic_filter:
+        critics = [c for c in critics
+                   if c['name'].lower() == critic_filter.lower()]
+        if not critics:
+            available = ', '.join(c['name'] for c in critics_data.get('critics', []))
+            print(f"No critic matching '{critic_filter}'. "
+                  f"Available: {available}", file=sys.stderr)
+            sys.exit(1)
+
+    for critic in critics:
+        slug = critic['name'].lower().replace(' ', '-')
+        sb_path = ace_dir / f'{slug}.json'
+        skillbook_context = _load_skillbook(sb_path)
+        prompt = build_prompt(critic, change_dir, project_dir,
+                              skillbook_context, team_context)
+        print(f"{'=' * 70}")
+        print(f"CRITIC: {critic['name']} (model: {critic['model']})")
+        print(f"{'=' * 70}")
+        print(prompt)
+        print()
+
+    if output_template:
+        print(f"{'=' * 70}")
+        print("SYSTEM PROMPT (appended to all critics)")
+        print(f"{'=' * 70}")
+        print(output_template)
+
+
 def main(argv: list[str] | None = None):
     args = parse_args(argv)
     change_dir = args.change_dir.resolve()
@@ -406,7 +442,7 @@ def main(argv: list[str] | None = None):
               file=sys.stderr)
         sys.exit(1)
 
-    if not args.dry_run and not shutil.which('claude'):
+    if not args.dry_run and not args.show_prompt and not shutil.which('claude'):
         print("ERROR: claude CLI not found in PATH", file=sys.stderr)
         sys.exit(1)
 
@@ -420,6 +456,22 @@ def main(argv: list[str] | None = None):
 
     critics_data = select_critics(change_dir, args.config_type)
     project_dir = resolve_project_dir(change_dir)
+
+    if args.show_prompt:
+        _show_prompts(critics_data, change_dir, project_dir,
+                      args.config_type, args.critic)
+        sys.exit(0)
+
+    if args.critic and args.dry_run:
+        all_critics = critics_data.get('critics', [])
+        filtered = [c for c in all_critics
+                    if c['name'].lower() == args.critic.lower()]
+        if not filtered:
+            available = ', '.join(c['name'] for c in all_critics)
+            print(f"No critic matching '{args.critic}'. "
+                  f"Available: {available}", file=sys.stderr)
+            sys.exit(1)
+        critics_data['critics'] = filtered
 
     result = asyncio.run(run_all_critics(
         critics_data, change_dir, project_dir,

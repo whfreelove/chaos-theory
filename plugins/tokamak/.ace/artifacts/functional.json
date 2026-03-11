@@ -1,0 +1,79 @@
+{
+  "skills": {
+    "eval-functional-1": {
+      "id": "eval-functional-1",
+      "section": "evaluation-criteria",
+      "content": "Functional specifications describe USER BURDEN and USER OUTCOMES, not system mechanics.\n\n**Self-check for every statement:** Would a user who's never seen the code describe their goal this way?",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-10T00:00:00+00:00",
+      "updated_at": "2026-03-10T00:00:00+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": "Core evaluation principle from writing-functional-specs skill",
+      "evidence": null,
+      "sources": ["writing-functional-specs"]
+    },
+    "eval-functional-2": {
+      "id": "eval-functional-2",
+      "section": "evaluation-criteria",
+      "content": "**Framing: Human Burden**\n\n| GOOD (human burden) | BAD (implementation gap) |\n|---------------------|---------------------------|\n| \"Manual task creation burns context\" | \"We need a hook to intercept X\" |\n| \"Users re-explain requirements each time\" | \"The API is missing endpoint Y\" |\n\n**Framing: Actor Outcomes**\n\n| GOOD (actor-centric with slug) | BAD (feature-centric) |\n|--------------------------------|----------------------|\n| `workflow-authoring`: Skill authors can ship complete workflows | \"FSM Hook: Intercepts skill loading\" |\n| `task-consistency`: Users see consistent task lists | \"TaskList Integration: Creates tasks\" |\n\nEach capability should be testable: can you verify an actor achieves the outcome?",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-10T00:00:00+00:00",
+      "updated_at": "2026-03-10T00:00:00+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": "GOOD/BAD framing tables for evaluating functional spec quality",
+      "evidence": null,
+      "sources": ["writing-functional-specs"]
+    },
+    "eval-functional-3": {
+      "id": "eval-functional-3",
+      "section": "evaluation-criteria",
+      "content": "**Forbidden Language Checklist**\n\nThese words signal implementation leaking into functional specification:\n\n- **Verbs:** implements, uses, supports, calls, invokes, leverages, utilizes\n- **Nouns:** hook, algorithm, data structure, endpoint, handler, middleware\n\nWhen you catch these, reframe around user experience.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-10T00:00:00+00:00",
+      "updated_at": "2026-03-10T00:00:00+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": "Concrete checklist for detecting implementation leakage",
+      "evidence": null,
+      "sources": ["writing-functional-specs"]
+    },
+    "eval-functional-4": {
+      "id": "eval-functional-4",
+      "section": "evaluation-criteria",
+      "content": "**Scope Signals**\n\nUse Scope (what's included), Out of Scope (what's deferred), and Known Risks to:\n- Prevent scope creep during design\n- Clarify boundaries for reviewers\n- Document future work explicitly\n- Surface risks early so reviewers can assess before design begins\n\nVerbosity often signals implementation leakage \u2014 functional specs should be under 1 page.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-10T00:00:00+00:00",
+      "updated_at": "2026-03-10T00:00:00+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": "Scope evaluation criteria and brevity signal",
+      "evidence": null,
+      "sources": ["writing-functional-specs"]
+    }
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-functional-1",
+      "eval-functional-2",
+      "eval-functional-3",
+      "eval-functional-4"
+    ]
+  },
+  "next_id": 5,
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "extracted from writing-functional-specs skill (evaluation principles only)",
+    "artifact": "functional.md"
+  }
+}

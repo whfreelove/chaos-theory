@@ -259,7 +259,8 @@ class TestBuildPrompt:
         )
         assert "Codebase Exploration" not in prompt
 
-    def test_includes_template_context(self, standard_critic, change_dir):
+    def test_templates_not_in_prompt(self, standard_critic, change_dir):
+        """Templates are metadata only — no longer injected into prompts."""
         standard_critic['templates'] = {
             'functional.md': '<!-- Template instructions for functional -->'
         }
@@ -267,31 +268,35 @@ class TestBuildPrompt:
             standard_critic, change_dir, None,
             skillbook_context='Check quality.',
         )
-        assert "## Schema Template Instructions" in prompt
-        assert "Do NOT flag behaviors that comply with template guidance" in prompt
-        assert "<!-- Template instructions for functional -->" in prompt
-
-    def test_no_template_section_when_empty(self, standard_critic, change_dir):
-        standard_critic['templates'] = {}
-        prompt = run_critics.build_prompt(
-            standard_critic, change_dir, None,
-            skillbook_context='Check quality.',
-        )
         assert "Schema Template Instructions" not in prompt
+        assert "<!-- Template instructions for functional -->" not in prompt
 
-    def test_template_labeled_per_file(self, standard_critic, change_dir):
-        standard_critic['templates'] = {
-            'functional.md': '<!-- func template -->',
-            'requirements': '<!-- req template -->',
-        }
+    def test_artifact_guidance_loaded(self, standard_critic, change_dir):
+        """Artifact skillbooks inject shared evaluation guidance by file type."""
         prompt = run_critics.build_prompt(
             standard_critic, change_dir, None,
             skillbook_context='Check quality.',
         )
-        assert "### Template: `functional.md`" in prompt
-        assert "### Template: `requirements`" in prompt
-        assert "<!-- func template -->" in prompt
-        assert "<!-- req template -->" in prompt
+        assert "## Artifact Guidance: functional" in prompt
+
+    def test_artifact_guidance_deduplicates(self, standard_critic, change_dir):
+        """Multiple files mapping to the same stem produce one guidance section."""
+        standard_critic['files'] = ['functional.md', 'functional.md']
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
+        count = prompt.count("## Artifact Guidance: functional")
+        assert count == 1
+
+    def test_missing_artifact_skillbook_skipped(self, standard_critic, change_dir):
+        """Files without artifact skillbooks are silently skipped."""
+        standard_critic['files'] = ['tasks.yaml']
+        prompt = run_critics.build_prompt(
+            standard_critic, change_dir, None,
+            skillbook_context='Check quality.',
+        )
+        assert "## Artifact Guidance: tasks" not in prompt
 
 
 # --- Command construction ---

@@ -1,0 +1,95 @@
+{
+  "skills": {
+    "eval-infra-1": {
+      "id": "eval-infra-1",
+      "section": "evaluation-criteria",
+      "content": "infra.md describes HOW to deploy, test, and operate a change using EXISTING infrastructure. It does NOT propose infrastructure changes \u2014 those belong in technical.md.\n\n**Self-check for every statement:** Does this describe operations for the current change, or is it proposing new infrastructure?",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-10T00:00:00+00:00",
+      "updated_at": "2026-03-10T00:00:00+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": "Core evaluation principle distinguishing ops from infra changes",
+      "evidence": null,
+      "sources": ["writing-infra-specs"]
+    },
+    "eval-infra-2": {
+      "id": "eval-infra-2",
+      "section": "evaluation-criteria",
+      "content": "**Coverage Model (structural vs enumerative)**\n\nDescribe coverage at the capability/Rule level, not per-scenario:\n\n| GOOD (structural) | BAD (enumerative) |\n|--------------------|-------------------|\n| \"Auth capabilities verified via E2E login flow\" | \"Scenario @auth:1.1 tested by test_login...\" |\n| \"Each Rule has a corresponding test class\" | Table listing every scenario -> test mapping |\n\nPer-scenario tables mirror requirements and go stale on any change. Describe the pattern that ensures coverage, not the line items.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-10T00:00:00+00:00",
+      "updated_at": "2026-03-10T00:00:00+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": "Evaluation criteria for coverage documentation quality",
+      "evidence": null,
+      "sources": ["writing-infra-specs"]
+    },
+    "eval-infra-3": {
+      "id": "eval-infra-3",
+      "section": "evaluation-criteria",
+      "content": "**Completeness Checklist**\n\nA testing strategy is complete when it answers:\n\n1. **Environments** \u2014 Where do tests run? (local, CI, staging)\n2. **Tooling** \u2014 What test frameworks, named specifically? Vague \"appropriate tooling\" is a gap.\n3. **Data management** \u2014 How is test data created, maintained, cleaned up?\n4. **Verification commands** \u2014 Concrete, runnable commands that prove tests pass.\n5. **Coverage mechanism** \u2014 How does the project verify requirements are actually tested?",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-10T00:00:00+00:00",
+      "updated_at": "2026-03-10T00:00:00+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": "5-point completeness checklist for testing strategy evaluation",
+      "evidence": null,
+      "sources": ["writing-infra-specs"]
+    },
+    "eval-infra-4": {
+      "id": "eval-infra-4",
+      "section": "evaluation-criteria",
+      "content": "**Test Type Selection**\n\n| Requirement type | Test approach |\n|-----------------|---------------|\n| User workflow (multi-step) | E2E test |\n| Component interaction | Integration test |\n| Isolated logic/algorithm | Unit test (implementation detail, not spec-level) |\n| Cross-capability behavior | Integration scenario (in integration.feature.md) |\n\ninfra.md covers integration and E2E strategy. Unit testing is an implementation detail.\n\n**Deployment Framing**\n\n| GOOD (flow) | BAD (topology change) |\n|-------------|----------------------|\n| \"Deploy via existing CI pipeline with feature flag\" | \"Add new staging environment\" |\n| Mermaid diagram showing rollout sequence | Mermaid diagram showing new service topology |\n\nOnly document logging, metrics, and alerts for NEW components in this change. Not infrastructure-wide observability changes.",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-10T00:00:00+00:00",
+      "updated_at": "2026-03-10T00:00:00+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": "Decision tables for test type selection and deployment framing evaluation",
+      "evidence": null,
+      "sources": ["writing-infra-specs"]
+    },
+    "eval-infra-5": {
+      "id": "eval-infra-5",
+      "section": "evaluation-criteria",
+      "content": "**Anti-Pattern Table**\n\n| Pattern | Problem |\n|---------|--------|\n| \"Tests will be added later\" | Deferred without commitment |\n| Testing strategy references tools not in the stack | Stack mismatch |\n| Per-scenario coverage tables | Goes stale, duplicates requirements |\n| No verification commands | Can't prove tests pass |\n| Proposing new infrastructure | Belongs in technical.md |\n| Unit testing details | Implementation concern, not spec-level |",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-10T00:00:00+00:00",
+      "updated_at": "2026-03-10T00:00:00+00:00",
+      "embedding": null,
+      "status": "active",
+      "justification": "Anti-pattern detection table for infra spec evaluation",
+      "evidence": null,
+      "sources": ["writing-infra-specs"]
+    }
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-infra-1",
+      "eval-infra-2",
+      "eval-infra-3",
+      "eval-infra-4",
+      "eval-infra-5"
+    ]
+  },
+  "next_id": 6,
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "extracted from writing-infra-specs skill (evaluation principles only)",
+    "artifact": "infra.md"
+  }
+}

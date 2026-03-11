@@ -85,3 +85,5 @@ Do not propose OpenSpec changes for implementation work.
 
 ### PreToolUse hooks must use `deny`, not errors
 When a PreToolUse hook needs to block an action, return a `deny` response with a reason — not an error. Agents will not interpret error messages as policy; they treat errors as transient failures and retry with variations. A `deny` response is understood as intentional policy and stops retry loops.
+
+@.claude/linear.md
