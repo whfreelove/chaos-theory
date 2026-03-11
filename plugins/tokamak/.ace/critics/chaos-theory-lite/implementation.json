@@ -3,7 +3,7 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "The `technical` section addresses all `functional` capabilities and what-changes entries with technical design",
+      "content": "Evaluate cross-artifact completeness:\n\n- **Capability Coverage**: Flag functional.md capabilities that lack corresponding technical design (components, interfaces, or data flow)\n- **What-Changes Coverage**: Flag \"What Changes\" items in functional.md without a technical counterpart explaining how the change is realized\n- **Orphan Design**: Flag technical.md sections that don't trace back to any functional capability or change\n\nWhen citing gaps, name the specific capability and the missing technical element.",
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,

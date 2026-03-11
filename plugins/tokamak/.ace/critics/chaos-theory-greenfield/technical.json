@@ -3,7 +3,7 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "verify that decisions in `technical.md` which require non-obvious, novel, or complex implementation document how they are technically feasible and testable",
+      "content": "Evaluate internal rigor of technical decisions:\n\n- **Feasibility**: Flag decisions requiring non-obvious or complex implementation that lack justification for why the approach works\n- **Testability**: Flag design choices that cannot be verified in isolation (no clear boundary for unit or integration testing)\n- **Ambiguity**: Flag decisions that leave implementation-critical details unspecified (e.g., error strategy, ordering guarantees) \u2014 but only details that block implementation, not ones that constrain it\n\nDo NOT evaluate consistency with functional.md \u2014 that is the Implementation critic's job.",
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,

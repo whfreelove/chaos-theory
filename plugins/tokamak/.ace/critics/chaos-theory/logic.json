@@ -3,7 +3,7 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Technical design components and interfaces adequately support implementation of requirement scenarios",
+      "content": "Evaluate requirement-to-design traceability:\n\n- **Scenario Supportability**: Flag requirement scenarios whose steps cannot be mapped to technical components or interfaces\n- **Interface Gaps**: Flag scenarios requiring data flow between components where no interface is defined\n- **Over-design**: Flag technical components that no requirement scenario exercises\n\nDo NOT evaluate whether scenarios are well-written \u2014 focus on whether technical design supports them.",
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,

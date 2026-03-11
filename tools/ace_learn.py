@@ -13,9 +13,7 @@ Usage:
     python tools/ace_learn.py openspec/changes/my-change --propagate
 
 Cross-repo usage (learn from another product's critique results):
-    python tools/ace_learn.py /tmp/collected/feature-x \\
-        --repo-root /path/to/other-product \\
-        --change-path openspec/changes/feature-x
+    python tools/ace_learn.py /path/to/other-product/openspec/changes/feature-x
 """
 
 import argparse
@@ -57,40 +55,31 @@ def _git_show(commit: str, filepath: str, cwd: str) -> str:
 
 def _evaluate_quality(
     change_dir: Path, run_data: dict, llm,
-    repo_root: Path | None = None,
-    change_path: str | None = None,
 ) -> dict[str, str]:
     """Evaluate per-critic finding quality using LLM + spec context.
 
     Returns {critic_name: quality_context_string}.
     Uses commit hash from run_data to reconstruct specs at critique time.
-
-    For cross-repo use, pass repo_root to point git commands at the
-    source repo, and change_path for the relative path within it.
+    Auto-detects repo root via git rev-parse from change_dir.
     """
     commit = run_data.get('commit', '')
     if not commit:
         return {}
 
-    git_cwd = str(repo_root) if repo_root else str(change_dir)
-
-    if change_path:
-        rel_dir = change_path
-    else:
-        try:
-            toplevel = subprocess.run(
-                ['git', 'rev-parse', '--show-toplevel'],
-                capture_output=True, text=True, check=True, cwd=git_cwd,
-            ).stdout.strip()
-            rel_dir = str(change_dir.relative_to(toplevel))
-        except (subprocess.CalledProcessError, ValueError, OSError):
-            return {}
+    try:
+        toplevel = subprocess.run(
+            ['git', 'rev-parse', '--show-toplevel'],
+            capture_output=True, text=True, check=True, cwd=str(change_dir),
+        ).stdout.strip()
+        rel_dir = str(change_dir.relative_to(toplevel))
+    except (subprocess.CalledProcessError, ValueError, OSError):
+        return {}
 
     # Reconstruct spec files at critique time
     spec_files = ['functional.md', 'technical.md', 'infra.md', 'gaps.md']
     specs_content = ''
     for sf in spec_files:
-        content = _git_show(commit, f'{rel_dir}/{sf}', git_cwd)
+        content = _git_show(commit, f'{rel_dir}/{sf}', str(change_dir))
         if content:
             specs_content += f'\n## {sf}\n{content[:3000]}\n'
 
@@ -131,8 +120,8 @@ def _evaluate_quality(
             f"End with: Effectiveness: X/Y (Z%)"
         )
         try:
-            response = llm.generate(prompt)
-            quality[name] = response.strip()
+            response = llm.complete(prompt)
+            quality[name] = response.text.strip()
         except Exception as e:
             print(f"  WARNING: Quality eval failed for {name}: {e}", file=sys.stderr)
             quality[name] = ''
@@ -142,7 +131,7 @@ def _evaluate_quality(
 
 def learn(
     change_dir: Path, model: str = 'sonnet', dry_run: bool = False,
-    repo_root: Path | None = None, change_path: str | None = None,
+    smoke: int = 0,
 ):
     """Run ACE learning on the latest critique results."""
     results_path = change_dir / '.critique-results.json'
@@ -174,13 +163,13 @@ def learn(
         print("No successful critic results to learn from", file=sys.stderr)
         sys.exit(1)
 
+    if smoke:
+        successes = successes[:smoke]
+        print(f"Smoke test: processing {len(successes)} of {len([r for r in results if r['status'] == 'success'])} critic(s)")
+
     # Evaluate finding quality
-    if repo_root:
-        print(f"Using repo root: {repo_root}")
-        if change_path:
-            print(f"Change path in repo: {change_path}")
     print("Evaluating finding quality...")
-    quality = _evaluate_quality(change_dir, data, llm, repo_root, change_path)
+    quality = _evaluate_quality(change_dir, data, llm)
 
     # Individual learning per critic
     print(f"\nLearning from {len(successes)} critic(s):")
@@ -199,7 +188,7 @@ def learn(
             reasoning=quality_context,
             final_answer=r['output'],
             skill_ids=[],
-            raw=r['output'],
+            raw={},
         )
         reflection = reflector.reflect(
             question=f"Critic '{r['name']}' evaluation results",
@@ -214,52 +203,55 @@ def learn(
         )
 
         if dry_run:
-            actions = ', '.join(u.action for u in sm_output.updates) if sm_output.updates else 'none'
-            print(f"  {r['name']}: {len(sm_output.updates)} proposed ({actions})")
+            ops = sm_output.update.operations
+            actions = ', '.join(u.type for u in ops) if ops else 'none'
+            print(f"  {r['name']}: {len(ops)} proposed ({actions})")
         else:
-            sb.apply_update(sm_output.updates)
+            sb.apply_update(sm_output.update)
             sb.save_to_file(str(sb_path))
             skills = sb.skills if hasattr(sb, 'skills') else []
-            print(f"  {r['name']}: {len(sm_output.updates)} updates ({len(skills)} skills)")
+            print(f"  {r['name']}: {len(sm_output.update.operations)} updates ({len(skills)} skills)")
 
-    # Team learning
-    print("\nTeam learning:")
-    combined = "\n\n".join([
-        f"## {r['name']}\n{r['output'][:2000]}"
-        for r in successes
-    ])
-    team_path = ACE_DIR / 'team' / 'critique.json'
-    if team_path.exists():
-        team_sb = Skillbook.load_from_file(str(team_path))
-    else:
-        team_sb = Skillbook()
+    # Team learning (skip in smoke mode — not enough data to be meaningful)
+    if not smoke:
+        print("\nTeam learning:")
+        combined = "\n\n".join([
+            f"## {r['name']}\n{r['output'][:2000]}"
+            for r in successes
+        ])
+        team_path = ACE_DIR / 'team' / 'critique.json'
+        if team_path.exists():
+            team_sb = Skillbook.load_from_file(str(team_path))
+        else:
+            team_sb = Skillbook()
 
-    agent_output = AgentOutput(
-        reasoning="",
-        final_answer=combined,
-        skill_ids=[],
-        raw=combined,
-    )
-    reflection = reflector.reflect(
-        question="How did these parallel critics perform as a team? "
-                 "What gaps exist in coverage? What duplication occurred?",
-        agent_output=agent_output,
-        skillbook=team_sb,
-    )
-    sm_output = skill_manager.update_skills(
-        reflection=reflection,
-        skillbook=team_sb,
-        question_context="Critic team coordination",
-        progress="",
-    )
+        agent_output = AgentOutput(
+            reasoning="",
+            final_answer=combined,
+            skill_ids=[],
+            raw={},
+        )
+        reflection = reflector.reflect(
+            question="How did these parallel critics perform as a team? "
+                     "What gaps exist in coverage? What duplication occurred?",
+            agent_output=agent_output,
+            skillbook=team_sb,
+        )
+        sm_output = skill_manager.update_skills(
+            reflection=reflection,
+            skillbook=team_sb,
+            question_context="Critic team coordination",
+            progress="",
+        )
 
-    if dry_run:
-        actions = ', '.join(u.action for u in sm_output.updates) if sm_output.updates else 'none'
-        print(f"  Team: {len(sm_output.updates)} proposed ({actions})")
-    else:
-        team_sb.apply_update(sm_output.updates)
-        team_sb.save_to_file(str(team_path))
-        print(f"  Team: {len(sm_output.updates)} updates")
+        if dry_run:
+            ops = sm_output.update.operations
+            actions = ', '.join(u.type for u in ops) if ops else 'none'
+            print(f"  Team: {len(ops)} proposed ({actions})")
+        else:
+            team_sb.apply_update(sm_output.update)
+            team_sb.save_to_file(str(team_path))
+            print(f"  Team: {len(sm_output.update.operations)} updates")
 
     if dry_run:
         print(f"\nDry run complete. No files modified.")
@@ -327,19 +319,14 @@ if __name__ == '__main__':
                         help='LLM model for reflection (default: sonnet)')
     parser.add_argument('--dry-run', action='store_true',
                         help='Show proposed changes without applying')
+    parser.add_argument('--smoke', type=int, nargs='?', const=2, default=0,
+                        metavar='N',
+                        help='Smoke test: process only N critics (default: 2), skip team learning')
     parser.add_argument('--propagate', action='store_true',
                         help='Copy learned skills across schemas for matching critics')
-    parser.add_argument('--repo-root', type=Path, default=None,
-                        help='Git repo root for cross-repo quality evaluation '
-                             '(default: auto-detect from change_dir)')
-    parser.add_argument('--change-path', default=None,
-                        help='Relative path of the change dir within --repo-root '
-                             '(required when change_dir is outside the target repo)')
     args = parser.parse_args()
 
-    repo_root = args.repo_root.resolve() if args.repo_root else None
-    learn(args.change_dir.resolve(), args.model, args.dry_run,
-          repo_root, args.change_path)
+    learn(args.change_dir.resolve(), args.model, args.dry_run, args.smoke)
 
     if args.propagate and not args.dry_run:
         results_path = args.change_dir.resolve() / '.critique-results.json'

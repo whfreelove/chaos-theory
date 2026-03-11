@@ -3,7 +3,7 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Tasks implement test infrastructure defined in the `infra` section (environments, tooling, test data)",
+      "content": "Evaluate test infrastructure coverage in task planning:\n\n- **Environment Tasks**: Flag test environments in infra.md that lack setup/teardown tasks in tasks.yaml\n- **Tooling Tasks**: Flag testing tools or frameworks in infra.md without corresponding installation/configuration tasks\n- **Test Data Tasks**: Flag test data requirements from infra.md without generation or provisioning tasks\n- **Missing Infra**: Flag tasks.yaml test tasks that assume infrastructure not defined in infra.md\n\nDo NOT evaluate whether infra.md itself is complete \u2014 focus on whether tasks.yaml accounts for what infra.md specifies.",
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
