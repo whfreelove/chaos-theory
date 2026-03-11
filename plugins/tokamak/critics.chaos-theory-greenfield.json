@@ -1,5 +1,5 @@
 {
-  "output_template": "## CRITIC OUTPUT FORMAT (required)\n\nFor each issue found:\n### <critic type>-N: <title>\n- **Severity**: high|medium|low\n- **Description**: <explanation>\n\nSeverity rubric:\n- HIGH = blocks implementation or causes incorrect behavior\n- MEDIUM = degrades functionality or creates ambiguity\n- LOW = minor issue or style\n\nIf no issues found:\n### NO ISSUES FOUND\n\nDo NOT invent issues. Only report genuine gaps.",
+  "output_template": "## CRITIC OUTPUT FORMAT (required)\n\nFor each issue found:\n### <critic type>-N: <title>\n- **Severity**: high|medium|low\n- **Description**: <explanation>\n\nIf no issues found:\n### NO ISSUES FOUND\n\nDo NOT invent issues. Only report genuine gaps.",
   "critics": [
     {
       "name": "Functional",
