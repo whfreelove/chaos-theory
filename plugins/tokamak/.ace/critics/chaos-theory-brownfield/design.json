@@ -104,5 +104,11 @@
     ]
   },
   "next_id": 6,
-  "similarity_decisions": {}
+  "similarity_decisions": {},
+  "metadata": {
+    "version": "0.1.0",
+    "mutations": [],
+    "source": "migrated from critics.chaos-theory-brownfield.json",
+    "critic": "Design"
+  }
 }

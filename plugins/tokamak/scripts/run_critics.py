@@ -39,7 +39,7 @@ ACCURACY_CRITICS = frozenset({
 })
 
 
-def _load_skillbook(sb_path: Path) -> str:
+def _load_skillbook(sb_path: Path, strip_headings: bool = False) -> str:
     """Read skillbook JSON, return skills content as formatted text.
 
     Uses ACE's canonical formatter when available; falls back to simple
@@ -91,7 +91,8 @@ def _load_skillbook(sb_path: Path) -> str:
                 section_parts.append(skill['content'])
                 rendered_ids.add(sid)
         if section_parts:
-            parts.append(f"## {heading}\n")
+            if not strip_headings:
+                parts.append(f"## {heading}\n")
             parts.append('\n\n'.join(section_parts))
     # Fallback: skills not in any section
     for sid, skill in skills.items():
@@ -152,7 +153,8 @@ def is_accuracy_critic(name: str) -> bool:
 
 def build_prompt(critic: dict, change_dir: Path,
                  project_dir: Path | None,
-                 skillbook_context: str = '') -> str:
+                 skillbook_context: str = '',
+                 team_context: str = '') -> str:
     """Construct the evaluation prompt for a single critic."""
     parts = []
 
@@ -164,13 +166,20 @@ def build_prompt(critic: dict, change_dir: Path,
             continue
         seen_artifacts.add(stem)
         artifact_sb = ACE_DIR / 'artifacts' / f'{stem}.json'
-        artifact_ctx = _load_skillbook(artifact_sb)
+        artifact_ctx = _load_skillbook(artifact_sb, strip_headings=True)
         if artifact_ctx:
+            parts.append(f"## Artifact Guidance: {stem}\n")
             parts.append(artifact_ctx)
             parts.append("")
 
+    parts.append("## Evaluation Criteria\n")
     parts.append(skillbook_context)
     parts.append("")
+
+    if team_context:
+        parts.append("## Team Coordination Guidance\n")
+        parts.append(team_context)
+        parts.append("")
 
     # Files to evaluate (relative to change_dir)
     parts.append("## Files to evaluate\n")
@@ -394,13 +403,15 @@ async def run_all_critics(
             'critics_failed': 0, 'results': [],
         }
 
+    team_ctx = _load_skillbook(ACE_DIR / 'team' / 'critique.json')
+
     if dry_run:
         for critic in critics:
             slug = critic['name'].lower().replace(' ', '-')
             sb_path = ace_dir / f'{slug}.json'
             skillbook_context = _load_skillbook(sb_path)
             prompt = build_prompt(critic, change_dir, project_dir,
-                                  skillbook_context)
+                                  skillbook_context, team_context=team_ctx)
             cmd = build_command(critic, change_dir, project_dir,
                                 output_template, budget)
             print(f"\n{'=' * 60}", file=sys.stderr)
@@ -422,7 +433,7 @@ async def run_all_critics(
         sb_path = ace_dir / f'{slug}.json'
         skillbook_context = _load_skillbook(sb_path)
         prompt = build_prompt(critic, change_dir, project_dir,
-                              skillbook_context)
+                              skillbook_context, team_context=team_ctx)
         cmd = build_command(critic, change_dir, project_dir,
                             output_template, budget)
         tasks.append(run_one_critic(critic, cmd, prompt, timeout, semaphore))
@@ -454,6 +465,8 @@ def _show_prompts(
     kind = 'gap-detectors' if 'gap-detector' in config_type else 'critics'
     ace_dir = ACE_DIR / kind / schema
 
+    team_ctx = _load_skillbook(ACE_DIR / 'team' / 'critique.json')
+
     if critic_filter:
         critics = [c for c in critics
                    if c['name'].lower() == critic_filter.lower()]
@@ -468,7 +481,7 @@ def _show_prompts(
         sb_path = ace_dir / f'{slug}.json'
         skillbook_context = _load_skillbook(sb_path)
         prompt = build_prompt(critic, change_dir, project_dir,
-                              skillbook_context)
+                              skillbook_context, team_context=team_ctx)
         print(f"{'=' * 70}")
         print(f"CRITIC: {critic['name']} (model: {critic['model']})")
         print(f"{'=' * 70}")

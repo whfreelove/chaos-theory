@@ -97,12 +97,13 @@ class TestMigrationIntegration:
                     )
 
     def test_team_skillbook_exists(self):
-        """Team skillbook exists with empty skills."""
+        """Team skillbook exists with populated skills."""
         team_path = self.PLUGIN_ROOT / '.ace' / 'team' / 'critique.json'
         assert team_path.exists()
         with open(team_path) as f:
             data = json.load(f)
-        assert data['skills'] == {}
+        assert isinstance(data['skills'], dict)
+        assert len(data['skills']) > 0
 
     def test_skillbook_content_nonempty(self):
         """Migrated skillbooks have non-empty content."""
