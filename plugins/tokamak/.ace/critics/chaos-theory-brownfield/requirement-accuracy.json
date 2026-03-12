@@ -3,22 +3,24 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Cross-reference requirement scenarios against the actual codebase to verify accuracy.\n\nUsing Glob, Grep, and Read tools, explore test suites and code paths from the project root:\n1. Find test files, test fixtures, and tested code paths\n2. Trace scenario Given/When/Then steps to actual code behavior\n\nFlag:\n- **Phantom scenarios**: Scenarios describing behavior the code doesn't exhibit\n- **Missing scenarios**: Untested code paths that should have requirement scenarios\n- **Step mismatch**: Given/When/Then steps that don't match actual code flow\n\nScope: Limit exploration to test directories and the code modules they exercise. Do not explore infrastructure or configuration.\n\nWhen citing issues, quote the specific scenario AND reference the code location that contradicts or is missing.",
-      "helpful": 0,
+      "content": "Cross-reference requirement scenarios against the actual codebase to verify accuracy.\n\nUsing Glob, Grep, and Read tools, explore test suites and code paths from the project root:\n1. Find test files, test fixtures, and tested code paths\n2. Trace scenario Given/When/Then steps to actual code behavior\n3. Trace requirements through the full dispatch chain \u2014 early returns in dispatchers can make handler-level guards dead code\n\nFlag:\n- **Phantom scenarios**: Scenarios describing behavior the code doesn't exhibit\n- **Missing scenarios**: Untested code paths that should have requirement scenarios\n- **Step mismatch**: Given/When/Then steps that don't match actual code flow\n- **Dead-code mismatch**: Requirements referencing behavior that exists but is unreachable at runtime due to early returns\n\nScope: Limit exploration to test directories and the code modules they exercise. Do not explore infrastructure or configuration.\n\nWhen citing issues, quote the specific scenario AND reference the code location that contradicts or is missing.",
+      "justification": "Adds dispatch-chain tracing and dead-code mismatch detection to existing cross-referencing skill based on concrete finding where bin/agentcontainer:230-244 exits before handler guard at line 120-123",
+      "evidence": "bin/agentcontainer:230-244 exits 0 via show_help before cmd_run_agent():120-123 error guard is reached",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:46:41.974360+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -26,24 +28,81 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "evaluation-criteria-00003": {
+      "id": "evaluation-criteria-00003",
+      "section": "evaluation-criteria",
+      "content": "Check flag-gated behavior against all early-return paths that precede the flag evaluation",
+      "justification": "Distinct from dispatch-chain tracing \u2014 this targets state-based early returns within a single command handler that bypass flag processing",
+      "evidence": "lib/commands/up.sh:55-63 returns 0 for existing containers before line 67 where --rebuild is evaluated",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:46:41.974426+00:00",
+      "updated_at": "2026-03-12T05:46:41.974432+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "evaluation-criteria-00004": {
+      "id": "evaluation-criteria-00004",
+      "section": "evaluation-criteria",
+      "content": "Verify downstream steps handle every runtime/variant listed in upstream spec scenarios",
+      "justification": "New combinatorial-coverage pattern \u2014 specs enumerate options in one scenario but downstream scenarios only cover a subset, creating silent gaps",
+      "evidence": "transfer_to_apple_container() at build.sh:192-227 only handles lima and docker but spec lists nerdctl and podman as valid fallbacks",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:46:41.974441+00:00",
+      "updated_at": "2026-03-12T05:46:41.974443+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "evaluation-criteria-00005": {
+      "id": "evaluation-criteria-00005",
+      "section": "evaluation-criteria",
+      "content": "State diagnostic findings as gap descriptions, not design questions or prescriptions",
+      "justification": "New role-boundary skill \u2014 critic role is diagnosis not prescription; ending with 'should they use X or Y?' crosses into design",
+      "evidence": "MISSING-SCENARIO-1 concludes with a design question rather than a pure gap statement",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:46:41.974448+00:00",
+      "updated_at": "2026-03-12T05:46:41.974450+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "evaluation-criteria-00006": {
+      "id": "evaluation-criteria-00006",
+      "section": "evaluation-criteria",
+      "content": "Explicitly confirm aligned requirements after listing mismatches to prove full coverage",
+      "justification": "New review-completeness skill \u2014 distinguishes thorough review from partial review by showing what was checked and passed",
+      "evidence": "Critic listed specific files (detect.sh, template.sh, setup.sh, shell.sh, stop.sh, down.sh) confirming remaining scenarios match",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:46:41.974455+00:00",
+      "updated_at": "2026-03-12T05:46:41.974457+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Requirement Accuracy"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00003",
+      "evaluation-criteria-00004",
+      "evaluation-criteria-00005",
+      "evaluation-criteria-00006"
     ],
     "severity-calibration": [
       "severity-cal-1"
     ]
   },
-  "next_id": 2
+  "next_id": 6,
+  "similarity_decisions": {}
 }

@@ -4,6 +4,8 @@
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
       "content": "`infra.md` defines test environments, tooling, and data management needed to execute requirement scenarios; flag missing infrastructure\n\nDo NOT flag scenario testability \u2014 focus on whether infra.md provides the environments, tooling, and data needed. Scenario quality is checked by the verification critic.",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -11,31 +13,53 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
-      "helpful": 0,
+      "content": "- **HIGH**: Complete absence of a required element; blocks implementation or verification\n- **MEDIUM**: Contradiction or ambiguity in existing content; degrades clarity and requires rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": "Refines HIGH/MEDIUM with concrete heuristic: absence=high, contradiction=medium \u2014 validated by reviewer on INFRA-1 and INFRA-2",
+      "evidence": "INFRA-1 (total absence of runnable commands) rated high; INFRA-2 (contradictory claims) rated medium \u2014 both validated as correctly calibrated",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:41:53.732398+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "finding-techniques-00003": {
+      "id": "finding-techniques-00003",
+      "section": "finding-techniques",
+      "content": "Anchor findings to specific document requirements by name",
+      "justification": "Citing named requirements (e.g., 'Completeness Checklist') makes findings verifiable and harder to dismiss, achieving 100% usefulness",
+      "evidence": "INFRA-1 referenced 'Completeness Checklist requires runnable commands' \u2014 reviewer classified as useful",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:41:53.732301+00:00",
+      "updated_at": "2026-03-12T05:41:53.732358+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "finding-techniques-00004": {
+      "id": "finding-techniques-00004",
+      "section": "finding-techniques",
+      "content": "Flag internal contradictions within the same document",
+      "justification": "Contradictions indicate unresolved design decisions that confuse implementers \u2014 distinct from completeness checks",
+      "evidence": "INFRA-2 found 'no unit test framework' vs. coverage table claiming macOS unit test coverage \u2014 reviewer classified as useful",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:41:53.732383+00:00",
+      "updated_at": "2026-03-12T05:41:53.732386+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
-  },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Design for Test"
   },
   "sections": {
     "evaluation-criteria": [
@@ -43,7 +67,12 @@
     ],
     "severity-calibration": [
       "severity-cal-1"
+    ],
+    "finding-techniques": [
+      "finding-techniques-00003",
+      "finding-techniques-00004"
     ]
   },
-  "next_id": 2
+  "next_id": 4,
+  "similarity_decisions": {}
 }

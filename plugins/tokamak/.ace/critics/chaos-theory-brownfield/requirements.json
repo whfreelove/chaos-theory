@@ -3,22 +3,24 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Evaluate requirements for testability and normative clarity:\n\n- **Testability**: Flag scenarios that describe internal state (Then the x variable equals 5) rather than observable behavior (Then 5 requests are created). Do NOT flag scenarios for lacking verification details - focus on whether the outcome is externally visible vs internal.\n- **Normative Language**: Flag weak language (should, may, might, can, will) - requirements use SHALL/MUST\n- **Scenario Titles**: Flag titles containing \"verify\", \"assert\", \"should\", or conjunctions (\"and\", \"or\", \"because\") suggesting multiple behaviors\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple When-Then pairs belong in separate scenarios; And to extend Given/When/Then is fine)\n\nThe skill handles MDG structure. Focus on whether requirements are implementable and verifiable.\n\nWhen citing issues, quote the specific violating text.",
-      "helpful": 0,
+      "content": "Evaluate requirements for testability and normative clarity:\n\n- **Testability**: Flag scenarios specifying mechanisms (chown -R, cmd_build()) instead of observable outcomes (directory owned by user, image exists). Flag internal state assertions (Then the x variable equals 5) vs observable behavior (Then 5 requests are created). Do NOT flag scenarios for lacking verification details.\n- **Normative Language**: Flag weak language (should, may, might, can, will) \u2014 requirements use SHALL/MUST. Flag ambiguous alternatives ('X or Y') lacking a selection rule.\n- **Scenario Titles**: Flag titles containing \"verify\", \"assert\", \"should\", or conjunctions (\"and\", \"or\", \"because\") suggesting multiple behaviors\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple When-Then pairs belong in separate scenarios; And to extend Given/When/Then is fine). Flag scenarios bundling error-tolerance with happy-path execution \u2014 a passing test cannot distinguish which behavior held.\n\nWhen citing issues, quote the specific violating text and name the concrete test-writing or implementation consequence.",
+      "justification": "Adds mechanism-vs-outcome distinction (highest-yield testability lens per reflection), normative ambiguity for alternatives, error-tolerance atomicity heuristic, and consequence-framing for citations. All validated by 100% useful classification in execution.",
+      "evidence": "TESTABILITY-1 (cmd_build() vs build output), TESTABILITY-2 (chown -R vs directory ownership) both rated useful; NORMATIVE-1 ('nerdctl.lima or wrapper') caught ambiguity; ATOMICITY-1 flagged bundled error-tolerance in scenarios 4.1/4.2",
+      "helpful": 2,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:34:43.103606+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -26,24 +28,33 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "evaluation-criteria-00003": {
+      "id": "evaluation-criteria-00003",
+      "section": "evaluation-criteria",
+      "content": "Flag undefined placeholders among concrete literals in data tables as testability violations",
+      "justification": "Inconsistency within a data table (e.g., {uid} among literal paths) reliably indicates spec ambiguity that blocks test authoring. Distinct from general testability \u2014 this is a structural detection heuristic for tabular specs.",
+      "evidence": "TESTABILITY-3 flagged {uid} in socket path when all other rows gave concrete literals; rated medium severity, useful",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:34:43.103584+00:00",
+      "updated_at": "2026-03-12T05:34:43.103589+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Requirements"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00003"
     ],
     "severity-calibration": [
       "severity-cal-1"
     ]
   },
-  "next_id": 2
+  "next_id": 3,
+  "similarity_decisions": {}
 }

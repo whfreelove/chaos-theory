@@ -4,46 +4,73 @@
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
       "content": "Evaluate requirement-to-design traceability:\n\n- **Scenario Supportability**: Flag requirement scenarios whose steps cannot be mapped to technical components or interfaces\n- **Interface Gaps**: Flag scenarios requiring data flow between components where no interface is defined\n- **Over-design**: Flag technical components that no requirement scenario exercises\n\nDo NOT evaluate whether scenarios are well-written \u2014 focus on whether technical design supports them.",
-      "helpful": 0,
+      "justification": null,
+      "evidence": null,
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:43:26.001493+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
-      "helpful": 0,
+      "content": "- **HIGH**: No component exists to own a required capability \u2014 blocks implementation\n- **MEDIUM**: Contract contradiction between specs, unspecified behavior, or ambiguity requiring rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": "Refines HIGH/MEDIUM distinction based on gap type: missing component (HIGH) vs contradiction or unspecified behavior (MEDIUM), matching implementation blocking potential",
+      "evidence": "TECHNICAL-1 (no component) rated HIGH; TECHNICAL-2 (contract contradiction), TECHNICAL-3 and TECHNICAL-4 (unspecified behavior) rated MEDIUM",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:43:26.001467+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "evaluation-criteria-00003": {
+      "id": "evaluation-criteria-00003",
+      "section": "evaluation-criteria",
+      "content": "Cite specific scenario IDs and name exact components in each finding",
+      "justification": "All 4 findings scored useful because each traced a named scenario ID to a specific design element \u2014 this is the differentiating quality pattern",
+      "evidence": "4/4 findings cite specific scenario IDs (@developer-views-status:1.1, @developer-stops-container:1.2) and name exact components (CMP-status-command, INT-container-finding)",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:43:26.001402+00:00",
+      "updated_at": "2026-03-12T05:43:26.001446+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "evaluation-criteria-00004": {
+      "id": "evaluation-criteria-00004",
+      "section": "evaluation-criteria",
+      "content": "Quote both conflicting spec texts when reporting contract contradictions",
+      "justification": "Distinguishes strong contradiction findings from vague 'these don't match' observations by making the conflict verifiable",
+      "evidence": "TECHNICAL-2 quotes INT-container-finding's 'exits with error' clause alongside two scenarios requiring exit code 0",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:43:26.001474+00:00",
+      "updated_at": "2026-03-12T05:43:26.001476+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Logic"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00003",
+      "evaluation-criteria-00004"
     ],
     "severity-calibration": [
       "severity-cal-1"
     ]
   },
-  "next_id": 2
+  "next_id": 4,
+  "similarity_decisions": {}
 }

@@ -4,6 +4,8 @@
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
       "content": "Evaluate internal rigor of technical decisions:\n\n- **Feasibility**: Flag decisions requiring non-obvious or complex implementation that lack justification for why the approach works\n- **Testability**: Flag design choices that cannot be verified in isolation (no clear boundary for unit or integration testing)\n- **Ambiguity**: Flag decisions that leave implementation-critical details unspecified (e.g., error strategy, ordering guarantees) \u2014 but only details that block implementation, not ones that constrain it\n\nDo NOT evaluate consistency with functional.md \u2014 that is the Implementation critic's job.",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -11,39 +13,48 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
-      "helpful": 0,
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Blocks one specific code path but not overall implementation progress; requires a decision during that subsystem's work\n- **LOW**: Surrounding context gives an implementer enough to infer intent despite a formal spec gap; spec hygiene issue, not a genuine blocker",
+      "justification": "Original definitions were too generic; refined MEDIUM and LOW with concrete discriminators from calibration evidence",
+      "evidence": "TECHNICAL-1/2 rated medium (blocks Apple Container fallback path specifically, not all implementation); TECHNICAL-3 rated low (existing find_project_container definition and contextual note about -a flag give implementer enough to infer intent)",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:31:21.168114+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "evaluation-criteria-00003": {
+      "id": "evaluation-criteria-00003",
+      "section": "evaluation-criteria",
+      "content": "Verify critic stayed within its mandate boundary separately from finding accuracy",
+      "justification": "Mandate adherence is a distinct quality axis from whether findings are correct \u2014 a critic can have accurate findings but drift into another critic's scope",
+      "evidence": "Calibrator noted 'The critic avoided the common trap of drifting into functional consistency concerns (which belongs to the Implementation critic)'",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:31:21.168042+00:00",
+      "updated_at": "2026-03-12T05:31:21.168084+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Technical"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00003"
     ],
     "severity-calibration": [
       "severity-cal-1"
     ]
   },
-  "next_id": 2
+  "next_id": 3,
+  "similarity_decisions": {}
 }

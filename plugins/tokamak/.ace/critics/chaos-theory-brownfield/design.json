@@ -4,6 +4,8 @@
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
       "content": "`technical.md` internal consistency: thorough architecture, non-conflicting technical decisions that reinforce architecture, specificity doesn't constrain coding, objectives with context",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -11,14 +13,14 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -26,24 +28,81 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "severity-calibration-00003": {
+      "id": "severity-calibration-00003",
+      "section": "severity-calibration",
+      "content": "Rate diagram-vs-prose contradictions as medium severity",
+      "justification": "Specific calibration pattern: developers may read only one representation, so contradictions between diagrams and prose create real implementation ambiguity",
+      "evidence": "TECHNICAL-1 correctly flagged system diagram showing eager loading while OBJ-lazy-loading and DEC-lazy-command-loading specify lazy behavior",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:30:11.608706+00:00",
+      "updated_at": "2026-03-12T05:30:11.608749+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "severity-calibration-00004": {
+      "id": "severity-calibration-00004",
+      "section": "severity-calibration",
+      "content": "Rate undocumented function call-context constraints as medium severity",
+      "justification": "Implicit preconditions (e.g., environment variable dependencies) that aren't documented create implementation ambiguity worth flagging",
+      "evidence": "TECHNICAL-2 identified build_mounts_json() requires CONTAINER_HOME but spec doesn't clarify if only called from generate_devcontainer_json()",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:30:11.608772+00:00",
+      "updated_at": "2026-03-12T05:30:11.608774+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "severity-calibration-00005": {
+      "id": "severity-calibration-00005",
+      "section": "severity-calibration",
+      "content": "Rate missing decision rationale in existing Decisions section as low severity",
+      "justification": "Documentation gaps in existing decision frameworks are low, not medium \u2014 the decision exists, only the formal record is incomplete",
+      "evidence": "TECHNICAL-3 noted find_project_container duplication acknowledged in INT-container-finding but absent from formal Decisions",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:30:11.608781+00:00",
+      "updated_at": "2026-03-12T05:30:11.608783+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "evaluation-criteria-00006": {
+      "id": "evaluation-criteria-00006",
+      "section": "evaluation-criteria",
+      "content": "100% useful rate signals strong critic scope discipline",
+      "justification": "Provides a benchmark for meta-evaluation: high useful ratio means critic stayed within its internal-consistency mandate without drifting to external concerns",
+      "evidence": "All 3 findings targeted genuine internal inconsistencies within technical.md, zero noise or out-of-scope items",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:30:11.608790+00:00",
+      "updated_at": "2026-03-12T05:30:11.608792+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Design"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00006"
     ],
     "severity-calibration": [
-      "severity-cal-1"
+      "severity-cal-1",
+      "severity-calibration-00003",
+      "severity-calibration-00004",
+      "severity-calibration-00005"
     ]
   },
-  "next_id": 2
+  "next_id": 6,
+  "similarity_decisions": {}
 }

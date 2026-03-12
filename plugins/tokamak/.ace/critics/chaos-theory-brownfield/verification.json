@@ -3,22 +3,24 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Each requirement scenario is verifiable with the test infrastructure defined in `infra.md`; flag scenarios that cannot be tested with available environments, tooling, or data\n\nDo NOT flag infrastructure gaps \u2014 focus on whether scenarios describe testable outcomes. Infrastructure completeness is checked by the design-for-test critic.",
-      "helpful": 0,
+      "content": "Each requirement scenario is verifiable with the test infrastructure defined in `infra.md`; flag scenarios that cannot be tested with available environments, tooling, or data\n\nApply two-step filter before raising a finding:\n1. Does the scenario lack any viable test path in described infrastructure? \u2192 Flag it\n2. Is the scenario testable but infra docs incomplete about how tests run? \u2192 Skip it (infra gap, not testability)\n\nDo NOT flag infrastructure gaps \u2014 focus on whether scenarios describe testable outcomes. Infrastructure completeness is checked by the design-for-test critic.",
+      "justification": "Adding explicit two-step filter prevents the documented 50% out-of-scope rate caused by conflating doc completeness with testability",
+      "evidence": "INFRA-1 and INFRA-4 flagged missing documentation about how tests are invoked rather than identifying scenarios lacking any test path",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:40:34.473856+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -26,16 +28,38 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "scope-enforcement-00003": {
+      "id": "scope-enforcement-00003",
+      "section": "scope-enforcement",
+      "content": "Treat reframed restatements of excluded finding types as still out-of-scope",
+      "justification": "INFRA-1 restated 'no runnable commands' (an infrastructure gap) using different vocabulary, bypassing the mandate's explicit exclusion",
+      "evidence": "Mandate said 'do NOT flag infrastructure gaps'; INFRA-1 flagged 'absence of runnable commands' \u2014 same concept, different framing",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:40:34.473906+00:00",
+      "updated_at": "2026-03-12T05:40:34.473912+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "scope-enforcement-00004": {
+      "id": "scope-enforcement-00004",
+      "section": "scope-enforcement",
+      "content": "50% useful-finding rate signals missing decision boundary, not random error",
+      "justification": "Distinguishes systematic scope drift (structural fix needed) from occasional misclassification (noise); both INFRA-1 and INFRA-4 shared the same root confusion",
+      "evidence": "2 of 4 findings out-of-scope, both confusing doc completeness with testability \u2014 consistent pattern indicating structural issue",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:40:34.473918+00:00",
+      "updated_at": "2026-03-12T05:40:34.473920+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
-  },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Verification"
   },
   "sections": {
     "evaluation-criteria": [
@@ -43,7 +67,12 @@
     ],
     "severity-calibration": [
       "severity-cal-1"
+    ],
+    "scope-enforcement": [
+      "scope-enforcement-00003",
+      "scope-enforcement-00004"
     ]
   },
-  "next_id": 2
+  "next_id": 4,
+  "similarity_decisions": {}
 }

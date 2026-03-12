@@ -3,47 +3,58 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Identify missing cross-capability integration scenarios by analyzing capability interactions in `functional.md`:\n\n- **Capability Interactions**: Flag multi-capability interactions that produce emergent behavior but lack integration scenario coverage\n- **Integration Boundaries**: Flag cases where capabilities share data, trigger each other, or have ordering dependencies without integration tests\n\nUse `requirements/` for deduplication \u2014 do NOT suggest integration scenarios for behaviors already covered by single-capability requirement scenarios.\n\nDo NOT:\n- Duplicate scenarios that already exist in `integration.feature.md` or `requirements/`\n- Suggest scenarios for capabilities that don't actually interact\n- Flag hypothetical interactions users would never encounter\n\nFor each gap, name the interacting capabilities and describe the missing integration behavior.",
-      "helpful": 0,
+      "content": "Identify missing cross-capability integration scenarios by analyzing capability interactions in `functional.md`:\n\n- **Shared Function Tracing**: Trace shared functions (e.g., discovery mechanisms) across all capabilities that use them \u2014 flag any capability missing integration coverage for that shared dependency\n- **Capability Interactions**: Flag multi-capability interactions that produce emergent behavior but lack integration scenario coverage\n- **Integration Boundaries**: Flag cases where capabilities share data, trigger each other, or have ordering dependencies without integration tests\n\nUse `requirements/` for deduplication \u2014 do NOT suggest integration scenarios for behaviors already covered by single-capability requirement scenarios.\n\nDo NOT:\n- Duplicate scenarios that already exist in `integration.feature.md` or `requirements/`\n- Suggest scenarios for capabilities that don't actually interact\n- Flag hypothetical interactions users would never encounter\n\nFor each gap, name the interacting capabilities, the shared dependency, and describe the missing integration behavior.",
+      "justification": "Adds concrete technique: trace shared functions across capabilities to find coverage gaps. Proven effective in finding agent-run missing coverage for find_project_container().",
+      "evidence": "Critic traced find_project_container() usage across shell/stop/down/agent-run and found agent-run lacked integration coverage",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:54:36.424249+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
-      "helpful": 0,
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality, creates ambiguity requiring rework, or leaves a coverage gap where a change could break functionality without blocking implementation\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": "Refines MEDIUM with concrete coverage-gap heuristic: 'change could break functionality but implementation isn't blocked'. Preserves existing calibration while adding specificity.",
+      "evidence": "Critic assigned medium to discovery naming pattern gap: 'won't block implementation but creates a coverage gap where a naming change could break agent execution'",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:54:36.424316+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "evaluation-criteria-00003": {
+      "id": "evaluation-criteria-00003",
+      "section": "evaluation-criteria",
+      "content": "Explicitly justify dismissed interactions with reasoning, not silent omission",
+      "justification": "Novel pattern: critics that show 'NO ISSUES FOUND' with explicit reasoning scored 100% effectiveness. No existing skill covers transparency about non-findings.",
+      "evidence": "Evaluator highlighted the 'no issues found' section with explicit reasoning as valuable, contributing to the 100% effectiveness score",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:54:36.424299+00:00",
+      "updated_at": "2026-03-12T05:54:36.424307+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Integration Coverage"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00003"
     ],
     "severity-calibration": [
       "severity-cal-1"
     ]
   },
-  "next_id": 2
+  "next_id": 3,
+  "similarity_decisions": {}
 }

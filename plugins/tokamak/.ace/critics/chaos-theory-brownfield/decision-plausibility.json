@@ -3,22 +3,24 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Verify `technical.md` decisions (Y-Statements) against code evidence.\n\nUsing Glob, Grep, and Read tools, examine the codebase from the project root:\n1. Read each `[initial-docs]` decision in `technical.md`\n2. Find code evidence that supports or contradicts each decision\n\nFlag:\n- **Contradicted decisions**: Y-statements claiming choices the code doesn't reflect (e.g., \"we chose REST\" but code uses GraphQL)\n- **Missing decisions**: Significant architectural choices visible in code but not documented as decisions\n- **Unsupported rationale**: Decision rationale that doesn't hold given actual code structure\n\nScope: Focus on configuration files, dependency manifests, and architectural boundaries visible in imports/exports.\n\nWhen citing issues, quote the specific decision AND reference code evidence.",
-      "helpful": 0,
+      "content": "Verify `technical.md` decisions (Y-Statements) against code evidence.\n\nUsing Glob, Grep, and Read tools, examine the codebase from the project root:\n\n**Positive verification** (documented \u2192 code):\n1. Read each `[initial-docs]` decision in `technical.md`\n2. Find code evidence that supports or contradicts each decision\n\n**Negative verification** (code \u2192 undocumented):\n3. Scan key architectural patterns (dispatch mechanisms, error handling, configuration loading, security boundaries)\n4. Check whether each significant pattern is captured in a Y-Statement\n\nFlag:\n- **Contradicted decisions**: Y-statements claiming choices the code doesn't reflect (e.g., \"we chose REST\" but code uses GraphQL)\n- **Missing decisions**: Significant architectural choices visible in code but not documented as decisions\n- **Unsupported rationale**: Decision rationale that doesn't hold given actual code structure\n\nScope: Focus on configuration files, dependency manifests, and architectural boundaries visible in imports/exports.\n\nWhen citing issues, quote the specific decision AND reference code evidence.",
+      "justification": "Existing skill only covers positive verification. Critic concluded 'no missing decisions' in 2,100-line codebase without exploratory scanning \u2014 adding explicit negative verification step closes this gap.",
+      "evidence": "Critic verified all 8 decisions but reviewer flagged absence of undocumented-decision hunting as a blind spot",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:49:51.115744+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -26,24 +28,65 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "evaluation-criteria-00003": {
+      "id": "evaluation-criteria-00003",
+      "section": "evaluation-criteria",
+      "content": "Trace capability claims through full code path: detection \u2192 mapping \u2192 dispatch \u2192 execution",
+      "justification": "Reusable technique that reliably surfaces implementation gaps at specific layers. Produced the critic's single high-quality finding.",
+      "evidence": "TECHNICAL-1 traced containerd through detect.sh:50-51 \u2192 get_container_cmd() \u2192 command module dispatch, finding the break at dispatch layer",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:49:51.115792+00:00",
+      "updated_at": "2026-03-12T05:49:51.115799+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "severity-calibration-00004": {
+      "id": "severity-calibration-00004",
+      "section": "severity-calibration",
+      "content": "Prioritize precision over recall \u2014 one evidenced finding beats five vague observations",
+      "justification": "Establishes quality benchmark for critic output. Prevents noise padding that dilutes actionable findings.",
+      "evidence": "Critic produced 1/1 useful findings (100% effectiveness) with specific file:line evidence; reviewer classified as well-calibrated",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:49:51.115808+00:00",
+      "updated_at": "2026-03-12T05:49:51.115810+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "evaluation-criteria-00005": {
+      "id": "evaluation-criteria-00005",
+      "section": "evaluation-criteria",
+      "content": "Target objective-level claims with concrete scope numbers as highest-priority verification items",
+      "justification": "Guides where critics should focus for maximum impact. Concrete scope claims (e.g., 'supports 6 runtimes') are falsifiable and high-value.",
+      "evidence": "The one useful finding came from verifying OBJ-runtime-abstraction's '6 runtimes' claim against actual command module coverage",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:49:51.115815+00:00",
+      "updated_at": "2026-03-12T05:49:51.115817+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Decision Plausibility"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00003",
+      "evaluation-criteria-00005"
     ],
     "severity-calibration": [
-      "severity-cal-1"
+      "severity-cal-1",
+      "severity-calibration-00004"
     ]
   },
-  "next_id": 2
+  "next_id": 5,
+  "similarity_decisions": {}
 }

@@ -3,22 +3,24 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Evaluate `integration.feature.md` for quality and legitimacy:\n\n- **Cross-Capability Focus**: Flag scenarios that test single-capability behavior (these belong in `requirements/`). Integration scenarios MUST involve 2+ capabilities interacting.\n- **@capability Tagging**: Flag scenarios missing @capability tags or tagged with only one capability\n- **Testability**: Flag scenarios describing internal state rather than observable behavior\n- **Normative Language**: Flag weak language (should, may, might, can, will) \u2014 integration scenarios use SHALL/MUST\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple When-Then pairs belong in separate scenarios)\n\nWhen citing issues, quote the specific violating text.",
-      "helpful": 0,
+      "content": "Evaluate `integration.feature.md` for quality and legitimacy:\n\n- **Cross-Capability Focus**: Flag scenarios that test single-capability behavior (these belong in `requirements/`). Integration scenarios MUST involve 2+ capabilities interacting.\n- **@capability Tagging**: Flag scenarios missing @capability tags or tagged with only one capability\n- **Testability**: Flag Then clauses referencing internal function names (e.g., `load_config()`, `image_exists()`) \u2014 assert observable behavior, not call chains\n- **Normative Language**: Flag weak language (should, may, might, can, will) \u2014 integration scenarios use SHALL/MUST\n- **Atomicity**: Flag scenarios collapsing multiple distinct commands into one When-Then pair \u2014 each command gets its own scenario for failure localization",
+      "justification": "Sharpens testability bullet with concrete anti-pattern (function names in Then clauses) and atomicity bullet with failure-localization rationale, both backed by specific findings",
+      "evidence": "TESTABILITY-1: 7 function-name references in Then clauses; ATOMICITY-1: build/up/shell/stop/down collapsed into one scenario",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:53:07.401985+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -26,16 +28,38 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "critic-output-quality-00003": {
+      "id": "critic-output-quality-00003",
+      "section": "critic-output-quality",
+      "content": "Classify critic findings as useful when they quote violating text, cite a named criterion, and suggest a fix",
+      "justification": "Reusable heuristic for triaging critic output \u2014 three-part test observed at 100% hit rate across 3 findings",
+      "evidence": "All 3 integration critic findings met quote+criterion+fix pattern and were correctly classified as useful",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:53:07.402039+00:00",
+      "updated_at": "2026-03-12T05:53:07.402048+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "critic-design-00004": {
+      "id": "critic-design-00004",
+      "section": "critic-design",
+      "content": "Constrain critics to 3-4 evaluation dimensions for higher signal-to-noise",
+      "justification": "Meta-pattern for critic architecture \u2014 narrow rubrics produced 3/3 useful findings vs broader reviewers",
+      "evidence": "Integration critic with testability, atomicity, cross-capability dimensions achieved 100% useful finding rate",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:53:07.402057+00:00",
+      "updated_at": "2026-03-12T05:53:07.402059+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
-  },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Integration"
   },
   "sections": {
     "evaluation-criteria": [
@@ -43,7 +67,14 @@
     ],
     "severity-calibration": [
       "severity-cal-1"
+    ],
+    "critic-output-quality": [
+      "critic-output-quality-00003"
+    ],
+    "critic-design": [
+      "critic-design-00004"
     ]
   },
-  "next_id": 2
+  "next_id": 4,
+  "similarity_decisions": {}
 }

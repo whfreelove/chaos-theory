@@ -3,22 +3,24 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Cross-reference `infra.md` against actual project infrastructure.\n\nUsing Glob, Grep, and Read tools, explore infrastructure from the project root:\n1. Find CI configs (.github/workflows/, .gitlab-ci.yml, Jenkinsfile, etc.)\n2. Find test configs (jest.config, pytest.ini, vitest.config, etc.)\n3. Find deployment configs (Dockerfile, docker-compose, k8s manifests, serverless.yml, etc.)\n4. Find build configs (package.json scripts, Makefile, build.gradle, etc.)\n\nFlag:\n- **Phantom infrastructure**: `infra.md` documents infrastructure that doesn't exist in the project\n- **Undocumented infrastructure**: Existing CI/test/deploy/build configs not covered in `infra.md`\n- **Configuration mismatch**: Documented settings that don't match actual config values\n\nScope: Focus on root-level and .github/ config files. Do not explore node_modules, vendor, or build output directories.\n\nWhen citing issues, quote specific infra.md text AND reference the actual config file (or absence thereof).",
-      "helpful": 0,
+      "content": "Cross-reference `infra.md` against actual project infrastructure.\n\nUsing Glob, Grep, and Read tools, explore infrastructure from the project root:\n1. Find CI configs (.github/workflows/, .gitlab-ci.yml, Jenkinsfile, etc.)\n2. Find test configs (jest.config, pytest.ini, vitest.config, etc.)\n3. Find deployment configs (Dockerfile, docker-compose, k8s manifests, serverless.yml, etc.)\n4. Find build configs (package.json scripts, Makefile, build.gradle, etc.)\n\nFlag:\n- **Phantom infrastructure**: `infra.md` documents infrastructure that doesn't exist in the project\n- **Undocumented infrastructure**: Existing CI/test/deploy/build configs not covered in `infra.md`\n- **Configuration mismatch**: Documented settings that don't match actual config values\n- **Metric drift**: Verify concrete claims (line counts, file sizes, step counts) against actual files \u2014 specs written against older versions drift from reality\n\nScope: Focus on root-level and .github/ config files. Do not explore node_modules, vendor, or build output directories.\n\nWhen citing issues, quote specific infra.md text AND reference the actual config file (or absence thereof).",
+      "justification": "Adds metric drift detection (line counts, file sizes) to existing cross-referencing criteria \u2014 catches factual staleness that pure document review misses",
+      "evidence": "install.sh claimed 222 lines but actually has 179; verified via rg line count",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:51:37.376407+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -26,24 +28,65 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "evaluation-criteria-00003": {
+      "id": "evaluation-criteria-00003",
+      "section": "evaluation-criteria",
+      "content": "Trace CI job-level conditionals to verify lint/test coverage claims.\n\nWhen infra.md claims CI coverage for a platform or stage:\n1. Read the workflow file and identify the specific job containing the step\n2. Check for `if:` conditionals, matrix exclusions, or environment variable gates on that job\n3. A step existing in a workflow does NOT mean it always executes\n\nFlag when coverage is conditional but spec claims it is unconditional.",
+      "justification": "Presence of a CI step doesn't guarantee execution \u2014 job-level conditionals create coverage gaps that specs often miss",
+      "evidence": "Lint step embedded in test job gated behind MACOS_RUNNER variable; spec claimed unconditional macOS lint coverage",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:51:37.376486+00:00",
+      "updated_at": "2026-03-12T05:51:37.376494+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "evaluation-criteria-00004": {
+      "id": "evaluation-criteria-00004",
+      "section": "evaluation-criteria",
+      "content": "Investigate truncated critic findings independently before classifying as vague.\n\nWhen a finding is cut off mid-sentence or lacks a complete evidence chain:\n1. Extract the core claim from what IS present\n2. Use Glob/Grep/Read to verify the underlying claim against source files\n3. If the claim has merit, reconstruct the full finding with your own evidence\n4. Only classify as 'vague' if the claim itself is unverifiable, not just truncated",
+      "justification": "Truncation is a presentation failure, not an analytical failure \u2014 dismissing truncated findings loses valid insights",
+      "evidence": "INFRA-4 truncated mid-sentence but generator reconstructed complete finding about devcontainer CLI dependency from source files",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:51:37.376505+00:00",
+      "updated_at": "2026-03-12T05:51:37.376507+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "severity-calibration-00005": {
+      "id": "severity-calibration-00005",
+      "section": "severity-calibration",
+      "content": "Benchmark infrastructure critic at 75%+ useful-finding rate with <5% noise.\n\nAfter evaluating findings, compute:\n- Useful: complete evidence chain, verifiable claim\n- Noise: incorrect or irrelevant findings\n- Vague: incomplete but potentially valid\n\nA well-calibrated critic produces \u226575% useful and 0% noise. Vague findings from truncation are acceptable if rate stays below 25%.",
+      "justification": "Establishes quantitative baseline for critic quality assessment in infrastructure domain",
+      "evidence": "3/4 useful (75%), 0 noise (0%), 1 vague from truncation (25%) across infrastructure accuracy evaluation",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:51:37.376513+00:00",
+      "updated_at": "2026-03-12T05:51:37.376515+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Infrastructure Accuracy"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00003",
+      "evaluation-criteria-00004"
     ],
     "severity-calibration": [
-      "severity-cal-1"
+      "severity-cal-1",
+      "severity-calibration-00005"
     ]
   },
-  "next_id": 2
+  "next_id": 5,
+  "similarity_decisions": {}
 }

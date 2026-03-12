@@ -4,6 +4,8 @@
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
       "content": "Evaluate cross-artifact completeness:\n\n- **Capability Coverage**: Flag functional.md capabilities that lack corresponding technical design (components, interfaces, or data flow)\n- **What-Changes Coverage**: Flag \"What Changes\" items in functional.md without a technical counterpart explaining how the change is realized\n- **Orphan Design**: Flag technical.md sections that don't trace back to any functional capability or change\n\nWhen citing gaps, name the specific capability and the missing technical element.",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -11,39 +13,64 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
-      "helpful": 0,
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior (e.g., functional capability with zero technical design \u2014 no CMP-*, no interface, no data flow)\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": "Adds concrete calibration example for HIGH severity based on confirmed evaluation \u2014 zero technical design forces implementers to invent architecture",
+      "evidence": "developer-views-status had no CMP-*, no interface, no data flow; evaluator confirmed HIGH as appropriate",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:36:01.276607+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "evaluation-criteria-00003": {
+      "id": "evaluation-criteria-00003",
+      "section": "evaluation-criteria",
+      "content": "Enumerate source artifact items, then verify each has a target counterpart",
+      "justification": "Enumeration-first method catches omissions that holistic reading misses \u2014 absences are invisible without an explicit checklist",
+      "evidence": "Critic found developer-views-status gap by iterating functional capabilities against CMP-* components in technical.md",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:36:01.276544+00:00",
+      "updated_at": "2026-03-12T05:36:01.276576+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "evaluation-criteria-00004": {
+      "id": "evaluation-criteria-00004",
+      "section": "evaluation-criteria",
+      "content": "Prioritize finding precision over volume \u2014 one correct finding beats padded lists",
+      "justification": "1/1 useful findings scored 100% effectiveness; padding with low-quality findings would reduce credibility",
+      "evidence": "Evaluator rated single high-quality finding as 100% effectiveness despite noting thoroughness cannot be assessed",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:36:01.276596+00:00",
+      "updated_at": "2026-03-12T05:36:01.276599+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Implementation"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00003",
+      "evaluation-criteria-00004"
     ],
     "severity-calibration": [
       "severity-cal-1"
     ]
   },
-  "next_id": 2
+  "next_id": 4,
+  "similarity_decisions": {}
 }

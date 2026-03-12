@@ -3,22 +3,24 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Hunt for unjustified dependencies in `technical.md`:\n\n- **External dependencies**: Flag if lacking Y-statement justification, poorly documented, or unviable (inactive, obscure, expensive, complex)\n- **Complex internal solutions**: Flag if a viable external alternative exists but wasn't considered\n\nEach dependency decision (add external OR build internal) should have a Y-statement documenting what was neglected and why.",
-      "helpful": 0,
+      "content": "Hunt for unjustified dependencies in `technical.md`:\n\n- **External dependencies**: Flag if lacking Y-statement justification, poorly documented, or unviable (inactive, obscure, expensive, complex)\n- **Complex internal solutions**: Flag if a viable external alternative exists but wasn't considered\n- **Alternative ranking**: Name the strongest alternative based on overlap with existing project dependencies (e.g., `node -e` when npm is already required)\n\nEach dependency decision (add external OR build internal) should have a Y-statement documenting what was neglected and why.",
+      "justification": "Adding alternative-ranking technique that made TECHNICAL-1 'particularly sharp' per evaluator",
+      "evidence": "TECHNICAL-1 named node -e as alternative to jq because devcontainer CLI already requires npm, praised as particularly sharp",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:32:53.947285+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": null,
+      "evidence": null,
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
@@ -26,24 +28,67 @@
       "updated_at": "2026-03-01T23:43:14.865186+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "evaluation-criteria-00003": {
+      "id": "evaluation-criteria-00003",
+      "section": "evaluation-criteria",
+      "content": "Expand to error contracts on interfaces when rubric permits adjacent concerns",
+      "justification": "Rubric-permitted scope expansion yielded useful findings without diluting critic focus",
+      "evidence": "TECHNICAL-2 surfaced missing error contracts on 5 interfaces using rubric's common-mistakes checklist, classified as useful",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:32:53.947329+00:00",
+      "updated_at": "2026-03-12T05:32:53.947332+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "evaluation-criteria-00004": {
+      "id": "evaluation-criteria-00004",
+      "section": "evaluation-criteria",
+      "content": "Flag entities detected/mapped in spec but never covered by component specifications",
+      "justification": "Detection-without-specification is a reusable under-specification gap pattern for dependency critics",
+      "evidence": "TECHNICAL-3 found containerd mapped in INT-runtime-detection and INT-container-cmd but absent from component specs",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:32:53.947338+00:00",
+      "updated_at": "2026-03-12T05:32:53.947340+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "finding-quality-00005": {
+      "id": "finding-quality-00005",
+      "section": "finding-quality",
+      "content": "Cite specific line numbers, interface IDs, and concrete alternatives in every finding",
+      "justification": "Specificity is the primary driver of useful vs vague classification, achieving 100% useful rate",
+      "evidence": "All 3 findings referenced specific locations (line 9, 160, 164) and named specific interfaces, all classified useful",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:32:53.947344+00:00",
+      "updated_at": "2026-03-12T05:32:53.947346+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Dependency"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00003",
+      "evaluation-criteria-00004"
     ],
     "severity-calibration": [
       "severity-cal-1"
+    ],
+    "finding-quality": [
+      "finding-quality-00005"
     ]
   },
-  "next_id": 2
+  "next_id": 5,
+  "similarity_decisions": {}
 }

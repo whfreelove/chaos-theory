@@ -3,47 +3,58 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Evaluate requirements coverage against functional spec:\n\n- **Capability Coverage**: Flag if any functional.md capability lacks a corresponding `requirements/<slug>/requirements.feature.md` file\n- **Rule Coverage**: Flag if capability behaviors described in functional.md lack corresponding Rules in requirements\n- **Scenario Coverage**: Flag if functional.md describes user interactions not covered by any scenario\n\nWhen citing gaps, name the specific capability/behavior missing.",
-      "helpful": 0,
+      "content": "Evaluate requirements coverage against functional spec:\n\n- **Capability Coverage**: Flag if any functional.md capability lacks a corresponding `requirements/<slug>/requirements.feature.md` file\n- **Rule Coverage**: Flag if capability behaviors described in functional.md lack corresponding Rules in requirements\n- **Scenario Coverage**: Flag if functional.md describes user interactions not covered by any scenario\n- **Gap Type**: Classify each finding as missing limitation, missing capability detail, or missing standalone contract\n\nWhen citing gaps, name the specific capability/behavior missing and its gap type.",
+      "justification": "Adds gap-type taxonomy to existing evaluation criteria, enabling consistent classification across findings",
+      "evidence": "Generator used three distinct gap types: REQUIREMENTS-1 (limitation absent), REQUIREMENTS-2 (capability detail absent), REQUIREMENTS-3 (mechanism only in integration, not standalone)",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:38:57.293494+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
-      "helpful": 0,
+      "content": "- **HIGH**: Gap would produce contradictory implementation behavior (e.g., implementer builds opposite of documented limitation)\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework (e.g., missing capability detail)\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": "Sharpens HIGH definition from generic 'blocks or causes incorrect behavior' to specific 'contradictory implementation behavior' with example",
+      "evidence": "REQUIREMENTS-1 rated high because implementer following only requirements would build --rebuild to always rebuild, contradicting the documented silent-ignore limitation",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:38:57.293535+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "evaluation-criteria-00003": {
+      "id": "evaluation-criteria-00003",
+      "section": "evaluation-criteria",
+      "content": "Flag behavior documented only in integration tests but absent from feature-level requirements",
+      "justification": "New criterion: integration test context is not a standalone contract; feature-level requirements must independently specify the behavior",
+      "evidence": "REQUIREMENTS-3 identified symlink behavior in integration:5.2 but absent from agent-auth-persists feature file",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:38:57.293552+00:00",
+      "updated_at": "2026-03-12T05:38:57.293556+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Validation"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00003"
     ],
     "severity-calibration": [
       "severity-cal-1"
     ]
   },
-  "next_id": 2
+  "next_id": 3,
+  "similarity_decisions": {}
 }

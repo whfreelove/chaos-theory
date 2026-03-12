@@ -4,46 +4,107 @@
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
       "content": "Evaluate `functional.md` for implementation leakage:\n\n- **Why**: Flag if it describes technical gaps (missing APIs, no hooks) instead of human burden (wasted effort, variability, rework)\n- **What Changes**: Flag if it describes internal mechanisms rather than artifacts/behaviors users interact with\n- **Capabilities**: Flag if framed by component/feature names rather than by actor (\"Users can...\", \"Skill authors can...\")\n- **User Impact**: Flag if it describes technical footprint (files, APIs, registrations) rather than experience changes\n\nVerbosity often signals implementation leakage - functional specs should be under 1 page.\n\nWhen citing issues, quote the specific violating text so it can be fixed directly.",
-      "helpful": 0,
+      "justification": null,
+      "evidence": null,
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:22:48.866023+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
-      "helpful": 0,
+      "content": "- **HIGH**: Document-level framing errors that misframe the entire spec (e.g., overview written as implementation spec)\n- **MEDIUM**: Item-level issues \u2014 individual capabilities, limitations, or sections with wrong framing\n- **LOW**: Partial drift in supporting sections that mostly work but have minor leakage",
+      "justification": "Original calibration used generic blocking/degrading criteria; new version calibrates by structural scope which matched the observed severity gradient exactly",
+      "evidence": "Finding 1 (overview=HIGH), findings 2-3 (items=MEDIUM), finding 4 (partial Why drift=LOW)",
+      "helpful": 2,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:22:48.866033+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "sources": []
+    },
+    "critique-technique-00003": {
+      "id": "critique-technique-00003",
+      "section": "critique-technique",
+      "content": "Include concrete reframings alongside each violation flag",
+      "justification": "Critics providing reframings achieved 100% usefulness vs flag-only findings",
+      "evidence": "Finding 2 suggested 'developer-skips-runtime-config' and 'developer-keeps-auth' as replacements",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T01:09:02.116043+00:00",
+      "updated_at": "2026-03-12T01:09:02.116108+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "evaluation-criteria-00004": {
+      "id": "evaluation-criteria-00004",
+      "section": "evaluation-criteria",
+      "content": "Litmus test: would a non-technical stakeholder understand every sentence?",
+      "justification": "Reusable heuristic that all 4 findings consistently applied to detect implementation leakage",
+      "evidence": "All 4 findings used this principle to distinguish functional content from implementation details",
+      "helpful": 2,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T01:09:02.116157+00:00",
+      "updated_at": "2026-03-12T05:22:48.866039+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "critique-technique-00005": {
+      "id": "critique-technique-00005",
+      "section": "critique-technique",
+      "content": "Stay on a single evaluation axis across all findings",
+      "justification": "Axis discipline is the strongest predictor of critic effectiveness observed",
+      "evidence": "All 4 findings evaluated implementation leakage only \u2014 no drift into completeness or clarity \u2014 yielding 100% usefulness",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T01:09:02.116187+00:00",
+      "updated_at": "2026-03-12T01:09:02.116190+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "critique-technique-00006": {
+      "id": "critique-technique-00006",
+      "section": "critique-technique",
+      "content": "Count all findings before writing summary totals",
+      "justification": "Meta-evaluation showed 3/3 but critic produced 4 findings \u2014 undercounting distorts effectiveness scores",
+      "evidence": "Summary table showed 3/3 useful findings but actual output contained 4 \u2014 finding #4 was missed in the count",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:22:48.866079+00:00",
+      "updated_at": "2026-03-12T05:22:48.866082+00:00",
+      "embedding": null,
+      "status": "active",
       "sources": []
     }
   },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Functional"
-  },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00004"
     ],
     "severity-calibration": [
       "severity-cal-1"
+    ],
+    "critique-technique": [
+      "critique-technique-00003",
+      "critique-technique-00005",
+      "critique-technique-00006"
     ]
   },
-  "next_id": 2
+  "next_id": 6,
+  "similarity_decisions": {}
 }

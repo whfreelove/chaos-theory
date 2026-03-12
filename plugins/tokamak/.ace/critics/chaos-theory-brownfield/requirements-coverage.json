@@ -3,47 +3,66 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Identify missing single-capability requirement scenarios that would meaningfully increase coverage:\n\n- **User Behaviors**: Flag expected user interactions not captured by any requirement scenario (e.g., edge cases, error paths, common workflows)\n- **Boundary Conditions**: Flag missing scenarios for limits, empty states, or invalid inputs that users would realistically encounter\n\nUse `integration.feature.md` as deduplication context \u2014 do NOT suggest requirement scenarios for behaviors already covered as integration scenarios.\n\nDo NOT:\n- Duplicate scenarios that already exist (check existing requirements AND integration scenarios carefully)\n- Nitpick minor variations that don't change behavior\n- Suggest scenarios that break Gherkin rules (one When-Then per scenario, observable outcomes only)\n- Flag hypothetical edge cases users would never encounter\n\nMATERIALITY: Only flag missing scenarios that would catch bugs in a REAL implementation \u2014 not theoretical completeness gaps. Ask: \"Would a competent developer who reads the existing scenarios misimplement this?\" If no, don't flag it.\n\nDo NOT flag:\n- Edge cases that require unlikely user behavior (empty inputs, single-item lists, format boundary cases)\n- Scenarios that duplicate coverage from a different angle\n- Scenarios whose absence would not cause incorrect implementation\n\nFor each gap, describe the missing behavior concisely. Only flag gaps that would catch real bugs.",
-      "helpful": 0,
+      "content": "Identify missing single-capability requirement scenarios that would meaningfully increase coverage:\n\n- **User Behaviors**: Flag expected user interactions not captured by any requirement scenario (e.g., edge cases, error paths, common workflows)\n- **Boundary Conditions**: Flag missing scenarios for limits, empty states, or invalid inputs that users would realistically encounter\n- **Known Limitations**: Cross-reference each Known Limitation against requirement scenarios \u2014 each limitation implies behavior a developer could misimplement if no negative scenario exists\n\nUse `integration.feature.md` as deduplication context \u2014 do NOT suggest requirement scenarios for behaviors already covered as integration scenarios.\n\nDo NOT:\n- Duplicate scenarios that already exist (check existing requirements AND integration scenarios carefully)\n- Nitpick minor variations that don't change behavior\n- Suggest scenarios that break Gherkin rules (one When-Then per scenario, observable outcomes only)\n- Flag hypothetical edge cases users would never encounter\n\nMATERIALITY: Only flag missing scenarios that would catch bugs in a REAL implementation \u2014 not theoretical completeness gaps. Ask: \"Would a competent developer who reads the existing scenarios misimplement this?\" If no, don't flag it.\n\nDo NOT flag:\n- Edge cases that require unlikely user behavior (empty inputs, single-item lists, format boundary cases)\n- Scenarios that duplicate coverage from a different angle\n- Scenarios whose absence would not cause incorrect implementation\n\nFor each gap, describe the missing behavior concisely. Only flag gaps that would catch real bugs.",
+      "justification": "Adds Known Limitations cross-referencing as a specific source for finding missing negative scenarios in brownfield specs",
+      "evidence": "Critic found --rebuild limitation documented but no corresponding scenario showing it is silently ignored when container exists",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:37:34.517678+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
     },
     "severity-cal-1": {
       "id": "severity-cal-1",
       "section": "severity-calibration",
-      "content": "## Severity Calibration\n\n- **HIGH**: Blocks implementation or causes incorrect behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
-      "helpful": 0,
+      "content": "- **HIGH**: Blocks implementation or causes incorrect behavior. In brownfield specs: requirements would produce behavior contradicting actual documented system behavior\n- **MEDIUM**: Degrades functionality or creates ambiguity that will require rework\n- **LOW**: Minor issue, style, or nitpick that won't block progress",
+      "justification": "Adds brownfield-specific HIGH severity criterion: requirements that contradict actual system behavior are high severity because they cause incorrect implementation",
+      "evidence": "Finding 1 correctly rated high because implementing from requirements alone would build --rebuild to always trigger rebuilds, contradicting actual silent-skip behavior",
+      "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T05:37:34.517763+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
       "sources": []
+    },
+    "evaluation-criteria-00003": {
+      "id": "evaluation-criteria-00003",
+      "section": "evaluation-criteria",
+      "content": "Check sibling capabilities for symmetric error handling on shared preconditions",
+      "justification": "New evaluation technique: when multiple capabilities share infrastructure preconditions, compare how each handles the same failure to find missing error scenarios",
+      "evidence": "Critic found developer-opens-shell and developer-stops-container handle 'no container' case but developer-runs-agent does not",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:37:34.517750+00:00",
+      "updated_at": "2026-03-12T05:37:34.517755+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": [
+        {
+          "pre_add_check": {
+            "most_similar_existing": "eval-criteria-1: Identify missing single-capability requirement scenarios",
+            "same_meaning": false,
+            "difference": "eval-criteria-1 lists sources for finding gaps (user behaviors, boundary conditions); this new skill is a cross-capability comparison technique, not a single-capability gap source"
+          }
+        }
+      ]
     }
-  },
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": [],
-    "source": "migrated from critics.chaos-theory-brownfield.json",
-    "critic": "Requirements Coverage"
   },
   "sections": {
     "evaluation-criteria": [
-      "eval-criteria-1"
+      "eval-criteria-1",
+      "evaluation-criteria-00003"
     ],
     "severity-calibration": [
       "severity-cal-1"
     ]
   },
-  "next_id": 2
+  "next_id": 3,
+  "similarity_decisions": {}
 }
