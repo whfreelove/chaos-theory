@@ -1,0 +1,44 @@
+{
+  "skills": {
+    "eval-criteria-1": {
+      "id": "eval-criteria-1",
+      "section": "evaluation-criteria",
+      "content": "Audit user-facing failure paths and exit codes:\n\n- **Error Path Coverage**: Flag capabilities in functional.md that describe failure modes without corresponding error scenarios in requirements\n- **Exit Code Accuracy**: Cross-reference exit codes specified in requirement scenarios against actual code behavior\n- **Error Message Completeness**: Flag scenarios where error output is unspecified (user sees silent failure or cryptic message)\n- **Failure UX Consistency**: Flag inconsistent error handling patterns across capabilities (e.g., one capability exits non-zero on missing precondition, another silently succeeds)",
+      "justification": "No existing critic systematically audited error message completeness \u2014 exit-code mismatch found only incidentally by Requirement Accuracy",
+      "evidence": "Team guidance critic_coverage-00005: Requirement Accuracy found exit-code 0-vs-1 mismatch incidentally; no critic owned systematic error path audit",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T23:03:26.784367+00:00",
+      "updated_at": "2026-03-12T23:03:26.784367+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "severity-cal-1": {
+      "id": "severity-cal-1",
+      "section": "severity-calibration",
+      "content": "- **HIGH**: Exit code or error behavior contradicts spec (user gets wrong signal about success/failure)\n- **MEDIUM**: Error path exists but message is unspecified or misleading\n- **LOW**: Minor inconsistency in error formatting or wording",
+      "justification": "Exit code mismatches are high severity because they cause automation and CI to misinterpret results",
+      "evidence": "Team guidance: exit-code 0-vs-1 mismatch at bin/agentcontainer:230-244 would silently pass CI checks on failure",
+      "helpful": 0,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T23:03:26.784367+00:00",
+      "updated_at": "2026-03-12T23:03:26.784367+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    }
+  },
+  "sections": {
+    "evaluation-criteria": [
+      "eval-criteria-1"
+    ],
+    "severity-calibration": [
+      "severity-cal-1"
+    ]
+  },
+  "next_id": 1,
+  "similarity_decisions": {}
+}

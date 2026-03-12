@@ -3,16 +3,16 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Evaluate `integration.feature.md` for quality and legitimacy:\n\n- **Cross-Capability Focus**: Flag scenarios that test single-capability behavior (these belong in `requirements/`). Integration scenarios MUST involve 2+ capabilities interacting.\n- **@capability Tagging**: Flag scenarios missing @capability tags or tagged with only one capability\n- **Testability**: Flag scenarios describing internal state rather than observable behavior\n- **Normative Language**: Flag weak language (should, may, might, can, will) \u2014 integration scenarios use SHALL/MUST\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple When-Then pairs belong in separate scenarios)\n\nWhen citing issues, quote the specific violating text.",
+      "content": "Evaluate `integration.feature.md` for quality and legitimacy:\n\n- **Cross-Capability Focus**: Flag scenarios that test single-capability behavior (these belong in `requirements/`). Integration scenarios MUST involve 2+ capabilities interacting.\n- **@capability Tagging**: Flag scenarios missing @capability tags or tagged with only one capability\n- **Normative Language**: Flag weak language (should, may, might, can, will) \u2014 integration scenarios use SHALL/MUST\n- **Atomicity**: Flag scenarios testing multiple behaviors (multiple When-Then pairs belong in separate scenarios)\n\nTestability (function names in Then clauses, mechanism vs outcome) is owned by the Requirements critic \u2014 do not duplicate.\n\nWhen citing issues, quote the specific violating text.",
       "helpful": 0,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-01T23:43:14.865186+00:00",
+      "updated_at": "2026-03-12T23:03:26.784367+00:00",
       "embedding": null,
       "status": "active",
-      "justification": null,
-      "evidence": null,
+      "justification": "Testability consolidated into Requirements critic to eliminate duplication \u2014 both critics independently flagged the same pattern class",
+      "evidence": "Team guidance critic_coordination-00006: Requirements TESTABILITY-1 flags cmd_build(); Integration TESTABILITY-1 flags load_config(), image_exists() \u2014 same finding class, two critics",
       "sources": []
     },
     "severity-cal-1": {

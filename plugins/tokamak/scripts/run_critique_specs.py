@@ -751,7 +751,8 @@ def run_critique(
         'commit': log.commit,
         'results': [
             {'name': r['name'], 'status': r['status'],
-             'output': r.get('output', ''), 'model': r.get('model', '')}
+             'output': r.get('output', ''), 'model': r.get('model', ''),
+             **({'usage': r['usage']} if 'usage' in r else {})}
             for r in results
         ],
     })

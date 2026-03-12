@@ -7,6 +7,7 @@
         "functional.md"
       ],
       "model": "opus",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-functional-specs"
       ]
@@ -17,6 +18,7 @@
         "technical.md"
       ],
       "model": "sonnet",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-technical-design"
       ]
@@ -27,6 +29,7 @@
         "technical.md"
       ],
       "model": "sonnet",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-technical-design"
       ]
@@ -37,6 +40,7 @@
         "technical.md"
       ],
       "model": "opus",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-technical-design"
       ]
@@ -47,6 +51,7 @@
         "requirements"
       ],
       "model": "sonnet",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-markdown-gherkin"
       ]
@@ -58,6 +63,7 @@
         "technical.md"
       ],
       "model": "sonnet",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-technical-design"
       ]
@@ -70,6 +76,7 @@
         "integration.feature.md"
       ],
       "model": "opus",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-markdown-gherkin"
       ]
@@ -82,6 +89,7 @@
         "integration.feature.md"
       ],
       "model": "sonnet",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-markdown-gherkin"
       ]
@@ -94,6 +102,7 @@
         "integration.feature.md"
       ],
       "model": "sonnet",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-markdown-gherkin"
       ]
@@ -106,6 +115,7 @@
         "integration.feature.md"
       ],
       "model": "sonnet",
+      "effort": "medium",
       "skills": [
         "writing-infra-specs"
       ]
@@ -117,6 +127,7 @@
         "requirements"
       ],
       "model": "sonnet",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-technical-design"
       ]
@@ -127,6 +138,7 @@
         "functional.md"
       ],
       "model": "opus",
+      "effort": "high",
       "skills": []
     },
     {
@@ -135,6 +147,7 @@
         "requirements"
       ],
       "model": "opus",
+      "effort": "high",
       "skills": [
         "tokamak:writing-markdown-gherkin"
       ]
@@ -145,6 +158,7 @@
         "technical.md"
       ],
       "model": "opus",
+      "effort": "high",
       "skills": [
         "tokamak:writing-technical-design"
       ]
@@ -155,6 +169,7 @@
         "technical.md"
       ],
       "model": "opus",
+      "effort": "high",
       "skills": [
         "tokamak:writing-technical-design"
       ]
@@ -165,6 +180,17 @@
         "infra.md"
       ],
       "model": "opus",
+      "effort": "high",
+      "skills": []
+    },
+    {
+      "name": "Error UX",
+      "files": [
+        "functional.md",
+        "requirements"
+      ],
+      "model": "opus",
+      "effort": "high",
       "skills": []
     },
     {
@@ -173,6 +199,7 @@
         "integration.feature.md"
       ],
       "model": "sonnet",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-markdown-gherkin"
       ]
@@ -185,6 +212,7 @@
         "integration.feature.md"
       ],
       "model": "opus",
+      "effort": "medium",
       "skills": [
         "tokamak:writing-markdown-gherkin"
       ]

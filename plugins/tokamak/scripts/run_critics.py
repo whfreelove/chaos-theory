@@ -35,6 +35,7 @@ ACCURACY_CRITICS = frozenset({
     "Architecture Accuracy",
     "Decision Plausibility",
     "Infrastructure Accuracy",
+    "Error UX",
 })
 
 
@@ -250,6 +251,7 @@ def build_command(critic: dict, change_dir: Path,
 
     cmd.extend(['--permission-mode', 'bypassPermissions'])
     cmd.append('--no-session-persistence')
+    cmd.extend(['--output-format', 'json'])
 
     # Grant filesystem access
     cmd.extend(['--add-dir', str(change_dir)])
@@ -300,30 +302,59 @@ async def run_one_critic(
                 timeout=timeout,
             )
 
+            stdout_text = stdout.decode().strip()
+            stderr_text = stderr.decode().strip()
+
+            # Parse JSON output for text and usage telemetry
+            output_text = stdout_text
+            usage = {}
+            try:
+                parsed = json.loads(stdout_text)
+                output_text = parsed.get('result', stdout_text)
+                model_usage = parsed.get('modelUsage', {})
+                usage = {
+                    'inputTokens': sum(
+                        u.get('inputTokens', 0) for u in model_usage.values()
+                    ),
+                    'outputTokens': sum(
+                        u.get('outputTokens', 0) for u in model_usage.values()
+                    ),
+                    'cacheReadInputTokens': sum(
+                        u.get('cacheReadInputTokens', 0)
+                        for u in model_usage.values()
+                    ),
+                    'num_turns': parsed.get('num_turns', 0),
+                }
+            except (json.JSONDecodeError, AttributeError):
+                pass  # Fall back to raw stdout
+
             if proc.returncode == 0:
                 print(f"[SUCCESS] {name}", file=sys.stderr)
-                return {
+                result = {
                     'name': name,
                     'model': critic['model'],
                     'status': 'success',
-                    'output': stdout.decode().strip(),
+                    'output': output_text,
                 }
+                if usage:
+                    result['usage'] = usage
+                return result
             else:
-                stderr_text = stderr.decode().strip()
-                stdout_text = stdout.decode().strip()
                 if stderr_text:
                     error_msg = stderr_text
                 else:
-                    # claude CLI often writes errors to stdout, not stderr
-                    error_msg = stdout_text[:500] or f"exit code {proc.returncode}"
+                    error_msg = output_text[:500] or f"exit code {proc.returncode}"
                 print(f"[FAILED] {name}: {error_msg}", file=sys.stderr)
-                return {
+                result = {
                     'name': name,
                     'model': critic['model'],
                     'status': 'error',
-                    'output': stdout.decode().strip(),
+                    'output': output_text,
                     'error': error_msg,
                 }
+                if usage:
+                    result['usage'] = usage
+                return result
         except asyncio.TimeoutError:
             proc.kill()
             await proc.wait()

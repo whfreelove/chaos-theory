@@ -3,14 +3,14 @@
     "eval-criteria-1": {
       "id": "eval-criteria-1",
       "section": "evaluation-criteria",
-      "content": "Evaluate `integration.feature.md` for quality and legitimacy:\n\n- **Cross-Capability Focus**: Flag scenarios that test single-capability behavior (these belong in `requirements/`). Integration scenarios MUST involve 2+ capabilities interacting.\n- **@capability Tagging**: Flag scenarios missing @capability tags or tagged with only one capability\n- **Testability**: Flag Then clauses referencing internal function names (e.g., `load_config()`, `image_exists()`) \u2014 assert observable behavior, not call chains\n- **Normative Language**: Flag weak language (should, may, might, can, will) \u2014 integration scenarios use SHALL/MUST\n- **Atomicity**: Flag scenarios collapsing multiple distinct commands into one When-Then pair \u2014 each command gets its own scenario for failure localization",
-      "justification": "Sharpens testability bullet with concrete anti-pattern (function names in Then clauses) and atomicity bullet with failure-localization rationale, both backed by specific findings",
-      "evidence": "TESTABILITY-1: 7 function-name references in Then clauses; ATOMICITY-1: build/up/shell/stop/down collapsed into one scenario",
+      "content": "Evaluate `integration.feature.md` for quality and legitimacy:\n\n- **Cross-Capability Focus**: Flag scenarios that test single-capability behavior (these belong in `requirements/`). Integration scenarios MUST involve 2+ capabilities interacting.\n- **@capability Tagging**: Flag scenarios missing @capability tags or tagged with only one capability\n- **Normative Language**: Flag weak language (should, may, might, can, will) \u2014 integration scenarios use SHALL/MUST\n- **Atomicity**: Flag scenarios collapsing multiple distinct commands into one When-Then pair \u2014 each command gets its own scenario for failure localization",
+      "justification": "Testability (function names in Then clauses) consolidated into Requirements critic to eliminate duplication \u2014 both critics independently flagged the same pattern class",
+      "evidence": "Team guidance critic_coordination-00006: Requirements TESTABILITY-1 flags cmd_build(); Integration TESTABILITY-1 flags load_config(), image_exists() \u2014 same finding class, two critics",
       "helpful": 1,
       "harmful": 0,
       "neutral": 0,
       "created_at": "2026-03-01T23:43:14.865186+00:00",
-      "updated_at": "2026-03-12T05:53:07.401985+00:00",
+      "updated_at": "2026-03-12T23:03:26.784367+00:00",
       "embedding": null,
       "status": "active",
       "sources": []
