@@ -8,6 +8,7 @@ Replaces unreliable "launch N Task calls in a single message" approach.
 Usage:
     python run_critics.py <change_dir> [--max-concurrent N] [--timeout S] [--dry-run]
     python run_critics.py <change_dir> --show-prompt [--critic Name]
+    python run_critics.py <change_dir> --show-team-guidance
 """
 
 import argparse
@@ -46,39 +47,63 @@ def _load_skillbook(sb_path: Path) -> str:
     """
     if not sb_path.exists():
         return ''
-    try:
-        from ace import Skillbook, wrap_skillbook_context
-        sb = Skillbook.load_from_file(str(sb_path))
-        result = wrap_skillbook_context(sb)
-        if result:
-            return result
-        # ACE returned empty — fall through to manual reader
-    except ImportError:
-        pass
-    except Exception:
-        pass  # ACE load/format error — fall through
-    # Manual reader: handles both dict and list formats
+    # Read JSON once — reused by both ACE path and manual reader
     try:
         with open(sb_path) as f:
             sb_data = json.load(f)
     except (json.JSONDecodeError, OSError):
         return ''
+    # Manual reader: handles both dict and list formats, plus section_order
     skills = sb_data.get('skills', {})
-    if isinstance(skills, dict):
+    if isinstance(skills, list):
+        return '\n\n'.join(s['content'] for s in skills if 'content' in s) or ''
+    if not isinstance(skills, dict):
+        return ''
+    sections = sb_data.get('sections', {})
+    if not sections:
+        # No sections defined — flat concatenation (backward compat)
         return '\n\n'.join(
             s['content'] for s in skills.values()
             if isinstance(s, dict) and 'content' in s
         ) or ''
-    elif isinstance(skills, list):
-        return '\n\n'.join(s['content'] for s in skills if 'content' in s) or ''
-    return ''
+    # Section-aware rendering (explicit order if provided, else dict order)
+    section_order = sb_data.get('section_order')
+    if isinstance(section_order, list):
+        ordered = list(dict.fromkeys(section_order))  # dedupe, preserve order
+        # Append any sections not listed in section_order
+        for name in sections:
+            if name not in ordered:
+                ordered.append(name)
+    else:
+        ordered = list(sections.keys())
+    parts = []
+    rendered_ids = set()
+    for section_name in ordered:
+        skill_ids = sections.get(section_name)
+        if not skill_ids:
+            continue
+        heading = section_name.replace('-', ' ').replace('_', ' ').title()
+        section_parts = []
+        for sid in skill_ids:
+            skill = skills.get(sid)
+            if isinstance(skill, dict) and 'content' in skill:
+                section_parts.append(skill['content'])
+                rendered_ids.add(sid)
+        if section_parts:
+            parts.append(f"## {heading}\n")
+            parts.append('\n\n'.join(section_parts))
+    # Fallback: skills not in any section
+    for sid, skill in skills.items():
+        if sid not in rendered_ids and isinstance(skill, dict) and 'content' in skill:
+            parts.append(skill['content'])
+    return '\n\n'.join(parts) or ''
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Run OpenSpec critics in parallel via claude -p'
     )
-    parser.add_argument('change_dir', type=Path,
+    parser.add_argument('change_dir', type=Path, nargs='?', default=None,
                         help='Path to OpenSpec change directory')
     parser.add_argument('--max-concurrent', type=int, default=6,
                         help='Maximum parallel claude -p processes (default: 6)')
@@ -93,6 +118,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                              'Resolves <type>.<schema>.json')
     parser.add_argument('--show-prompt', action='store_true',
                         help='Print assembled prompts to stdout and exit')
+    parser.add_argument('--show-team-guidance', action='store_true',
+                        help='Print rendered team coordination guidance and exit')
     parser.add_argument('--critic', default=None,
                         help='Filter to a single critic by name '
                              '(use with --show-prompt or --dry-run)')
@@ -124,15 +151,9 @@ def is_accuracy_critic(name: str) -> bool:
 
 def build_prompt(critic: dict, change_dir: Path,
                  project_dir: Path | None,
-                 skillbook_context: str = '',
-                 team_context: str = '') -> str:
+                 skillbook_context: str = '') -> str:
     """Construct the evaluation prompt for a single critic."""
     parts = []
-
-    if team_context:
-        parts.append("## Team Coordination Guidance\n")
-        parts.append(team_context)
-        parts.append("")
 
     # Artifact evaluation guidance (shared per file type)
     seen_artifacts = set()
@@ -144,11 +165,9 @@ def build_prompt(critic: dict, change_dir: Path,
         artifact_sb = ACE_DIR / 'artifacts' / f'{stem}.json'
         artifact_ctx = _load_skillbook(artifact_sb)
         if artifact_ctx:
-            parts.append(f"## Artifact Guidance: {stem}\n")
             parts.append(artifact_ctx)
             parts.append("")
 
-    parts.append("## Evaluation Criteria\n")
     parts.append(skillbook_context)
     parts.append("")
 
@@ -246,6 +265,10 @@ def build_command(critic: dict, change_dir: Path,
     if budget is not None:
         cmd.extend(['--max-budget-usd', str(budget)])
 
+    effort = critic.get('effort')
+    if effort:
+        cmd.extend(['--effort', effort])
+
     # Prompt is passed via stdin (avoids shell argument length limits)
     return cmd
 
@@ -334,10 +357,6 @@ async def run_all_critics(
     kind = 'gap-detectors' if 'gap-detector' in config_type else 'critics'
     ace_dir = Path(__file__).parent.parent / '.ace' / kind / schema_slug
 
-    # Load team skillbook once (shared across all critics)
-    team_path = Path(__file__).parent.parent / '.ace' / 'team' / 'critique.json'
-    team_context = _load_skillbook(team_path)
-
     if not critics:
         return {
             'critics_run': 0, 'critics_succeeded': 0,
@@ -350,7 +369,7 @@ async def run_all_critics(
             sb_path = ace_dir / f'{slug}.json'
             skillbook_context = _load_skillbook(sb_path)
             prompt = build_prompt(critic, change_dir, project_dir,
-                                  skillbook_context, team_context)
+                                  skillbook_context)
             cmd = build_command(critic, change_dir, project_dir,
                                 output_template, budget)
             print(f"\n{'=' * 60}", file=sys.stderr)
@@ -372,7 +391,7 @@ async def run_all_critics(
         sb_path = ace_dir / f'{slug}.json'
         skillbook_context = _load_skillbook(sb_path)
         prompt = build_prompt(critic, change_dir, project_dir,
-                              skillbook_context, team_context)
+                              skillbook_context)
         cmd = build_command(critic, change_dir, project_dir,
                             output_template, budget)
         tasks.append(run_one_critic(critic, cmd, prompt, timeout, semaphore))
@@ -403,7 +422,6 @@ def _show_prompts(
     schema = critics_data.get('schema') or 'chaos-theory'
     kind = 'gap-detectors' if 'gap-detector' in config_type else 'critics'
     ace_dir = ACE_DIR / kind / schema
-    team_context = _load_skillbook(ACE_DIR / 'team' / 'critique.json')
 
     if critic_filter:
         critics = [c for c in critics
@@ -419,7 +437,7 @@ def _show_prompts(
         sb_path = ace_dir / f'{slug}.json'
         skillbook_context = _load_skillbook(sb_path)
         prompt = build_prompt(critic, change_dir, project_dir,
-                              skillbook_context, team_context)
+                              skillbook_context)
         print(f"{'=' * 70}")
         print(f"CRITIC: {critic['name']} (model: {critic['model']})")
         print(f"{'=' * 70}")
@@ -435,6 +453,18 @@ def _show_prompts(
 
 def main(argv: list[str] | None = None):
     args = parse_args(argv)
+    if args.show_team_guidance:
+        guidance = _load_skillbook(ACE_DIR / 'team' / 'critique.json')
+        if guidance:
+            print(guidance)
+        else:
+            print("No team guidance found.", file=sys.stderr)
+        sys.exit(0)
+
+    if args.change_dir is None:
+        print("ERROR: change_dir is required", file=sys.stderr)
+        sys.exit(1)
+
     change_dir = args.change_dir.resolve()
 
     if not change_dir.exists():

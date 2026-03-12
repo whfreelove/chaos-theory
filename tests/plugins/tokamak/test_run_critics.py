@@ -157,6 +157,61 @@ class TestLoadSkillbook:
         result = run_critics._load_skillbook(sb_path)
         assert 'Check for leakage.' in result
 
+    def test_section_order_respected(self, tmp_path):
+        """section_order controls rendering order of sections."""
+        sb_path = tmp_path / "ordered.json"
+        sb_path.write_text(json.dumps({
+            'skills': {
+                's1': {'id': 's1', 'section': 'alpha', 'content': 'Alpha content.'},
+                's2': {'id': 's2', 'section': 'beta', 'content': 'Beta content.'},
+                's3': {'id': 's3', 'section': 'gamma', 'content': 'Gamma content.'},
+            },
+            'sections': {
+                'alpha': ['s1'],
+                'beta': ['s2'],
+                'gamma': ['s3'],
+            },
+            'section_order': ['gamma', 'alpha', 'beta'],
+        }))
+        result = run_critics._load_skillbook(sb_path)
+        gamma_pos = result.index('Gamma content.')
+        alpha_pos = result.index('Alpha content.')
+        beta_pos = result.index('Beta content.')
+        assert gamma_pos < alpha_pos < beta_pos
+
+    def test_section_order_absent_falls_back_to_dict_order(self, tmp_path):
+        """Without section_order, dict insertion order is used."""
+        sb_path = tmp_path / "no_order.json"
+        sb_path.write_text(json.dumps({
+            'skills': {
+                's1': {'id': 's1', 'section': 'first', 'content': 'First.'},
+                's2': {'id': 's2', 'section': 'second', 'content': 'Second.'},
+            },
+            'sections': {
+                'first': ['s1'],
+                'second': ['s2'],
+            },
+        }))
+        result = run_critics._load_skillbook(sb_path)
+        assert result.index('First.') < result.index('Second.')
+
+    def test_section_order_unlisted_sections_appended(self, tmp_path):
+        """Sections not in section_order render after listed ones."""
+        sb_path = tmp_path / "partial_order.json"
+        sb_path.write_text(json.dumps({
+            'skills': {
+                's1': {'id': 's1', 'section': 'listed', 'content': 'Listed.'},
+                's2': {'id': 's2', 'section': 'unlisted', 'content': 'Unlisted.'},
+            },
+            'sections': {
+                'unlisted': ['s2'],
+                'listed': ['s1'],
+            },
+            'section_order': ['listed'],
+        }))
+        result = run_critics._load_skillbook(sb_path)
+        assert result.index('Listed.') < result.index('Unlisted.')
+
 
 # --- Prompt construction ---
 
