@@ -1,9 +1,126 @@
 {
-  "skills": {},
-  "sections": {},
-  "next_id": 0,
-  "metadata": {
-    "version": "0.1.0",
-    "mutations": []
-  }
+  "skills": {
+    "critic_coordination-00001": {
+      "id": "critic_coordination-00001",
+      "section": "critic_coordination",
+      "content": "Assign each artifact-pair to exactly one critic for cross-checking",
+      "justification": "5 of 18 critics independently found developer-views-status gap — exclusive ownership eliminates convergent duplication",
+      "evidence": "Implementation, Logic, Validation, Capability Accuracy, Verification all reported same missing-component gap",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:56:35.592137+00:00",
+      "updated_at": "2026-03-12T05:56:35.592185+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "critic_coordination-00002": {
+      "id": "critic_coordination-00002",
+      "section": "critic_coordination",
+      "content": "Prioritize code-grounded critics over spec-only critics for unique findings",
+      "justification": "Accuracy critics reading source code produced highest-value unique findings because codebase grounding prevents duplication",
+      "evidence": "Decision Plausibility verified 8/8 decisions with file:line refs; Requirement Accuracy found exit-code mismatch at bin/agentcontainer:230-244",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:56:35.592214+00:00",
+      "updated_at": "2026-03-12T05:56:35.592218+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "critic_coordination-00003": {
+      "id": "critic_coordination-00003",
+      "section": "critic_coordination",
+      "content": "Behavioral edge cases at capability boundaries cause highest duplication",
+      "justification": "--rebuild silent-ignore found by 4 critics independently; edge cases sit at intersection of requirements, validation, coverage, and accuracy scopes",
+      "evidence": "Requirements Coverage functional-critic-1, Validation REQUIREMENTS-1, Requirement Accuracy STEP-MISMATCH-2, Requirements TESTABILITY-1 all flagged --rebuild precondition gap",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:56:35.592224+00:00",
+      "updated_at": "2026-03-12T05:56:35.592226+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "critic_output-00004": {
+      "id": "critic_output-00004",
+      "section": "critic_output",
+      "content": "Set per-critic token budgets to prevent truncation of tail findings",
+      "justification": "8+ critics truncated mid-sentence; later findings tend to be more niche/unique, so truncation disproportionately loses novel insights",
+      "evidence": "Dependency TECHNICAL-2, Technical TECHNICAL-3, Requirements TESTABILITY-3, Verification INFRA-4, Architecture Accuracy TECH-2, Requirement Accuracy MISSING-SCENARIO-1 all end mid-sentence",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:56:35.592234+00:00",
+      "updated_at": "2026-03-12T05:56:35.592236+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "critic_coverage-00005": {
+      "id": "critic_coverage-00005",
+      "section": "critic_coverage",
+      "content": "Add dedicated error-UX critic for user-facing failure paths and exit codes",
+      "justification": "No existing critic systematically audited error message completeness — exit-code mismatch found only incidentally by Requirement Accuracy",
+      "evidence": "Requirement Accuracy found exit-code 0-vs-1 mismatch incidentally; no critic owned systematic error path audit",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:56:35.592241+00:00",
+      "updated_at": "2026-03-12T05:56:35.592243+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "critic_coordination-00006": {
+      "id": "critic_coordination-00006",
+      "section": "critic_coordination",
+      "content": "Consolidate testability checking into one critic, not split across two",
+      "justification": "Integration and Requirements critics both flagged internal function names in Then clauses — same finding class split across critics wastes capacity",
+      "evidence": "Requirements TESTABILITY-1 flags cmd_build(); Integration TESTABILITY-1 flags load_config(), image_exists(), find_project_container() — same pattern, two critics",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:56:35.592248+00:00",
+      "updated_at": "2026-03-12T05:56:35.592250+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    },
+    "critic_coverage-00007": {
+      "id": "critic_coverage-00007",
+      "section": "critic_coverage",
+      "content": "Positive decision verification is uniquely valuable — keep Decision Plausibility critic",
+      "justification": "Decision Plausibility verified 8/8 decisions supported with file:line evidence — positive confirmation not duplicated by any gap-finding critic",
+      "evidence": "Decision Plausibility table: 8/8 decisions supported with code locations (build.sh:153, up.sh:80-83, config.sh:13-21)",
+      "helpful": 1,
+      "harmful": 0,
+      "neutral": 0,
+      "created_at": "2026-03-12T05:56:35.592256+00:00",
+      "updated_at": "2026-03-12T05:56:35.592258+00:00",
+      "embedding": null,
+      "status": "active",
+      "sources": []
+    }
+  },
+  "sections": {
+    "critic_coordination": [
+      "critic_coordination-00001",
+      "critic_coordination-00002",
+      "critic_coordination-00003",
+      "critic_coordination-00006"
+    ],
+    "critic_output": [
+      "critic_output-00004"
+    ],
+    "critic_coverage": [
+      "critic_coverage-00005",
+      "critic_coverage-00007"
+    ]
+  },
+  "next_id": 7,
+  "similarity_decisions": {}
 }
