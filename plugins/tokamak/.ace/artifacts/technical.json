@@ -2,7 +2,7 @@
   "skills": {
     "eval-technical-1": {
       "id": "eval-technical-1",
-      "section": "evaluation-criteria",
+      "section": "technical-artifact-guidance",
       "content": "**The Assignment Test**\n\nTechnical designs enable task assignment. The right detail level lets a team lead direct work without follow-up questions while leaving implementation choices to developers.\n\nBefore including a detail, ask: Would a team lead need this to assign the task?\n\n| Question | If YES | If NO |\n|----------|--------|-------|\n| Would removing this cause ambiguity or rework? | Include | Omit |\n| Does this lock in an implementation choice? | Omit (or justify in Decisions) | Include |\n| Will this need updating when code changes? | Omit | Include |",
       "helpful": 0,
       "harmful": 0,
@@ -13,11 +13,13 @@
       "status": "active",
       "justification": "Core evaluation methodology for judging detail sufficiency",
       "evidence": null,
-      "sources": ["writing-technical-design"]
+      "sources": [
+        "writing-technical-design"
+      ]
     },
     "eval-technical-2": {
       "id": "eval-technical-2",
-      "section": "evaluation-criteria",
+      "section": "technical-artifact-guidance",
       "content": "**What to Include vs Omit**\n\n| Include (assignment context) | Omit (developer decisions) |\n|------------------------------|----------------------------|\n| Component purpose and responsibilities | Internal class/module structure |\n| External dependencies and why | How to use those dependencies |\n| Contract shapes at boundaries | Data transformations inside |\n| Error categories (4xx vs 5xx) | Specific error message text |\n| Performance targets (p95 < 200ms) | How to achieve the target |\n| What scenarios need testing | How to write the tests |",
       "helpful": 0,
       "harmful": 0,
@@ -28,11 +30,13 @@
       "status": "active",
       "justification": "Decision table for evaluating specification granularity",
       "evidence": null,
-      "sources": ["writing-technical-design"]
+      "sources": [
+        "writing-technical-design"
+      ]
     },
     "eval-technical-3": {
       "id": "eval-technical-3",
-      "section": "evaluation-criteria",
+      "section": "technical-artifact-guidance",
       "content": "**Specification Calibration Examples**\n\n- **Over-specified:** \"Use sliding window with 1-second buckets, store in Redis with INCR+EXPIRE\" \u2014 Locks in algorithm and Redis commands; developer can't choose alternatives\n- **Under-specified:** \"Limits requests\" \u2014 Team lead must ask: Per user? Per endpoint? What storage?\n- **Right level:** \"Enforce per-user limits across instances using Redis, reject with 429, sync within 100ms\" \u2014 Assignable task, developer chooses implementation",
       "helpful": 0,
       "harmful": 0,
@@ -43,11 +47,13 @@
       "status": "active",
       "justification": "Calibration examples for over/under specification detection",
       "evidence": null,
-      "sources": ["writing-technical-design"]
+      "sources": [
+        "writing-technical-design"
+      ]
     },
     "eval-technical-4": {
       "id": "eval-technical-4",
-      "section": "evaluation-criteria",
+      "section": "technical-artifact-guidance",
       "content": "**Y-Statement Decision Criteria**\n\nBoth directions need justification:\n- **Adding external dependency**: Document why it's worth the vendor risk, maintenance burden, and API stability concerns\n- **Building internally**: Document why external alternatives were rejected (avoid NIH syndrome)\n\nIf the solution is complex and viable alternatives exist, document the choice.",
       "helpful": 0,
       "harmful": 0,
@@ -58,11 +64,13 @@
       "status": "active",
       "justification": "Criteria for evaluating decision documentation quality",
       "evidence": null,
-      "sources": ["writing-technical-design"]
+      "sources": [
+        "writing-technical-design"
+      ]
     },
     "eval-technical-5": {
       "id": "eval-technical-5",
-      "section": "evaluation-criteria",
+      "section": "technical-artifact-guidance",
       "content": "**Common Mistakes**\n\n| Mistake | Problem | Fix |\n|---------|---------|-----|\n| Mixing WHAT and HOW | Functional spec leakage | Keep requirements in functional.md |\n| Objectives without metrics | Unverifiable success | Add measurable criteria |\n| Monolithic diagrams | Unreadable, unmaintainable | Split into focused diagrams |\n| Responsibilities as implementation | Too detailed, brittle | Stay at interface level |\n| Proposed decisions | Unapproved choices in design | Get approval first, then document |\n| Missing alternatives | Can't evaluate decision quality | Y-statements require \"neglected\" clause |\n| Trade-offs in Risks section | Duplicates decision content | Keep trade-offs in Y-statement |\n| Missing component dependencies | Incomplete picture | List all internal and external deps |\n| Missing error contracts | Consumers can't handle failures | Document all error responses |\n| Over-specification | Constrains developers, stale quickly | Apply assignment test |\n| Under-specification | Team lead can't assign work | Include enough context to assign without follow-up |",
       "helpful": 0,
       "harmful": 0,
@@ -73,11 +81,13 @@
       "status": "active",
       "justification": "Anti-pattern table with 11 common mistakes and fixes",
       "evidence": null,
-      "sources": ["writing-technical-design"]
+      "sources": [
+        "writing-technical-design"
+      ]
     }
   },
   "sections": {
-    "evaluation-criteria": [
+    "technical-artifact-guidance": [
       "eval-technical-1",
       "eval-technical-2",
       "eval-technical-3",
