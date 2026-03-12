@@ -67,3 +67,38 @@ class TestAceLearnReadResults:
         """Missing .critique-results.json should cause an error."""
         results_path = tmp_path / '.critique-results.json'
         assert not results_path.exists()
+
+
+class TestInjectSectionOrder:
+    """Tests that section_order survives ACE save cycles."""
+
+    def test_inject_section_order(self, tmp_path):
+        import ace_learn
+        sb_path = tmp_path / "test.json"
+        # Simulate ACE save output (no section_order)
+        sb_path.write_text(json.dumps({
+            'skills': {'s1': {'id': 's1', 'content': 'x'}},
+            'sections': {'a': ['s1']},
+            'next_id': 1,
+        }))
+        ace_learn._inject_section_order(sb_path, ['b', 'a'])
+        with open(sb_path) as f:
+            data = json.load(f)
+        assert data['section_order'] == ['b', 'a']
+        # Original keys preserved
+        assert 'skills' in data
+        assert 'sections' in data
+
+    def test_inject_section_order_overwrites_existing(self, tmp_path):
+        import ace_learn
+        sb_path = tmp_path / "test.json"
+        sb_path.write_text(json.dumps({
+            'skills': {},
+            'sections': {},
+            'next_id': 0,
+            'section_order': ['old'],
+        }))
+        ace_learn._inject_section_order(sb_path, ['new-a', 'new-b'])
+        with open(sb_path) as f:
+            data = json.load(f)
+        assert data['section_order'] == ['new-a', 'new-b']

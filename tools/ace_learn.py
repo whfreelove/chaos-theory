@@ -36,6 +36,22 @@ except ImportError:
 ACE_DIR = Path(__file__).resolve().parent.parent / 'plugins' / 'tokamak' / '.ace'
 
 
+def _inject_section_order(sb_path: Path, section_order: list) -> None:
+    """Re-inject section_order into a skillbook JSON after ACE save.
+
+    ACE's Skillbook.to_dict() only emits its own known keys, so any
+    section_order present in the original file gets dropped on save.
+    This reads the saved file, inserts section_order after sections,
+    and writes it back.
+    """
+    with open(sb_path) as f:
+        data = json.load(f)
+    data['section_order'] = section_order
+    with open(sb_path, 'w') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write('\n')
+
+
 def _slugify(name: str) -> str:
     """'Requirements Coverage' -> 'requirements-coverage'."""
     return name.lower().replace(' ', '-')
@@ -183,6 +199,11 @@ def learn(
 
         sb = Skillbook.load_from_file(str(sb_path))
 
+        # Preserve section_order — ACE's to_dict() drops unknown keys
+        with open(sb_path) as _f:
+            _raw = json.load(_f)
+        _section_order = _raw.get('section_order')
+
         quality_context = quality.get(r['name'], '')
         agent_output = AgentOutput(
             reasoning=quality_context,
@@ -209,7 +230,10 @@ def learn(
         else:
             sb.apply_update(sm_output.update)
             sb.save_to_file(str(sb_path))
-            skills = sb.skills if hasattr(sb, 'skills') else []
+            # Re-inject section_order (ACE's to_dict drops it)
+            if _section_order is not None:
+                _inject_section_order(sb_path, _section_order)
+            skills = sb.skills() if hasattr(sb, 'skills') else []
             print(f"  {r['name']}: {len(sm_output.update.operations)} updates ({len(skills)} skills)")
 
     # Team learning (skip in smoke mode — not enough data to be meaningful)
